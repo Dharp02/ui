@@ -10,6 +10,7 @@ export default defineConfig({
       '**/node_modules/**',
       'dist/**',
       '.attic/**',
+      'packages/datavis/**',
       'packages/esheet/**',
       'artipod-sync/**',
       'tests/visual/**',
@@ -20,6 +21,7 @@ export default defineConfig({
       exclude: [
         'node_modules/',
         'dist/',
+        'packages/datavis/**',
         '.storybook/',
         'src/test/',
         '**/*.stories.tsx',
