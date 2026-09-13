@@ -23,6 +23,13 @@ describe('CountryDropdown', () => {
     ).toHaveTextContent('Pick one');
   });
 
+  it('renders an unknown code as empty before the list has loaded', () => {
+    renderWithTheme(<CountryDropdown value="ZZ" />);
+    const trigger = screen.getByRole('button', { name: 'Select country' });
+    expect(trigger).toHaveTextContent('Select country…');
+    expect(trigger).not.toHaveTextContent('ZZ');
+  });
+
   it('starts with defaultValue selected when uncontrolled', () => {
     renderWithTheme(<CountryDropdown defaultValue="US" />);
     expect(

@@ -87,6 +87,13 @@ function countryFromCode(code: string): CountryData {
   };
 }
 
+/** Whether libphonenumber knows this ISO alpha-2 region. */
+function isSupportedRegion(code: string): boolean {
+  return (
+    PhoneNumberUtil.getInstance().getSupportedRegions() as string[]
+  ).includes(code);
+}
+
 /** Lazy singleton so we only build the list once. */
 let _countries: CountryData[] | null = null;
 function getCountries(): CountryData[] {
@@ -222,7 +229,7 @@ function CountryDropdownBase({
       return countries.find((c) => c.code === activeValue) ?? null;
     }
     // Lightweight fallback while list hasn't loaded yet
-    return countryFromCode(activeValue);
+    return isSupportedRegion(activeValue) ? countryFromCode(activeValue) : null;
   }, [activeValue, countries]);
 
   const filtered = React.useMemo(() => {
