@@ -76,6 +76,11 @@ export interface ChatComposerHandle {
   addFiles: (files: File[]) => void;
   /** Focus the text input. */
   focus: () => void;
+  /**
+   * The underlying textarea element, for host integrations that need caret
+   * access (e.g. mention insertion via `setSelectionRange`).
+   */
+  getTextarea: () => HTMLTextAreaElement | null;
 }
 
 /** Structured context passed to `onError` so hosts can localize by reason. */
@@ -108,6 +113,30 @@ export interface ChatComposerProps {
   maxLength?: number;
   /** Show a character counter (requires `maxLength`). */
   showCharacterCount?: boolean;
+  /**
+   * Allow sending while the composer itself is empty (e.g. when the host
+   * stages attachments outside the composer). The host receives a message
+   * with empty `content` and no attachments and owns any further guarding.
+   * @default false
+   */
+  canSendWhenEmpty?: boolean;
+  /**
+   * Maximum height of the auto-growing input: a pixel number or any CSS
+   * length (e.g. `'40vh'`).
+   * @default 160
+   */
+  maxHeight?: number | string;
+  /**
+   * Extra props spread onto the underlying textarea. Event handlers run
+   * before the composer's built-in handlers; call `event.preventDefault()`
+   * in `onKeyDown` / `onPaste` to claim that event (e.g. for a mention
+   * menu's arrow/Enter navigation). `className` and `style` are merged
+   * with the composer's own.
+   */
+  textareaProps?: Omit<
+    React.TextareaHTMLAttributes<HTMLTextAreaElement>,
+    'value' | 'defaultValue'
+  >;
 
   /** Extra entries for the `+` menu, rendered after the built-in items. */
   addMenuItems?: ChatComposerMenuItem[];
@@ -235,6 +264,9 @@ export const ChatComposer = React.forwardRef<
     autoFocus = false,
     maxLength,
     showCharacterCount = false,
+    canSendWhenEmpty = false,
+    maxHeight = MAX_INPUT_HEIGHT,
+    textareaProps,
     addMenuItems,
     allowAttachments = true,
     acceptedFileTypes,
@@ -288,7 +320,7 @@ export const ChatComposer = React.forwardRef<
   const isOverLimit = maxLength !== undefined && value.length > maxLength;
   // Without an onSend handler, sending would silently discard the draft.
   const canSend =
-    hasContent &&
+    (hasContent || canSendWhenEmpty) &&
     onSend !== undefined &&
     !disabled &&
     !isSending &&
@@ -307,12 +339,13 @@ export const ChatComposer = React.forwardRef<
     [isControlled, onValueChange]
   );
 
-  // Auto-grow the textarea up to MAX_INPUT_HEIGHT.
+  // Auto-grow the textarea. The cap is enforced with CSS max-height so it
+  // can be any CSS length (e.g. '40vh'), not just a pixel number.
   React.useLayoutEffect(() => {
     const textarea = textareaRef.current;
     if (!textarea) return;
     textarea.style.height = 'auto';
-    textarea.style.height = `${Math.min(textarea.scrollHeight, MAX_INPUT_HEIGHT)}px`;
+    textarea.style.height = `${textarea.scrollHeight}px`;
   }, [value]);
 
   // --------------------------------------------------------------------
@@ -425,6 +458,7 @@ export const ChatComposer = React.forwardRef<
     () => ({
       addFiles,
       focus: () => textareaRef.current?.focus(),
+      getTextarea: () => textareaRef.current,
     }),
     [addFiles]
   );
@@ -533,12 +567,26 @@ export const ChatComposer = React.forwardRef<
           standard utilities (no arbitrary width). */}
       <div className="px-1 pt-1">
         <textarea
+          {...textareaProps}
           ref={textareaRef}
           data-slot="chat-composer-input"
           value={value}
-          onChange={(event) => setValue(event.target.value)}
-          onKeyDown={handleKeyDown}
-          onPaste={handlePaste}
+          onChange={(event) => {
+            textareaProps?.onChange?.(event);
+            setValue(event.target.value);
+          }}
+          // Host handlers run first; preventDefault() opts out of the
+          // built-in behavior (Enter-to-send, paste-to-attach).
+          onKeyDown={(event) => {
+            textareaProps?.onKeyDown?.(event);
+            if (event.defaultPrevented) return;
+            handleKeyDown(event);
+          }}
+          onPaste={(event) => {
+            textareaProps?.onPaste?.(event);
+            if (event.defaultPrevented) return;
+            handlePaste(event);
+          }}
           placeholder={placeholder}
           disabled={disabled}
           // Host-opt-in only; off by default.
@@ -546,13 +594,19 @@ export const ChatComposer = React.forwardRef<
           autoFocus={autoFocus}
           rows={1}
           aria-label={inputLabel}
+          style={{
+            ...textareaProps?.style,
+            maxHeight:
+              typeof maxHeight === 'number' ? `${maxHeight}px` : maxHeight,
+          }}
           className={cn(
             'block w-full resize-none bg-transparent',
             'rounded-lg px-2 pt-2 pb-1 text-sm',
             'text-neutral-900 placeholder:text-neutral-400 dark:text-white dark:placeholder:text-neutral-500',
             // Ring the input itself on focus rather than the whole shell.
             'focus:ring-primary-500 focus:ring-1 focus:outline-none',
-            'disabled:cursor-not-allowed'
+            'disabled:cursor-not-allowed',
+            textareaProps?.className
           )}
         />
       </div>

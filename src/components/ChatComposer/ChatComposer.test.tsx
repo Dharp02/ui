@@ -437,4 +437,86 @@ describe('ChatComposer', () => {
       screen.getByRole('button', { name: 'Select agent: Code helper' })
     ).toBeInTheDocument();
   });
+
+  it('lets textareaProps.onKeyDown claim Enter via preventDefault', () => {
+    const onSend = vi.fn();
+    const onKeyDown = vi.fn((event: React.KeyboardEvent) => {
+      if (event.key === 'Enter') event.preventDefault();
+    });
+    renderWithTheme(
+      <ChatComposer onSend={onSend} textareaProps={{ onKeyDown }} />
+    );
+
+    const input = getInput();
+    fireEvent.change(input, { target: { value: 'Hello' } });
+    fireEvent.keyDown(input, { key: 'Enter' });
+
+    expect(onKeyDown).toHaveBeenCalled();
+    expect(onSend).not.toHaveBeenCalled();
+  });
+
+  it('still sends on Enter when textareaProps.onKeyDown does not preventDefault', () => {
+    const onSend = vi.fn();
+    renderWithTheme(
+      <ChatComposer onSend={onSend} textareaProps={{ onKeyDown: vi.fn() }} />
+    );
+
+    const input = getInput();
+    fireEvent.change(input, { target: { value: 'Hello' } });
+    fireEvent.keyDown(input, { key: 'Enter' });
+
+    expect(onSend).toHaveBeenCalledWith({
+      content: 'Hello',
+      attachments: [],
+    });
+  });
+
+  it('lets textareaProps.onPaste opt out of paste-to-attach', () => {
+    const onPaste = vi.fn((event: React.ClipboardEvent) => {
+      event.preventDefault();
+    });
+    renderWithTheme(<ChatComposer textareaProps={{ onPaste }} />);
+
+    const file = new File(['data'], 'pasted.png', { type: 'image/png' });
+    fireEvent.paste(getInput(), {
+      clipboardData: { files: [file], getData: () => '' },
+    });
+
+    expect(onPaste).toHaveBeenCalled();
+    expect(screen.queryByText('pasted.png')).not.toBeInTheDocument();
+  });
+
+  it('passes caret events through textareaProps (onSelect)', () => {
+    const onSelect = vi.fn();
+    renderWithTheme(<ChatComposer textareaProps={{ onSelect }} />);
+
+    fireEvent.select(getInput());
+    expect(onSelect).toHaveBeenCalled();
+  });
+
+  it('exposes the textarea element via getTextarea on the handle', () => {
+    const ref = React.createRef<ChatComposerHandle>();
+    renderWithTheme(<ChatComposer ref={ref} />);
+
+    expect(ref.current?.getTextarea()).toBe(getInput());
+  });
+
+  it('allows sending while empty when canSendWhenEmpty is set', () => {
+    const onSend = vi.fn();
+    renderWithTheme(<ChatComposer onSend={onSend} canSendWhenEmpty />);
+
+    const sendButton = screen.getByRole('button', { name: /send message/i });
+    expect(sendButton).toBeEnabled();
+
+    fireEvent.click(sendButton);
+    expect(onSend).toHaveBeenCalledWith({ content: '', attachments: [] });
+  });
+
+  it('applies maxHeight as an inline style cap', () => {
+    const { rerender } = renderWithTheme(<ChatComposer maxHeight={200} />);
+    expect(getInput()).toHaveStyle({ maxHeight: '200px' });
+
+    rerender(<ChatComposer maxHeight="40vh" />);
+    expect(getInput()).toHaveStyle({ maxHeight: '40vh' });
+  });
 });
