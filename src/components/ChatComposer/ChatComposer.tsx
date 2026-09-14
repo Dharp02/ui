@@ -342,12 +342,30 @@ export const ChatComposer = React.forwardRef<
 
   // Auto-grow the textarea. The cap is enforced with CSS max-height so it
   // can be any CSS length (e.g. '40vh'), not just a pixel number.
-  React.useLayoutEffect(() => {
+  const resizeTextarea = React.useCallback(() => {
     const textarea = textareaRef.current;
     if (!textarea) return;
     textarea.style.height = 'auto';
+    // While the textarea is not laid out (hidden container, e.g. a
+    // just-mounted Storybook story or a closed panel) scrollHeight is 0 —
+    // keep height auto and let the ResizeObserver below re-measure once
+    // the element becomes visible.
+    if (textarea.scrollHeight === 0) return;
     textarea.style.height = `${textarea.scrollHeight}px`;
-  }, [value]);
+  }, []);
+
+  React.useLayoutEffect(resizeTextarea, [resizeTextarea, value]);
+
+  // Re-measure when the textarea's box changes for reasons other than
+  // typing: the container becoming visible, width changes, font loading,
+  // or crossing the md breakpoint (different paddings).
+  React.useEffect(() => {
+    const textarea = textareaRef.current;
+    if (!textarea || typeof ResizeObserver === 'undefined') return;
+    const observer = new ResizeObserver(resizeTextarea);
+    observer.observe(textarea);
+    return () => observer.disconnect();
+  }, [resizeTextarea]);
 
   // --------------------------------------------------------------------
   // Attachments
