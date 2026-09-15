@@ -338,7 +338,8 @@ function MotionDemo() {
 
   return (
     <MotionProvider disabled={!motionEnabled}>
-      <div className="flex flex-col items-center gap-4">
+      <div className="flex items-center gap-3">
+        <Button onClick={() => setOpen(true)}>Open Modal</Button>
         <Button
           variant="secondary"
           size="sm"
@@ -347,22 +348,16 @@ function MotionDemo() {
         >
           Motion: {motionEnabled ? 'on' : 'off'}
         </Button>
-        <Button onClick={() => setOpen(true)}>Open dialog</Button>
-        <p className="text-muted-foreground max-w-sm text-center text-xs">
-          Watch the close, not the open. With motion off the dialog disappears
-          on the frame it closes, because it unmounts and CSS has nothing left
-          to animate.
-        </p>
       </div>
       <Modal open={open} onOpenChange={setOpen} size="md">
         <ModalHeader>
-          <ModalTitle>Discard draft?</ModalTitle>
+          <ModalTitle>Discard Draft</ModalTitle>
           <ModalClose />
         </ModalHeader>
         <ModalBody>
           <p className="text-muted-foreground">
-            Close this with the switch set each way. The exit is the part the
-            CSS path cannot do.
+            Close this with the switch set each way. Watch the close, not the
+            open — the exit is the part the CSS path cannot do.
           </p>
         </ModalBody>
         <ModalFooter>
@@ -382,7 +377,7 @@ export const Motion: Story = {
     docs: {
       description: {
         story:
-          'Modal under `@mieweb/ui/motion`. The provider is normally mounted once at the app root; it is local here so the comparison can be toggled. Call sites are unchanged either way.',
+          'Modal under `@mieweb/ui/motion`. With motion on the dialog springs in and animates out; with it off it fades in and then disappears on the frame it closes, because the component unmounts and CSS has nothing left to transition. The provider is normally mounted once at the app root — it is local here so the comparison can be toggled. Call sites are unchanged either way.',
       },
     },
   },
