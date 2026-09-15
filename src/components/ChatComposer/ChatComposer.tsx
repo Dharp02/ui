@@ -542,7 +542,10 @@ export const ChatComposer = React.forwardRef<
     return (
       <div
         data-slot="chat-composer"
-        role="note"
+        // A live status region (implicit aria-live="polite"): readOnly can
+        // flip at runtime (e.g. after permissions resolve), and screen-reader
+        // users must be told the input became read-only.
+        role="status"
         className={cn(
           'flex items-center gap-2 rounded-xl border px-4 py-3 text-sm',
           'border-amber-300 bg-amber-50 text-amber-900',
