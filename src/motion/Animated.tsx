@@ -41,13 +41,15 @@ export interface AnimatedProps extends React.HTMLAttributes<HTMLElement> {
    */
   fallbackClassName?: string;
   /**
-   * Set `false` to stay on the CSS path even when a runtime is available.
+   * Set `false` to stop this element animating even when a runtime is active.
    *
    * For states where an animated element would be wrong rather than merely
    * unnecessary. Motion writes a `transform` to hold an element at its resting
    * position, and a transformed ancestor becomes the containing block for any
    * `position: fixed` descendant — so an element that is only sometimes
    * animated should opt out the rest of the time.
+   *
+   * The rendered element type is unaffected, so toggling this does not remount.
    */
   enabled?: boolean;
 }
@@ -70,10 +72,11 @@ export const Animated = React.forwardRef<HTMLElement, AnimatedProps>(
   ) {
     const runtime = useMotionRuntime();
 
-    // No opt-in, or opted out for this state: plain element plus the CSS
-    // fallback. Identical to the markup these components rendered before motion
-    // existed.
-    if (!runtime || !enabled) {
+    // No provider anywhere: a plain element plus the CSS fallback, identical to
+    // the markup these components rendered before motion existed. This branch
+    // is decided by the module graph, not by state, so it never flips at
+    // runtime and cannot cause a remount.
+    if (!runtime) {
       const Tag = as as React.ElementType;
       return (
         <Tag ref={ref} className={cn(fallbackClassName, className)} {...rest}>
@@ -84,6 +87,28 @@ export const Animated = React.forwardRef<HTMLElement, AnimatedProps>(
 
     const Component =
       as === 'nav' ? runtime.Nav : as === 'span' ? runtime.Span : runtime.Div;
+
+    // Under a provider the element type is always the motion component, even
+    // when nothing is animating. Only the props change.
+    //
+    // Swapping to a native tag here would change the React element type and
+    // remount the subtree — discarding consumer state and focus every time the
+    // provider is disabled or a component crosses a breakpoint that toggles
+    // `enabled`. A motion component with no animation props writes no
+    // transform, so opting out this way still avoids creating a containing
+    // block for `position: fixed` descendants.
+    if (!runtime.enabled || !enabled) {
+      return (
+        <Component
+          ref={ref}
+          className={cn(fallbackClassName, className)}
+          {...rest}
+        >
+          {children}
+        </Component>
+      );
+    }
+
     const motionProps =
       mode === 'toggle'
         ? runtime.toggle(preset, open, custom)

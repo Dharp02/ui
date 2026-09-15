@@ -55,12 +55,14 @@ function Presence({
 export interface MotionProviderProps {
   children: React.ReactNode;
   /**
-   * Withhold the runtime, forcing every component back onto its CSS path.
+   * Stop animations running, putting every component on its CSS path.
    *
    * Intended for test runs: real spring animations make screenshot and
    * interaction assertions timing-dependent, and this keeps a suite
-   * deterministic without having to unmount the provider. Safe to flip at
-   * runtime — it does not remount the subtree.
+   * deterministic without having to unmount the provider.
+   *
+   * Safe to flip at runtime. The runtime is still supplied while disabled, so
+   * the element tree keeps the same shape and nothing below remounts.
    */
   disabled?: boolean;
   /**
@@ -80,28 +82,30 @@ export function MotionProvider({
 }: MotionProviderProps): React.JSX.Element {
   const runtime = React.useMemo<MotionRuntime>(
     () => ({
+      enabled: !disabled,
       Div: m.div,
       Nav: m.nav,
       Span: m.span,
       Presence,
       ...createPresetPropBuilders(),
     }),
-    []
+    [disabled]
   );
 
   return (
     // `domAnimation` covers transforms, opacity and exit animations — the whole
-    // preset vocabulary — at roughly a fifth of the full bundle. `strict`
-    // catches any accidental use of the eagerly-loaded `motion.*` components.
+    // preset vocabulary — at roughly a fifth of the full bundle.
     //
-    // `disabled` withholds the runtime rather than skipping these wrappers, so
-    // the element tree keeps the same shape either way. Changing shape would
-    // make React unmount and remount the whole subtree on every flip, throwing
-    // away component state — which breaks toggling motion on a live component
-    // and would make the flag unusable mid-test.
-    <LazyMotion features={domAnimation} strict>
+    // Deliberately not `strict`: this provider is documented to wrap the whole
+    // app, and `strict` throws on any `motion.*` component anywhere beneath it.
+    // That would make an application's own unrelated animations fail the moment
+    // it opts in — a root-level provider has no business imposing that.
+    //
+    // A disabled provider still supplies the runtime, so the element tree keeps
+    // the same shape in both states and nothing below remounts on a flip.
+    <LazyMotion features={domAnimation}>
       <MotionConfig reducedMotion={reducedMotion}>
-        <MotionRuntimeContext.Provider value={disabled ? null : runtime}>
+        <MotionRuntimeContext.Provider value={runtime}>
           {children}
         </MotionRuntimeContext.Provider>
       </MotionConfig>

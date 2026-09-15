@@ -31,6 +31,16 @@ export interface MotionPresenceProps {
  * stays a one-file change.
  */
 export interface MotionRuntime {
+  /**
+   * Whether animations should actually run.
+   *
+   * A disabled provider still supplies a runtime rather than `null`. That is
+   * what lets `Animated` keep rendering the same element type in both states:
+   * swapping between a motion component and a native tag changes the React
+   * element type, which remounts the subtree and discards consumer state and
+   * focus. Only the animation props come and go.
+   */
+  enabled: boolean;
   /** Animated `div`. */
   Div: React.ElementType;
   /** Animated `nav`. */

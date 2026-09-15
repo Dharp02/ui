@@ -52,6 +52,16 @@ components from CSS transitions to spring-driven motion without making the
   to explain it. A duplicated install of the package fails the same way. Do not
   "simplify" this back to a module-local const.
 
+- **Never swap the rendered element type based on state.** Under a provider,
+  `Animated` always renders the motion component — `disabled` and `enabled`
+  change the _props_, not the tag. Returning a native tag for the "off" case
+  changes the React element type, which remounts the subtree and throws away
+  consumer state and focus every time the flag or a breakpoint flips. That is
+  also why a disabled `MotionProvider` still supplies a runtime carrying
+  `enabled: false` instead of providing `null`. A motion component with no
+  animation props writes no transform, so opting out this way is still safe for
+  the containing-block problem below.
+
 - **Motion writes a `transform` even at rest.** A transformed ancestor becomes
   the containing block for `position: fixed` descendants, so an element that is
   only _sometimes_ animated must pass `enabled={false}` the rest of the time.
@@ -59,10 +69,10 @@ components from CSS transitions to spring-driven motion without making the
   arbitrary consumer children.
 
 - **CSS keyframes and motion must never drive the same property.** Put a
-  component's existing transition in `fallbackClassName`, which `Animated` only
-  applies when there's no runtime. `Modal` shows the pattern: its
-  `data-[state=…]:animate-*` classes were pulled out of the `cva` base for
-  exactly this reason.
+  component's existing transition in `fallbackClassName`, which `Animated`
+  applies only when nothing is animating — no provider, a disabled one, or
+  `enabled={false}`. `Modal` shows the pattern: its `data-[state=…]:animate-*`
+  classes were pulled out of the `cva` base for exactly this reason.
 
 - **`AnimatePresence` detects removal on its direct keyed child, but exit
   animations run per motion node at any depth.** Registration happens in each
