@@ -21,7 +21,10 @@
 
 /** Named animation recipes shared by components. */
 export type MotionPreset =
-  'drawerStart' | 'overlay' | 'modalContent' | 'sidebarLabel';
+  | 'drawerStart'
+  | 'overlay'
+  | 'modalContent'
+  | 'sidebarLabel';
 
 /**
  * A variant value. Either a plain target object or a function of the element's
@@ -29,7 +32,8 @@ export type MotionPreset =
  * drawer flipping its off-canvas direction in RTL.
  */
 export type MotionVariant =
-  Record<string, unknown> | ((custom: never) => Record<string, unknown>);
+  | Record<string, unknown>
+  | ((custom: never) => Record<string, unknown>);
 
 export interface MotionPresetDefinition {
   variants: {
