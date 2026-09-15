@@ -208,6 +208,13 @@ bullet a decision aid, not a feature list:
 4. **Example** — a realistic composition showing state ownership.
 5. **Limitations** — accessibility facts as implemented (roles, focus, live regions),
    responsive/RTL behaviour, theming, i18n defaults, dependencies.
+6. **Motion** — _only for components that respond to
+   [`<MotionProvider>`](src/motion/MAINTAINERS.md)._ What changes under the opt-in
+   and what does not, plus any consequence a demo cannot show — chiefly that motion
+   writes a `transform`, making the element a containing block for `position: fixed`
+   descendants. Keep it to what the story cannot demonstrate: pair it with a
+   `Motion` story on the same page rather than narrating the animation in prose.
+   Omit the heading entirely for components that ignore the provider.
 
 **Related** and **Install / entry point** are rendered from `parameters.catalog`;
 do not duplicate them in prose.
