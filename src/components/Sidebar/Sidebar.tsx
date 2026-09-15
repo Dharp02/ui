@@ -426,7 +426,7 @@ export function SidebarNavGroup({
             {icon}
           </span>
         )}
-        <AnimatedPresence>
+        <AnimatedPresence initial={false}>
           {!showCollapsed && (
             <Animated
               key="label"
@@ -540,8 +540,13 @@ export function SidebarNavItem({
         collapsing. The accessible name is unaffected: once collapsed the
         control carries `aria-label`, which takes precedence over text content,
         so a label still finishing its exit is never read twice.
+
+        `initial={false}` because this animates a *state change*, not arrival.
+        Without it every label fades up on first paint, which makes the whole
+        sidebar look like it is loading and leaves the text mid-transparency
+        while assistive tooling and contrast checks are reading it.
       */}
-      <AnimatedPresence>
+      <AnimatedPresence initial={false}>
         {!showCollapsed && (
           <Animated
             key="label"
