@@ -276,6 +276,37 @@ describe('ChatComposer', () => {
     ).not.toBeInTheDocument();
   });
 
+  it('defers the ResizeObserver re-measure to the next frame and cancels it on unmount', () => {
+    // Mutating the observed textarea's height synchronously inside the
+    // observer callback triggers the browser's "ResizeObserver loop
+    // completed with undelivered notifications" error, so the re-measure
+    // must be scheduled via requestAnimationFrame and the pending frame
+    // canceled on unmount. The jsdom ResizeObserver stub (test/setup.ts)
+    // fires its callback once during observe(), exercising this path.
+    const frameCallbacks: Array<(time: number) => void> = [];
+    const raf = vi
+      .spyOn(window, 'requestAnimationFrame')
+      .mockImplementation((callback) => {
+        frameCallbacks.push(callback);
+        return frameCallbacks.length;
+      });
+    const caf = vi
+      .spyOn(window, 'cancelAnimationFrame')
+      .mockImplementation(() => {});
+
+    const { unmount } = renderWithTheme(<ChatComposer onSend={vi.fn()} />);
+
+    expect(raf).toHaveBeenCalled();
+    const lastResult = raf.mock.results[raf.mock.results.length - 1];
+    const scheduledFrame = lastResult.value as number;
+
+    unmount();
+    expect(caf).toHaveBeenCalledWith(scheduledFrame);
+
+    raf.mockRestore();
+    caf.mockRestore();
+  });
+
   it('swaps send for stop while streaming', () => {
     const onStop = vi.fn();
     renderWithTheme(<ChatComposer isStreaming onStop={onStop} />);
