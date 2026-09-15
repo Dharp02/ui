@@ -23,9 +23,17 @@ describe('CountryDropdown', () => {
     ).toHaveTextContent('Pick one');
   });
 
-  it('renders an unknown code as empty before the list has loaded', () => {
+  it('renders an unknown code as empty before and after the list loads', async () => {
+    const user = userEvent.setup();
     renderWithTheme(<CountryDropdown value="ZZ" />);
     const trigger = screen.getByRole('button', { name: 'Select country' });
+    // Pre-open fallback branch (list not built yet)
+    expect(trigger).toHaveTextContent('Select country…');
+    expect(trigger).not.toHaveTextContent('ZZ');
+
+    // Loaded-list branch: opening builds the full country list
+    await user.click(trigger);
+    expect(screen.getByRole('listbox')).toBeInTheDocument();
     expect(trigger).toHaveTextContent('Select country…');
     expect(trigger).not.toHaveTextContent('ZZ');
   });
