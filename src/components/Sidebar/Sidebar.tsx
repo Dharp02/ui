@@ -156,7 +156,12 @@ export function Sidebar({
               preset="overlay"
               mode="presence"
               data-slot="sidebar-backdrop"
-              className="fixed inset-0 z-40 bg-black/50 lg:hidden"
+              // No `lg:hidden` here: this only renders when `isMobileViewport`
+              // is true, which follows the provider's configurable
+              // `mobileBreakpoint`. A hardcoded 1024px CSS gate on top of that
+              // disagrees with any custom breakpoint and hides the backdrop
+              // while the drawer is open, leaving no way to dismiss it.
+              className="fixed inset-0 z-40 bg-black/50"
               onClick={closeMobile}
               aria-hidden="true"
             />
@@ -253,7 +258,10 @@ export function SidebarHeader({
       {showMobileClose && isMobileViewport && (
         <button
           onClick={closeMobile}
-          className="-me-2 rounded-lg p-2 text-neutral-500 transition-colors hover:bg-neutral-100 lg:hidden dark:hover:bg-neutral-800"
+          // See the backdrop in `Sidebar`: `isMobileViewport` already gates
+          // this, so a hardcoded `lg:hidden` would only ever contradict a
+          // custom `mobileBreakpoint` and strip the drawer's close affordance.
+          className="-me-2 rounded-lg p-2 text-neutral-500 transition-colors hover:bg-neutral-100 dark:hover:bg-neutral-800"
           aria-label="Close navigation"
         >
           <XIcon />
