@@ -364,9 +364,20 @@ export const ChatComposer = React.forwardRef<
   React.useEffect(() => {
     const textarea = textareaRef.current;
     if (!textarea || typeof ResizeObserver === 'undefined') return;
-    const observer = new ResizeObserver(resizeTextarea);
+    // Defer the re-measure to the next frame: mutating the observed
+    // element's height synchronously inside the observer callback triggers
+    // the browser's "ResizeObserver loop completed with undelivered
+    // notifications" error, which dev overlays surface as a runtime error.
+    let frame = 0;
+    const observer = new ResizeObserver(() => {
+      cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(resizeTextarea);
+    });
     observer.observe(textarea);
-    return () => observer.disconnect();
+    return () => {
+      cancelAnimationFrame(frame);
+      observer.disconnect();
+    };
   }, [resizeTextarea]);
 
   // --------------------------------------------------------------------
