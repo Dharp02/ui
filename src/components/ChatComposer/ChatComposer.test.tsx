@@ -519,4 +519,29 @@ describe('ChatComposer', () => {
     rerender(<ChatComposer maxHeight="40vh" />);
     expect(getInput()).toHaveStyle({ maxHeight: '40vh' });
   });
+
+  it('renders the selector row outside the card', () => {
+    const { container } = renderWithTheme(
+      <ChatComposer
+        showModelSelector
+        modelSelectorProps={{
+          models: [{ provider: 'openai', model: 'gpt-5', label: 'GPT-5' }],
+          value: { provider: 'openai', model: 'gpt-5' },
+          onChange: vi.fn(),
+        }}
+      />
+    );
+
+    const card = container.querySelector('[data-slot="chat-composer-card"]');
+    expect(card).not.toBeNull();
+    const selectors = container.querySelector(
+      '[data-slot="chat-composer-selectors"]'
+    );
+    // Selector row is a sibling of the card, not inside it.
+    expect(card?.contains(selectors)).toBe(false);
+    expect(selectors?.parentElement).toHaveAttribute(
+      'data-slot',
+      'chat-composer'
+    );
+  });
 });
