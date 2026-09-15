@@ -614,14 +614,19 @@ export const MobileView: Story = {
 // ============================================================================
 
 /**
- * A/B harness for the motion opt-in, built on the same `ConfigurableSidebarDemo`
- * as the other stories so the drawer is shown in a real app shell rather than
- * against a blank canvas. The drawer opens from that demo's own
- * `SidebarMobileToggle`, exactly as it does in Mobile View.
+ * A/B harness for the motion opt-in.
  *
- * `mobileBreakpoint` is forced so the drawer is reachable at any canvas width —
- * in a real app this is simply the sub-1024px layout. `disabled` does not
- * remount the subtree, so motion can be flipped with the drawer open.
+ * Identical to `Default` apart from the motion switch — same provider, same
+ * `ConfigurableSidebarDemo`, no forced breakpoint — so the sidebar is on screen
+ * as its own component rather than parked off-canvas.
+ *
+ * The animation itself is the mobile drawer, so the story opens at a mobile
+ * viewport where the real breakpoint applies. Widen the viewport and the
+ * sidebar becomes the static desktop rail, which is correct: it opts out of
+ * motion above the breakpoint rather than being held in place by a transform.
+ *
+ * `disabled` does not remount the subtree, so motion can be flipped with the
+ * drawer open.
  */
 function MotionDemo(args: SidebarStoryArgs) {
   const [motionEnabled, setMotionEnabled] = React.useState(true);
@@ -629,7 +634,6 @@ function MotionDemo(args: SidebarStoryArgs) {
   return (
     <MotionProvider disabled={!motionEnabled}>
       <SidebarProvider
-        mobileBreakpoint="(min-width: 0px)"
         defaultExpandedGroup={
           args.defaultExpandedGroup === 'none'
             ? undefined
@@ -666,10 +670,13 @@ function MotionDemo(args: SidebarStoryArgs) {
 export const Motion: Story = {
   render: (args) => <MotionDemo {...args} />,
   parameters: {
+    viewport: {
+      defaultViewport: 'mobile1',
+    },
     docs: {
       description: {
         story:
-          'The mobile drawer under `@mieweb/ui/motion`. With motion on it springs in and the backdrop fades on both enter and exit; with it off both run as a 300ms CSS transition and the backdrop simply appears. The provider is normally mounted once at the app root — it is local here so the comparison can be toggled. Desktop is unaffected either way, since the sidebar opts out of motion above the breakpoint.',
+          'The same composition as Default, plus a switch for the motion opt-in. With motion on the drawer springs in and the backdrop fades on both enter and exit; with it off both run as a 300ms CSS transition and the backdrop simply appears. Opens at a mobile viewport because the drawer is what animates — widen it and the sidebar becomes the static desktop rail, which is deliberate: it opts out of motion above the breakpoint so it never becomes a containing block for `position: fixed` descendants. The provider is normally mounted once at the app root; it is local here so the comparison can be toggled.',
       },
     },
   },
