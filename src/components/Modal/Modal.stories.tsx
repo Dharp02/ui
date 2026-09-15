@@ -10,6 +10,9 @@ import {
 } from './Modal';
 import { Button } from '../Button';
 import { Input } from '../Input';
+// Story-only import. Stories are not tsup entries, so this never reaches dist
+// and `motion` stays an optional peer dependency for consumers.
+import { MotionProvider } from '../../motion/MotionProvider';
 
 const meta: Meta<typeof Modal> = {
   id: 'overlays-modal',
@@ -61,12 +64,14 @@ The host owns \`open\`; keep form state in the form so closing discards it predi
 
 - \`role="dialog"\` + \`aria-modal\`, labelled by \`ModalTitle\` (or pass \`aria-label\`). Focus is trapped and moved to the first focusable element on open; **focus is not returned to the trigger on close** — handle that in \`onOpenChange\` when it matters.
 - Body scroll is locked while open (reference-counted, so nested modals are safe). Background content is not made \`inert\`.
-- Fixed \`z-50\` layer, not portalled: render it outside any ancestor with \`transform\`/\`overflow\` or it will clip. Note that an app using [Foundations/Motion](?path=/docs/foundations-motion--docs) puts a \`transform\` on the dialog surface itself, so a \`position: fixed\` descendant will be contained by it.
+- Fixed \`z-50\` layer, not portalled: render it outside any ancestor with \`transform\`/\`overflow\` or it will clip.
 - Full-screen on mobile means the footer sits at the bottom of the viewport; test with the keyboard open.
 
 ### Motion
 
-Enter and exit animations are CSS by default. Under [Foundations/Motion](?path=/docs/foundations-motion--docs) — an app wrapping itself in \`<MotionProvider>\` from \`@mieweb/ui/motion\` — the dialog springs in and, more importantly, **animates out**. On the CSS path it cannot: the component unmounts on close, so there is no element left to transition. Nothing changes at the call site either way.`,
+Transitions are CSS by default. An app that opts into [\`@mieweb/ui/motion\`](?path=/docs/foundations-motion--docs) gets spring transitions and a real **exit** animation — which the CSS path cannot do, because the dialog unmounts on close and leaves nothing to transition. See the **Motion** story below; nothing changes at the call site either way.
+
+The one consequence the demo can't show: motion writes a \`transform\` on the dialog surface, so a \`position: fixed\` descendant is contained by it rather than the viewport.`,
       },
     },
     catalog: {
@@ -313,4 +318,72 @@ function NoCloseOnOverlayDemo() {
 
 export const NoCloseOnOverlay: Story = {
   render: () => <NoCloseOnOverlayDemo />,
+};
+
+// ============================================================================
+// Motion
+// ============================================================================
+
+/**
+ * A/B harness for the motion opt-in.
+ *
+ * A side-by-side comparison is not possible here: `Modal` is `position: fixed`,
+ * so two instances would sit on top of each other. One subject with a visible
+ * switch is the arrangement that actually reads — and `disabled` no longer
+ * remounts the subtree, so the dialog can be left open while flipping it.
+ */
+function MotionDemo() {
+  const [motionEnabled, setMotionEnabled] = React.useState(true);
+  const [open, setOpen] = React.useState(false);
+
+  return (
+    <MotionProvider disabled={!motionEnabled}>
+      <div className="flex flex-col items-center gap-4">
+        <Button
+          variant="secondary"
+          size="sm"
+          onClick={() => setMotionEnabled((enabled) => !enabled)}
+          aria-pressed={motionEnabled}
+        >
+          Motion: {motionEnabled ? 'on' : 'off'}
+        </Button>
+        <Button onClick={() => setOpen(true)}>Open dialog</Button>
+        <p className="text-muted-foreground max-w-sm text-center text-xs">
+          Watch the close, not the open. With motion off the dialog disappears
+          on the frame it closes, because it unmounts and CSS has nothing left
+          to animate.
+        </p>
+      </div>
+      <Modal open={open} onOpenChange={setOpen} size="md">
+        <ModalHeader>
+          <ModalTitle>Discard draft?</ModalTitle>
+          <ModalClose />
+        </ModalHeader>
+        <ModalBody>
+          <p className="text-muted-foreground">
+            Close this with the switch set each way. The exit is the part the
+            CSS path cannot do.
+          </p>
+        </ModalBody>
+        <ModalFooter>
+          <Button variant="secondary" onClick={() => setOpen(false)}>
+            Cancel
+          </Button>
+          <Button onClick={() => setOpen(false)}>Discard</Button>
+        </ModalFooter>
+      </Modal>
+    </MotionProvider>
+  );
+}
+
+export const Motion: Story = {
+  render: () => <MotionDemo />,
+  parameters: {
+    docs: {
+      description: {
+        story:
+          'Modal under `@mieweb/ui/motion`. The provider is normally mounted once at the app root; it is local here so the comparison can be toggled. Call sites are unchanged either way.',
+      },
+    },
+  },
 };
