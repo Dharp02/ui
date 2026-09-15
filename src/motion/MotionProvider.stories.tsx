@@ -3,23 +3,6 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import { MotionProvider } from './MotionProvider';
 import { Animated, AnimatedPresence } from './Animated';
 import { Button } from '../components/Button';
-import {
-  Modal,
-  ModalHeader,
-  ModalTitle,
-  ModalClose,
-  ModalBody,
-  ModalFooter,
-} from '../components/Modal';
-import {
-  Sidebar,
-  SidebarHeader,
-  SidebarContent,
-  SidebarNav,
-  SidebarNavItem,
-  SidebarProvider,
-  useSidebar,
-} from '../components/Sidebar';
 
 // =============================================================================
 // Meta
@@ -35,9 +18,11 @@ const meta: Meta<typeof MotionProvider> = {
       description: {
         component: `### What it's for
 
-Opting an application into real animations. Components in the library ship with CSS transitions and look finished without any of this; wrapping the app in \`<MotionProvider>\` from \`@mieweb/ui/motion\` upgrades the ones that support it — currently \`Modal\` and \`Sidebar\` — to spring-driven transforms and, crucially, **exit** animations that CSS cannot express for an unmounting element.
+Opting an application into real animations. Components ship with CSS transitions and look finished without any of this; wrapping the app in \`<MotionProvider>\` from \`@mieweb/ui/motion\` upgrades the ones that support it to spring-driven transforms and, crucially, **exit** animations, which CSS cannot express for an element that unmounts.
 
 The opt-in is resolved in the module graph, not by a prop. \`motion\` is an optional peer dependency imported only by the \`@mieweb/ui/motion\` entry, so an app that never imports that entry never pays for it and its bundle is unchanged.
+
+This page documents the layer itself; the subject in every story below is a panel built from \`Animated\` rather than a library component. To see what motion does to a component, use the **Motion** story on that component's own page — [Modal](?path=/story/overlays-modal--motion) and [Sidebar](?path=/story/overlays-sidebar--motion) are the two wired up so far.
 
 ### Use it when
 
@@ -53,8 +38,13 @@ The opt-in is resolved in the module graph, not by a prop. \`motion\` is an opti
 
 ### Example
 
+Install the optional peer dependency, then wrap the app once:
+
+\`\`\`sh
+npm install motion
+\`\`\`
+
 \`\`\`tsx
-// App root — the entire opt-in.
 import { MotionProvider } from '@mieweb/ui/motion';
 
 createRoot(el).render(
@@ -64,7 +54,7 @@ createRoot(el).render(
 );
 \`\`\`
 
-Existing \`<Modal>\` and \`<Sidebar>\` call sites need no changes. To animate a component of your own on the same presets:
+That is the entire opt-in. Existing \`<Modal>\` and \`<Sidebar>\` call sites need no changes. To animate a component of your own on the same presets:
 
 \`\`\`tsx
 import { Animated, AnimatedPresence } from '@mieweb/ui';
@@ -78,14 +68,14 @@ import { Animated, AnimatedPresence } from '@mieweb/ui';
 </AnimatedPresence>
 \`\`\`
 
-\`Animated\` renders a plain element when no provider is present, so a component written this way works in both apps.
+Note that import is from \`@mieweb/ui\`, not \`@mieweb/ui/motion\`: \`Animated\` renders a plain element when no provider is present, so a component written this way still works in apps that have not opted in. The stories below are built exactly this way.
 
 ### Limitations
 
 - Only \`Modal\` and \`Sidebar\` are wired up so far. Every other component ignores the provider and keeps its CSS transitions.
 - \`reducedMotion\` defaults to \`'user'\`, which drops transforms and keeps opacity when the OS asks for reduced motion. Verify both paths — they are different code.
 - Motion holds an element at rest with a \`transform\`, and a transformed ancestor becomes the containing block for \`position: fixed\` descendants. Components that are only sometimes animated should pass \`enabled={false}\` the rest of the time, as \`Sidebar\` does on desktop.
-- \`disabled\` forces every component back onto the CSS path. It exists for test runs, where springs make assertions timing-dependent.`,
+- \`disabled\` forces every component back onto the CSS path. It exists for test runs, where springs make assertions timing-dependent. It withholds the runtime without changing the tree shape, so it is safe to flip on a live tree.`,
       },
     },
     catalog: {
@@ -109,7 +99,7 @@ import { Animated, AnimatedPresence } from '@mieweb/ui';
     disabled: {
       control: 'boolean',
       description:
-        'Render children with no runtime, forcing every component onto its CSS path.',
+        'Withhold the runtime, forcing every component onto its CSS path.',
       table: { category: 'Behaviour' },
     },
     reducedMotion: {
@@ -153,93 +143,35 @@ function Stage({
 }
 
 /**
- * The clearest demonstration of what motion buys: toggle `disabled` in the
- * controls and close the dialog. Without a runtime it vanishes on the frame it
- * closes, because `Modal` unmounts and CSS has nothing left to animate.
+ * The subject for every story on this page is a panel built from `Animated`,
+ * not a library component.
+ *
+ * Deliberate: this page documents the layer, so demonstrating it with `Modal`
+ * would duplicate that component's own Motion story and blur whose behaviour
+ * is on show. It doubles as the reference for consumers animating something
+ * the library does not cover.
  */
-function ModalDemo() {
-  const [open, setOpen] = React.useState(false);
-
-  return (
-    <>
-      <Button onClick={() => setOpen(true)}>Open dialog</Button>
-      <Modal open={open} onOpenChange={setOpen} size="md">
-        <ModalHeader>
-          <ModalTitle>Discard draft?</ModalTitle>
-          <ModalClose />
-        </ModalHeader>
-        <ModalBody>
-          <p className="text-sm">
-            Watch the close, not the open. The exit animation is the part CSS
-            cannot do here.
-          </p>
-        </ModalBody>
-        <ModalFooter>
-          <Button variant="secondary" onClick={() => setOpen(false)}>
-            Cancel
-          </Button>
-          <Button onClick={() => setOpen(false)}>Discard</Button>
-        </ModalFooter>
-      </Modal>
-    </>
-  );
-}
-
-function DrawerTrigger() {
-  const { isMobileOpen, toggleMobile } = useSidebar();
-  return (
-    <Button onClick={toggleMobile}>
-      {isMobileOpen ? 'Close drawer' : 'Open drawer'}
-    </Button>
-  );
-}
-
-/**
- * `mobileBreakpoint` is forced so the drawer behaviour is reachable at any
- * Storybook canvas width — in a real app this is the sub-1024px layout.
- */
-function DrawerDemo() {
-  return (
-    <SidebarProvider mobileBreakpoint="(min-width: 0px)">
-      <DrawerTrigger />
-      <Sidebar>
-        <SidebarHeader>
-          <span className="text-base font-bold">Navigation</span>
-        </SidebarHeader>
-        <SidebarContent>
-          <SidebarNav>
-            <SidebarNavItem label="Dashboard" href="#" isActive />
-            <SidebarNavItem label="Orders" href="#" />
-            <SidebarNavItem label="Reports" href="#" />
-            <SidebarNavItem label="Settings" href="#" />
-          </SidebarNav>
-        </SidebarContent>
-      </Sidebar>
-    </SidebarProvider>
-  );
-}
-
-/** How a consuming app animates a component the library does not cover. */
-function CustomComponentDemo() {
+function PanelDemo() {
   const [open, setOpen] = React.useState(false);
 
   return (
     <div className="space-y-4">
-      <Button onClick={() => setOpen((v) => !v)}>
+      <Button onClick={() => setOpen((isOpen) => !isOpen)}>
         {open ? 'Hide panel' : 'Show panel'}
       </Button>
       <AnimatedPresence>
         {open && (
           <Animated
-            key="custom-panel"
+            key="panel"
             preset="modalContent"
             mode="presence"
             className="border-border bg-card max-w-md rounded-xl border p-6 shadow-lg"
           >
             <p className="text-sm">
-              This panel is not a library component. It uses the same presets
-              through <code>Animated</code>, and renders as a plain{' '}
-              <code>div</code> in apps that have not opted in.
+              This panel is not a library component. It composes{' '}
+              <code>Animated</code> and <code>AnimatedPresence</code> against
+              the shared presets, and renders as a plain <code>div</code> in
+              apps that have not opted in.
             </p>
           </Animated>
         )}
@@ -256,10 +188,10 @@ export const Default: Story = {
   render: (args) => (
     <MotionProvider {...args}>
       <Stage
-        title="Modal, with motion"
-        hint="Open and close the dialog. Then flip `disabled` in the controls and close it again — the difference is entirely in the exit."
+        title="With motion"
+        hint="Show and hide the panel. It springs in, and on hide it animates out before unmounting — the enter is the obvious half, the exit is the half CSS cannot do."
       >
-        <ModalDemo />
+        <PanelDemo />
       </Stage>
     </MotionProvider>
   ),
@@ -270,23 +202,10 @@ export const WithoutMotion: Story = {
   render: (args) => (
     <MotionProvider {...args}>
       <Stage
-        title="Modal, CSS path"
-        hint="The behaviour every app gets today without importing @mieweb/ui/motion. The dialog fades in, then disappears instantly on close because the element unmounts."
+        title="Without motion"
+        hint="What an app that has not imported @mieweb/ui/motion gets. `Animated` renders a plain element, so the panel appears and disappears on the frame it is toggled."
       >
-        <ModalDemo />
-      </Stage>
-    </MotionProvider>
-  ),
-};
-
-export const Drawer: Story = {
-  render: (args) => (
-    <MotionProvider {...args}>
-      <Stage
-        title="Sidebar drawer"
-        hint="The off-canvas drawer springs in along the inline axis and its backdrop fades. On the CSS path the same slide runs as a 300ms transform transition."
-      >
-        <DrawerDemo />
+        <PanelDemo />
       </Stage>
     </MotionProvider>
   ),
@@ -298,22 +217,9 @@ export const ReducedMotion: Story = {
     <MotionProvider {...args}>
       <Stage
         title="Reduced motion"
-        hint="What a user with `prefers-reduced-motion` sees. Transforms are dropped and only opacity animates — the dialog still enters and exits, it just does not travel."
+        hint="What a user with `prefers-reduced-motion` sees. Transforms are dropped and only opacity animates — the panel still enters and exits, it just does not travel or scale."
       >
-        <ModalDemo />
-      </Stage>
-    </MotionProvider>
-  ),
-};
-
-export const CustomComponent: Story = {
-  render: (args) => (
-    <MotionProvider {...args}>
-      <Stage
-        title="Animating your own component"
-        hint="Apps compose `Animated` and `AnimatedPresence` against the library's presets, so product code animates consistently with the design system and still degrades to a plain element."
-      >
-        <CustomComponentDemo />
+        <PanelDemo />
       </Stage>
     </MotionProvider>
   ),
