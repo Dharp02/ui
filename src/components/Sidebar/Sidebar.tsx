@@ -136,7 +136,14 @@ export function Sidebar({
   // The off-canvas drawer slides along the inline axis, so its direction has to
   // be resolved in JS for the motion path — CSS logical properties cover the
   // fallback, but a transform value cannot be expressed logically.
-  const isRtl = useDirection() === 'rtl';
+  //
+  // Resolved from the nav itself rather than `<html>`: the CSS fallback uses
+  // `rtl:` variants, which follow the nearest inherited `dir`. Reading the
+  // document would disagree with that under a local `dir="rtl"` subtree and
+  // spring the drawer off the wrong edge — so the two paths must resolve
+  // direction the same way.
+  const navRef = useRef<HTMLElement>(null);
+  const isRtl = useDirection(navRef) === 'rtl';
 
   // Determine effective width
   const width = isMobileViewport
@@ -171,6 +178,7 @@ export function Sidebar({
 
       {/* Sidebar */}
       <Animated
+        ref={navRef}
         as="nav"
         preset="drawerStart"
         mode="toggle"
