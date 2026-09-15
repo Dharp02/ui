@@ -22,6 +22,15 @@ export interface MotionPresenceProps {
   children?: React.ReactNode;
   /** Suppress the initial mount animation. */
   initial?: boolean;
+  /**
+   * Fires once every exiting child has finished and been removed.
+   *
+   * Needed by anything that guards the DOM while it is open — a focus trap, a
+   * scroll lock — because those guards must outlive `open` for as long as the
+   * subtree is still on screen. Never fires when no runtime is active, since
+   * there is no exit to wait for.
+   */
+  onExitComplete?: () => void;
 }
 
 /**

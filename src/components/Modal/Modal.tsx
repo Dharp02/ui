@@ -4,7 +4,7 @@ import { cn } from '../../utils/cn';
 import { isStorybookDocsMode } from '../../utils/environment';
 import { useFocusTrap } from '../../hooks/useFocusTrap';
 import { useEscapeKey } from '../../hooks/useEscapeKey';
-import { Animated, AnimatedPresence } from '../../motion';
+import { Animated, AnimatedPresence, useMotionRuntime } from '../../motion';
 
 /**
  * Modal scroll lock state manager.
@@ -146,9 +146,36 @@ function Modal({
   const generatedId = React.useId();
   const modalId = id || generatedId;
 
-  // Focus trap (only active when modal is open). Typed as `HTMLElement` because
-  // the content element is supplied by `Animated`, which is element-agnostic.
-  const focusTrapRef = useFocusTrap<HTMLElement>(open);
+  /*
+   * The dialog outlives `open`.
+   *
+   * With a motion runtime, `AnimatedPresence` keeps the subtree on screen until
+   * its exit animation finishes. Guards keyed on `open` alone would therefore
+   * release while a `role="dialog" aria-modal="true"` element is still visible:
+   * Tab could reach the page behind it and body scrolling would resume under
+   * it. `isGuarded` stays true until presence reports the exit is done.
+   *
+   * Only tracked when a runtime is actually animating. Without one the subtree
+   * unmounts on the same frame, and `onExitComplete` would never fire to clear
+   * the flag.
+   */
+  const runtime = useMotionRuntime();
+  const animatesExit = Boolean(runtime?.enabled);
+  const [isExiting, setIsExiting] = React.useState(false);
+  const wasOpen = React.useRef(open);
+
+  React.useEffect(() => {
+    if (wasOpen.current && !open && animatesExit) {
+      setIsExiting(true);
+    }
+    wasOpen.current = open;
+  }, [open, animatesExit]);
+
+  const isGuarded = open || isExiting;
+
+  // Focus trap. Typed as `HTMLElement` because the content element is supplied
+  // by `Animated`, which is element-agnostic.
+  const focusTrapRef = useFocusTrap<HTMLElement>(isGuarded);
 
   // Handle escape key
   useEscapeKey(() => {
@@ -167,11 +194,13 @@ function Modal({
     [closeOnOverlayClick, onOpenChange]
   );
 
-  // Prevent body scroll when modal is open (handles multiple modals)
+  // Prevent body scroll while the modal is on screen (handles multiple modals).
+  // Keyed on `isGuarded`, not `open`, so scrolling does not resume underneath a
+  // dialog that is still animating out.
   // Skip scroll lock in Storybook docs mode where multiple stories render inline
   React.useEffect(() => {
     // Skip scroll lock entirely in Storybook docs mode
-    if (!open || isStorybookDocsMode()) {
+    if (!isGuarded || isStorybookDocsMode()) {
       return undefined;
     }
 
@@ -193,7 +222,7 @@ function Modal({
         scrollLockState.originalOverflow = null;
       }
     };
-  }, [open]);
+  }, [isGuarded]);
 
   return (
     <ModalContext.Provider
@@ -205,7 +234,7 @@ function Modal({
         unmounts immediately. With a motion runtime the subtree is held on
         screen until the overlay and content finish their exit animations.
       */}
-      <AnimatedPresence>
+      <AnimatedPresence onExitComplete={() => setIsExiting(false)}>
         {open && (
           <div key="modal-root" className="fixed inset-0 z-50">
             {/* Overlay backdrop */}

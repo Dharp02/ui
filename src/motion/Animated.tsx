@@ -138,6 +138,7 @@ Animated.displayName = 'Animated';
 export function AnimatedPresence({
   children,
   initial,
+  onExitComplete,
 }: MotionPresenceProps): React.JSX.Element {
   const runtime = useMotionRuntime();
 
@@ -146,7 +147,11 @@ export function AnimatedPresence({
   }
 
   const { Presence } = runtime;
-  return <Presence initial={initial}>{children}</Presence>;
+  return (
+    <Presence initial={initial} onExitComplete={onExitComplete}>
+      {children}
+    </Presence>
+  );
 }
 
 AnimatedPresence.displayName = 'AnimatedPresence';

@@ -44,8 +44,13 @@ import {
 function Presence({
   children,
   initial = true,
+  onExitComplete,
 }: MotionPresenceProps): React.JSX.Element {
-  return <AnimatePresence initial={initial}>{children}</AnimatePresence>;
+  return (
+    <AnimatePresence initial={initial} onExitComplete={onExitComplete}>
+      {children}
+    </AnimatePresence>
+  );
 }
 
 // =============================================================================
