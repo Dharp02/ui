@@ -462,7 +462,9 @@ describe('ChatComposer', () => {
   it('shows a read-only notice instead of the input', () => {
     renderWithTheme(<ChatComposer readOnly readOnlyMessage="No access" />);
 
-    expect(screen.getByText('No access')).toBeInTheDocument();
+    // role="status" makes the notice a live region so the change is
+    // announced when readOnly flips at runtime.
+    expect(screen.getByRole('status')).toHaveTextContent('No access');
     expect(screen.queryByRole('textbox')).not.toBeInTheDocument();
   });
 
