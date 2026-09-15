@@ -155,8 +155,10 @@ export interface ChatComposerProps {
   onMicClick?: () => void;
   /**
    * Custom node rendered in place of the built-in mic button (e.g.
-   * `RecordButton`). Rendered as-is: pass your own disabled state when the
-   * composer is `disabled`.
+   * `RecordButton`). The slot is wrapped in a 32px-tall (`h-8`) flex row so it
+   * aligns with the other composer controls; taller content overflows and
+   * stays vertically centered without inflating the row. Interaction state is
+   * not managed: pass your own disabled state when the composer is `disabled`.
    */
   micSlot?: React.ReactNode;
   /** When to show the mic: always, or only while the composer is empty. @default 'always' */
