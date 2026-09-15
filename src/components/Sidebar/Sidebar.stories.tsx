@@ -14,6 +14,10 @@ import {
   SidebarProvider,
   useSidebar,
 } from './index';
+import { Button } from '../Button';
+// Story-only import. Stories are not tsup entries, so this never reaches dist
+// and `motion` stays an optional peer dependency for consumers.
+import { MotionProvider } from '../../motion/MotionProvider';
 
 // =============================================================================
 // Icons
@@ -434,7 +438,9 @@ The application's primary navigation rail. \`SidebarProvider\` holds collapsed /
 
 ### Motion
 
-The mobile drawer slides with a CSS transform transition by default. Under [Foundations/Motion](?path=/docs/foundations-motion--docs) — an app wrapping itself in \`<MotionProvider>\` from \`@mieweb/ui/motion\` — it springs instead and its backdrop fades on both enter and exit. Desktop stays on the CSS path deliberately: motion holds elements at rest with a \`transform\`, and a transformed sidebar would become the containing block for any \`position: fixed\` descendant. Desktop collapse animates \`width\` on both paths.`,
+The mobile drawer slides with a CSS transform transition by default. An app that opts into [\`@mieweb/ui/motion\`](?path=/docs/foundations-motion--docs) gets a spring slide and a backdrop that fades on both enter and exit — see the **Motion** story below.
+
+Desktop stays on the CSS path deliberately, and that is not a limitation of the demo: motion holds elements at rest with a \`transform\`, and a transformed sidebar would become the containing block for every \`position: fixed\` descendant inside it. Desktop collapse animates \`width\` on both paths.`,
       },
     },
     catalog: {
@@ -598,6 +604,80 @@ export const MobileView: Story = {
       description: {
         story:
           'On mobile viewports, the sidebar becomes a slide-out drawer with a backdrop.',
+      },
+    },
+  },
+};
+
+// ============================================================================
+// Motion
+// ============================================================================
+
+/** Lives inside SidebarProvider so it can read and drive the drawer state. */
+function MotionDrawerTrigger() {
+  const { isMobileOpen, toggleMobile } = useSidebar();
+  return (
+    <Button onClick={toggleMobile}>
+      {isMobileOpen ? 'Close drawer' : 'Open drawer'}
+    </Button>
+  );
+}
+
+/**
+ * A/B harness for the motion opt-in.
+ *
+ * `mobileBreakpoint` is forced so the drawer is reachable at any canvas width —
+ * in a real app this is simply the sub-1024px layout. `disabled` no longer
+ * remounts the subtree, so motion can be flipped with the drawer open.
+ */
+function MotionDemo() {
+  const [motionEnabled, setMotionEnabled] = React.useState(true);
+
+  return (
+    <MotionProvider disabled={!motionEnabled}>
+      <SidebarProvider mobileBreakpoint="(min-width: 0px)">
+        <div className="flex min-h-[420px] flex-col items-start gap-4 p-8">
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={() => setMotionEnabled((enabled) => !enabled)}
+            aria-pressed={motionEnabled}
+          >
+            Motion: {motionEnabled ? 'on' : 'off'}
+          </Button>
+          <MotionDrawerTrigger />
+          <p className="text-muted-foreground max-w-sm text-xs">
+            With motion on the drawer springs and the backdrop fades in and out.
+            With it off, both run as a 300ms CSS transition and the backdrop
+            simply appears. Dismiss by clicking the backdrop.
+          </p>
+        </div>
+        <Sidebar>
+          <SidebarHeader>
+            <span className="text-base font-bold">Navigation</span>
+          </SidebarHeader>
+          <SidebarContent>
+            <SidebarNav>
+              <SidebarNavItem label="Dashboard" href="#" isActive />
+              <SidebarNavItem label="Orders" href="#" />
+              <SidebarNavItem label="Reports" href="#" />
+              <SidebarNavItem label="Settings" href="#" />
+            </SidebarNav>
+          </SidebarContent>
+        </Sidebar>
+      </SidebarProvider>
+    </MotionProvider>
+  );
+}
+
+export const Motion: Story = {
+  render: () => <MotionDemo />,
+  parameters: {
+    layout: 'fullscreen',
+    docs: {
+      description: {
+        story:
+          'The mobile drawer under `@mieweb/ui/motion`. The provider is normally mounted once at the app root; it is local here so the comparison can be toggled. Desktop is unaffected either way — the sidebar opts out of motion above the breakpoint.',
       },
     },
   },
