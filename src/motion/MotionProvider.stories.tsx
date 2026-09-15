@@ -89,7 +89,7 @@ Note that import is from \`@mieweb/ui\`, not \`@mieweb/ui/motion\`: \`Animated\`
         {
           type: 'composes with',
           target: 'overlays-sidebar',
-          why: 'MotionProvider upgrades the mobile drawer to a spring slide with a fading backdrop; desktop stays on the CSS path to avoid a transform containing block.',
+          why: 'MotionProvider fades the rail\u2019s labels on desktop collapse and upgrades the mobile drawer to a spring slide with a fading backdrop.',
         },
       ],
     },

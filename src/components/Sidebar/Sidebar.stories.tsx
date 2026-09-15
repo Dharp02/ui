@@ -438,9 +438,12 @@ The application's primary navigation rail. \`SidebarProvider\` holds collapsed /
 
 ### Motion
 
-The mobile drawer slides with a CSS transform transition by default. An app that opts into [\`@mieweb/ui/motion\`](?path=/docs/foundations-motion--docs) gets a spring slide and a backdrop that fades on both enter and exit — see the **Motion** story below.
+An app that opts into [\`@mieweb/ui/motion\`](?path=/docs/foundations-motion--docs) gets animation on both layouts, and they are different animations:
 
-Desktop stays on the CSS path deliberately, and that is not a limitation of the demo: motion holds elements at rest with a \`transform\`, and a transformed sidebar would become the containing block for every \`position: fixed\` descendant inside it. Desktop collapse animates \`width\` on both paths.`,
+- **Desktop** — labels, badges and group chevrons fade as the rail collapses instead of vanishing on the first frame while the width is still moving. See the **Motion** story.
+- **Mobile** — the drawer springs in and its backdrop fades on both enter and exit rather than sliding on a 300ms CSS transition. See **Motion Drawer**.
+
+The split is deliberate. Motion holds elements at rest with a \`transform\`, and a transformed nav would become the containing block for every \`position: fixed\` descendant inside it — so on desktop the nav itself opts out and its *contents* animate instead. Desktop collapse still animates \`width\` on both paths.`,
       },
     },
     catalog: {
@@ -464,7 +467,7 @@ Desktop stays on the CSS path deliberately, and that is not a limitation of the 
         {
           type: 'composes with',
           target: 'foundations-motion',
-          why: 'MotionProvider upgrades the mobile drawer to a spring slide with a fading backdrop; desktop stays on the CSS path to avoid a transform containing block.',
+          why: 'MotionProvider fades the rail\u2019s labels on desktop collapse and upgrades the mobile drawer to a spring slide with a fading backdrop.',
         },
       ],
     },
@@ -616,19 +619,14 @@ export const MobileView: Story = {
 /**
  * A/B harness for the motion opt-in.
  *
- * Identical to `Default` apart from the motion switch — same provider, same
- * `ConfigurableSidebarDemo`, no forced breakpoint — so the sidebar is on screen
- * as its own component rather than parked off-canvas.
+ * Identical to `Default` apart from the switch — same provider, same
+ * `ConfigurableSidebarDemo`, no breakpoint override — so both stories below
+ * show the component as it is actually documented.
  *
- * The animation itself is the mobile drawer, so the story opens at a mobile
- * viewport where the real breakpoint applies. Widen the viewport and the
- * sidebar becomes the static desktop rail, which is correct: it opts out of
- * motion above the breakpoint rather than being held in place by a transform.
- *
- * `disabled` does not remount the subtree, so motion can be flipped with the
- * drawer open.
+ * `disabled` does not remount the subtree, so motion can be flipped mid-state:
+ * with the rail collapsed, or with the drawer open.
  */
-function MotionDemo(args: SidebarStoryArgs) {
+function MotionDemo(args: SidebarStoryArgs & { hint: string }) {
   const [motionEnabled, setMotionEnabled] = React.useState(true);
 
   return (
@@ -650,10 +648,7 @@ function MotionDemo(args: SidebarStoryArgs) {
             >
               Motion: {motionEnabled ? 'on' : 'off'}
             </Button>
-            <p className="text-muted-foreground text-xs">
-              Open the drawer with the menu button, then flip the switch and
-              open it again. Dismiss by clicking the backdrop.
-            </p>
+            <p className="text-muted-foreground text-xs">{args.hint}</p>
           </div>
           <ConfigurableSidebarDemo
             expandedWidth={args.expandedWidth}
@@ -668,7 +663,29 @@ function MotionDemo(args: SidebarStoryArgs) {
 }
 
 export const Motion: Story = {
-  render: (args) => <MotionDemo {...args} />,
+  render: (args) => (
+    <MotionDemo
+      {...args}
+      hint="Collapse the rail with the chevron in the footer, then flip the switch and collapse it again."
+    />
+  ),
+  parameters: {
+    docs: {
+      description: {
+        story:
+          'The desktop rail, at the same width and composition as Default. With motion on, labels and badges fade as the rail collapses; with it off they vanish on the first frame while the width is still animating. The provider is normally mounted once at the app root — it is local here so the comparison can be toggled. See Motion Drawer for the mobile half.',
+      },
+    },
+  },
+};
+
+export const MotionDrawer: Story = {
+  render: (args) => (
+    <MotionDemo
+      {...args}
+      hint="Open the drawer with the menu button, then flip the switch and open it again. Dismiss by clicking the backdrop."
+    />
+  ),
   parameters: {
     viewport: {
       defaultViewport: 'mobile1',
@@ -676,7 +693,7 @@ export const Motion: Story = {
     docs: {
       description: {
         story:
-          'The same composition as Default, plus a switch for the motion opt-in. With motion on the drawer springs in and the backdrop fades on both enter and exit; with it off both run as a 300ms CSS transition and the backdrop simply appears. Opens at a mobile viewport because the drawer is what animates — widen it and the sidebar becomes the static desktop rail, which is deliberate: it opts out of motion above the breakpoint so it never becomes a containing block for `position: fixed` descendants. The provider is normally mounted once at the app root; it is local here so the comparison can be toggled.',
+          'The same demo at a mobile viewport, where the sidebar is an off-canvas drawer. With motion on it springs in and the backdrop fades on both enter and exit; with it off both run as a 300ms CSS transition and the backdrop simply appears. The drawer itself is the one element that opts out of motion above this breakpoint, so that a transformed nav never becomes the containing block for `position: fixed` descendants — which is why the desktop story animates labels instead.',
       },
     },
   },

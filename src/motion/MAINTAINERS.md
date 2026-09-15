@@ -77,13 +77,30 @@ components from CSS transitions to spring-driven motion without making the
 
 ## Adding motion to another component
 
-1. Replace the root element with `<Animated>`; give it a `preset` and a `mode`.
-2. Move the component's existing CSS transition into `fallbackClassName`.
-3. For mount/unmount animations, wrap in `<AnimatedPresence>` and give the child
+**Cover every layout the component has.** A responsive component usually has
+two distinct animations, not one behaviour at two sizes — `Sidebar` springs a
+drawer on mobile and fades labels on desktop collapse. Shipping only one leaves
+an app that opted in seeing no difference on the layout it actually uses, which
+is the single easiest way for this whole feature to look pointless. Each layout
+needs its own preset and its own story.
+
+1. Identify what animates in **each** layout. If a layout has nothing, say why
+   in the component's docs rather than leaving it unexplained.
+2. Replace the relevant element with `<Animated>`; give it a `preset` and a
+   `mode`.
+3. Move the component's existing CSS transition into `fallbackClassName`.
+4. For mount/unmount animations, wrap in `<AnimatedPresence>` and give the child
    a stable `key`.
-4. If the element is only conditionally animated, gate it with `enabled`.
-5. Add a preset to [presets.ts](presets.ts) only if no existing one fits — the
+5. If the element is only conditionally animated, gate it with `enabled`.
+6. Add a preset to [presets.ts](presets.ts) only if no existing one fits — the
    shared vocabulary is the point.
+7. Add a `Motion` story per layout, at the viewport where that animation lives.
+
+**When the root element cannot be animated, animate its contents.** A
+transformed ancestor captures `position: fixed` descendants, so a container that
+holds arbitrary consumer children should opt out with `enabled={false}` — but
+its own labels, icons and badges are disposable and safe. That is how `Sidebar`
+has desktop motion while its `<nav>` stays transform-free.
 
 No new imports and no dependency changes should be needed. If a step requires
 importing `motion` outside `MotionProvider.tsx`, the design has been broken.

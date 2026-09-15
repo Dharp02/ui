@@ -214,7 +214,10 @@ bullet a decision aid, not a feature list:
    writes a `transform`, making the element a containing block for `position: fixed`
    descendants. Keep it to what the story cannot demonstrate: pair it with a
    `Motion` story on the same page rather than narrating the animation in prose.
-   Omit the heading entirely for components that ignore the provider.
+   Cover **every layout the component has** — a responsive component usually has a
+   distinct animation per breakpoint, and each needs its own story at the viewport
+   where it applies. Omit the heading entirely for components that ignore the
+   provider.
 
 **Related** and **Install / entry point** are rendered from `parameters.catalog`;
 do not duplicate them in prose.
