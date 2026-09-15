@@ -430,7 +430,11 @@ The application's primary navigation rail. \`SidebarProvider\` holds collapsed /
 - Collapsed items expose their label through \`aria-label\`; icons are decorative. The mobile drawer has a backdrop and close button but no focus trap.
 - Active state is controlled (\`isActive\`); the sidebar does not read the router.
 - Positioned with logical properties (\`start-0\`), so it mirrors in RTL; widths are CSS strings you supply.
-- Only one group expands at a time (accordion); \`defaultExpanded\` seeds the initial one.`,
+- Only one group expands at a time (accordion); \`defaultExpanded\` seeds the initial one.
+
+### Motion
+
+The mobile drawer slides with a CSS transform transition by default. Under [Foundations/Motion](?path=/docs/foundations-motion--docs) — an app wrapping itself in \`<MotionProvider>\` from \`@mieweb/ui/motion\` — it springs instead and its backdrop fades on both enter and exit. Desktop stays on the CSS path deliberately: motion holds elements at rest with a \`transform\`, and a transformed sidebar would become the containing block for any \`position: fixed\` descendant. Desktop collapse animates \`width\` on both paths.`,
       },
     },
     catalog: {
@@ -450,6 +454,11 @@ The application's primary navigation rail. \`SidebarProvider\` holds collapsed /
           type: 'composes with',
           target: 'layout-appheader',
           why: 'Sidebar + AppHeader form the app shell: the rail owns route navigation, the header owns brand, search and account triggers (SidebarMobileToggle lives in the header).',
+        },
+        {
+          type: 'composes with',
+          target: 'foundations-motion',
+          why: 'MotionProvider upgrades the mobile drawer to a spring slide with a fading backdrop; desktop stays on the CSS path to avoid a transform containing block.',
         },
       ],
     },

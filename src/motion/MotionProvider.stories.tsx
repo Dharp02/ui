@@ -88,6 +88,21 @@ import { Animated, AnimatedPresence } from '@mieweb/ui';
 - \`disabled\` forces every component back onto the CSS path. It exists for test runs, where springs make assertions timing-dependent.`,
       },
     },
+    catalog: {
+      entry: '@mieweb/ui/motion',
+      relationships: [
+        {
+          type: 'composes with',
+          target: 'overlays-modal',
+          why: 'MotionProvider upgrades Modal to spring transitions and gives it a real exit animation, which the CSS path cannot do because the dialog unmounts on close.',
+        },
+        {
+          type: 'composes with',
+          target: 'overlays-sidebar',
+          why: 'MotionProvider upgrades the mobile drawer to a spring slide with a fading backdrop; desktop stays on the CSS path to avoid a transform containing block.',
+        },
+      ],
+    },
   },
   tags: ['autodocs', 'scope:general-purpose', 'maturity:experimental'],
   argTypes: {

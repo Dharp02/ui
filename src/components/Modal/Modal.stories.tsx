@@ -61,8 +61,12 @@ The host owns \`open\`; keep form state in the form so closing discards it predi
 
 - \`role="dialog"\` + \`aria-modal\`, labelled by \`ModalTitle\` (or pass \`aria-label\`). Focus is trapped and moved to the first focusable element on open; **focus is not returned to the trigger on close** — handle that in \`onOpenChange\` when it matters.
 - Body scroll is locked while open (reference-counted, so nested modals are safe). Background content is not made \`inert\`.
-- Fixed \`z-50\` layer, not portalled: render it outside any ancestor with \`transform\`/\`overflow\` or it will clip.
-- Full-screen on mobile means the footer sits at the bottom of the viewport; test with the keyboard open.`,
+- Fixed \`z-50\` layer, not portalled: render it outside any ancestor with \`transform\`/\`overflow\` or it will clip. Note that an app using [Foundations/Motion](?path=/docs/foundations-motion--docs) puts a \`transform\` on the dialog surface itself, so a \`position: fixed\` descendant will be contained by it.
+- Full-screen on mobile means the footer sits at the bottom of the viewport; test with the keyboard open.
+
+### Motion
+
+Enter and exit animations are CSS by default. Under [Foundations/Motion](?path=/docs/foundations-motion--docs) — an app wrapping itself in \`<MotionProvider>\` from \`@mieweb/ui/motion\` — the dialog springs in and, more importantly, **animates out**. On the CSS path it cannot: the component unmounts on close, so there is no element left to transition. Nothing changes at the call site either way.`,
       },
     },
     catalog: {
@@ -92,6 +96,11 @@ The host owns \`open\`; keep form state in the form so closing discards it predi
           type: 'alternative to',
           target: 'data-display-timeline',
           why: "Modal is the general dialog with slots, focus trap and scroll lock; Timeline's OrderConfirmation is a fixed one-button success overlay without focus management.",
+        },
+        {
+          type: 'composes with',
+          target: 'foundations-motion',
+          why: 'MotionProvider upgrades Modal to spring transitions and gives it a real exit animation, which the CSS path cannot do because the dialog unmounts on close.',
         },
       ],
     },
