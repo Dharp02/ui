@@ -142,6 +142,21 @@ test.describe('Visual Regression Tests - Core Components', () => {
     await expect(page).toHaveScreenshot('select-default.png');
   });
 
+  test('CountryDropdown - Default (empty placeholder)', async ({ page }) => {
+    await gotoStory(page, 'choice-inputs-countrydropdown--default');
+    await expect(page).toHaveScreenshot('countrydropdown-default.png');
+  });
+
+  test('CountryDropdown - Default value', async ({ page }) => {
+    await gotoStory(page, 'choice-inputs-countrydropdown--default-value');
+    await expect(page).toHaveScreenshot('countrydropdown-default-value.png');
+  });
+
+  test('CountryCodeDropdown - Default (US)', async ({ page }) => {
+    await gotoStory(page, 'choice-inputs-countrycodedropdown--default');
+    await expect(page).toHaveScreenshot('countrycodedropdown-default.png');
+  });
+
   test('Table - Default', async ({ page }) => {
     await gotoStory(page, 'grids-table--default');
     await expect(page).toHaveScreenshot('table-default.png');
