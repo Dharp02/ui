@@ -4,6 +4,7 @@ import { cn } from '../../utils/cn';
 import { isStorybookDocsMode } from '../../utils/environment';
 import { useFocusTrap } from '../../hooks/useFocusTrap';
 import { useEscapeKey } from '../../hooks/useEscapeKey';
+import { Animated, AnimatedPresence } from '../../motion';
 
 /**
  * Modal scroll lock state manager.
@@ -24,17 +25,33 @@ const scrollLockState = {
 export const __resetScrollLockState = () => scrollLockState.reset();
 
 const modalOverlayVariants = cva(
-  [
-    'fixed inset-0',
-    'bg-black/50 backdrop-blur-sm',
-    'data-[state=open]:animate-in data-[state=open]:fade-in-0',
-    'data-[state=closed]:animate-out data-[state=closed]:fade-out-0',
-  ],
+  ['fixed inset-0', 'bg-black/50 backdrop-blur-sm'],
   {
     variants: {},
     defaultVariants: {},
   }
 );
+
+/**
+ * Keyframe classes for the CSS path only.
+ *
+ * These are kept out of the `cva` base so they never run alongside the motion
+ * runtime. Both drive opacity and transform; applied together they fight, and
+ * the `data-[state=closed]` half would fire against motion's own exit.
+ *
+ * Note that on the CSS path the `closed` keyframes are effectively dead code:
+ * the component unmounts the moment `open` flips to false, so the element is
+ * gone before the animation can play. That missing exit is the clearest thing
+ * the motion opt-in buys back.
+ */
+const MODAL_OVERLAY_FALLBACK_ANIMATION =
+  'data-[state=open]:animate-in data-[state=open]:fade-in-0 ' +
+  'data-[state=closed]:animate-out data-[state=closed]:fade-out-0';
+
+const MODAL_CONTENT_FALLBACK_ANIMATION =
+  'duration-200 ' +
+  'data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95 ' +
+  'data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95';
 
 const modalContentVariants = cva(
   [
@@ -50,9 +67,6 @@ const modalContentVariants = cva(
     // make it participate in the flex column layout so overflow constraints work.
     '[&>form]:flex [&>form]:flex-col [&>form]:flex-1 [&>form]:min-h-0',
     'focus:outline-none',
-    'data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95',
-    'data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95',
-    'duration-200',
   ],
   {
     variants: {
@@ -132,8 +146,9 @@ function Modal({
   const generatedId = React.useId();
   const modalId = id || generatedId;
 
-  // Focus trap (only active when modal is open)
-  const focusTrapRef = useFocusTrap<HTMLDivElement>(open);
+  // Focus trap (only active when modal is open). Typed as `HTMLElement` because
+  // the content element is supplied by `Animated`, which is element-agnostic.
+  const focusTrapRef = useFocusTrap<HTMLElement>(open);
 
   // Handle escape key
   useEscapeKey(() => {
@@ -180,48 +195,60 @@ function Modal({
     };
   }, [open]);
 
-  if (!open) return null;
-
   return (
     <ModalContext.Provider
       value={{ onClose: () => onOpenChange(false), modalId }}
     >
-      {/* Portal to body */}
-      <div className="fixed inset-0 z-50">
-        {/* Overlay backdrop */}
-        <div
-          className={cn(modalOverlayVariants())}
-          data-state={open ? 'open' : 'closed'}
-          aria-hidden="true"
-        />
-        {/* Scrollable centering container — click outside to close */}
-        <div className="fixed inset-0 overflow-y-auto">
-          {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions */}
-          <div
-            className="flex min-h-full items-center justify-center p-0 sm:p-4"
-            onClick={handleOverlayClick}
-          >
-            {/* Content */}
-            {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-noninteractive-element-interactions */}
-            <div
-              ref={focusTrapRef}
-              role="dialog"
-              aria-modal="true"
-              aria-label={ariaLabel}
-              aria-labelledby={ariaLabelledBy || `${modalId}-title`}
-              aria-describedby={ariaDescribedBy}
-              id={modalId}
-              tabIndex={-1}
-              data-state={open ? 'open' : 'closed'}
-              data-slot="modal"
-              className={cn(modalContentVariants({ size }), className)}
-              onClick={(e) => e.stopPropagation()}
-            >
-              {children}
+      {/*
+        The `open` check lives inside `AnimatedPresence` rather than as an early
+        `return null` above. On the CSS path this is identical — the tree
+        unmounts immediately. With a motion runtime the subtree is held on
+        screen until the overlay and content finish their exit animations.
+      */}
+      <AnimatedPresence>
+        {open && (
+          <div key="modal-root" className="fixed inset-0 z-50">
+            {/* Overlay backdrop */}
+            <Animated
+              preset="overlay"
+              mode="presence"
+              className={cn(modalOverlayVariants())}
+              fallbackClassName={MODAL_OVERLAY_FALLBACK_ANIMATION}
+              data-state="open"
+              aria-hidden="true"
+            />
+            {/* Scrollable centering container — click outside to close */}
+            <div className="fixed inset-0 overflow-y-auto">
+              {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions */}
+              <div
+                className="flex min-h-full items-center justify-center p-0 sm:p-4"
+                onClick={handleOverlayClick}
+              >
+                {/* Content */}
+                <Animated
+                  ref={focusTrapRef}
+                  preset="modalContent"
+                  mode="presence"
+                  role="dialog"
+                  aria-modal="true"
+                  aria-label={ariaLabel}
+                  aria-labelledby={ariaLabelledBy || `${modalId}-title`}
+                  aria-describedby={ariaDescribedBy}
+                  id={modalId}
+                  tabIndex={-1}
+                  data-state="open"
+                  data-slot="modal"
+                  className={cn(modalContentVariants({ size }), className)}
+                  fallbackClassName={MODAL_CONTENT_FALLBACK_ANIMATION}
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  {children}
+                </Animated>
+              </div>
             </div>
           </div>
-        </div>
-      </div>
+        )}
+      </AnimatedPresence>
     </ModalContext.Provider>
   );
 }

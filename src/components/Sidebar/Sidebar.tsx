@@ -6,6 +6,8 @@ import React, {
   useEffect,
 } from 'react';
 import { cn } from '../../utils/cn';
+import { useDirection } from '../../hooks/useDirection';
+import { Animated, AnimatedPresence } from '../../motion';
 import { useSidebar } from './SidebarProvider';
 
 // =============================================================================
@@ -131,6 +133,11 @@ export function Sidebar({
   const { isCollapsed, isMobileOpen, closeMobile, isMobileViewport } =
     useSidebar();
 
+  // The off-canvas drawer slides along the inline axis, so its direction has to
+  // be resolved in JS for the motion path — CSS logical properties cover the
+  // fallback, but a transform value cannot be expressed logically.
+  const isRtl = useDirection() === 'rtl';
+
   // Determine effective width
   const width = isMobileViewport
     ? expandedWidth
@@ -141,32 +148,57 @@ export function Sidebar({
   return (
     <>
       {/* Mobile backdrop */}
-      {isMobileViewport && isMobileOpen && (
-        <div
-          data-slot="sidebar-backdrop"
-          className="fixed inset-0 z-40 bg-black/50 lg:hidden"
-          onClick={closeMobile}
-          aria-hidden="true"
-        />
+      {isMobileViewport && (
+        <AnimatedPresence>
+          {isMobileOpen && (
+            <Animated
+              key="sidebar-backdrop"
+              preset="overlay"
+              mode="presence"
+              data-slot="sidebar-backdrop"
+              className="fixed inset-0 z-40 bg-black/50 lg:hidden"
+              onClick={closeMobile}
+              aria-hidden="true"
+            />
+          )}
+        </AnimatedPresence>
       )}
 
       {/* Sidebar */}
-      <nav
+      <Animated
+        as="nav"
+        preset="drawerStart"
+        mode="toggle"
+        // Only the mobile drawer slides. On desktop the sidebar sits in normal
+        // flow, so it stays on the CSS path rather than being pinned at rest by
+        // a transform that would capture `position: fixed` descendants.
+        enabled={isMobileViewport}
+        open={isMobileOpen}
+        custom={isRtl}
         data-slot="sidebar"
         data-testid={testId}
         className={cn(
           'flex h-screen flex-col',
           'border-e border-neutral-200 bg-white dark:border-neutral-700 dark:bg-neutral-900',
-          'transition-all duration-300 ease-in-out',
           // Mobile positioning (start-pinned; off-canvas direction flips in RTL)
           isMobileViewport && 'fixed start-0 top-0 z-50',
+          // Desktop positioning. Collapsing animates `width`, which motion does
+          // not drive, so this transition belongs on both paths — but scoped to
+          // desktop, where width is the only thing that changes.
+          !isMobileViewport &&
+            'relative transition-[width,min-width] duration-300 ease-in-out',
+          className
+        )}
+        // CSS path only, and only on mobile. `transition-transform` rather than
+        // the `transition-all` this used to carry: `width` is set inline, and
+        // animating it during the slide forces layout every frame, which is what
+        // made the drawer stutter. Transforms alone stay on the compositor.
+        fallbackClassName={cn(
+          isMobileViewport && 'transition-transform duration-300 ease-in-out',
           isMobileViewport &&
             (isMobileOpen
               ? 'translate-x-0'
-              : '-translate-x-full rtl:translate-x-full'),
-          // Desktop positioning
-          !isMobileViewport && 'relative',
-          className
+              : '-translate-x-full rtl:translate-x-full')
         )}
         style={{
           width,
@@ -176,7 +208,7 @@ export function Sidebar({
         aria-label="Main navigation"
       >
         {children}
-      </nav>
+      </Animated>
     </>
   );
 }
