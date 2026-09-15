@@ -294,17 +294,52 @@ describe('ChatComposer', () => {
       .spyOn(window, 'cancelAnimationFrame')
       .mockImplementation(() => {});
 
-    const { unmount } = renderWithTheme(<ChatComposer onSend={vi.fn()} />);
+    // Control the measured content height — jsdom always reports 0, which
+    // makes resizeTextarea bail — and count reads so a synchronous
+    // re-measure inside the observer callback is detectable.
+    let measuredScrollHeight = 120;
+    let scrollHeightReads = 0;
+    Object.defineProperty(HTMLTextAreaElement.prototype, 'scrollHeight', {
+      configurable: true,
+      get() {
+        scrollHeightReads += 1;
+        return measuredScrollHeight;
+      },
+    });
 
-    expect(raf).toHaveBeenCalled();
-    const lastResult = raf.mock.results[raf.mock.results.length - 1];
-    const scheduledFrame = lastResult.value as number;
+    try {
+      const { unmount } = renderWithTheme(<ChatComposer onSend={vi.fn()} />);
+      const textarea = getInput();
 
-    unmount();
-    expect(caf).toHaveBeenCalledWith(scheduledFrame);
+      // The mount layout effect (typing path) measures synchronously —
+      // exactly two reads: the visibility check and the applied value.
+      expect(textarea.style.height).toBe('120px');
+      expect(scrollHeightReads).toBe(2);
 
-    raf.mockRestore();
-    caf.mockRestore();
+      // The observer fired during observe() but must only have scheduled a
+      // frame: no further scrollHeight reads means no synchronous
+      // re-measure — the loop-error regression this test guards against.
+      expect(raf).toHaveBeenCalled();
+      expect(frameCallbacks).toHaveLength(1);
+      expect(scrollHeightReads).toBe(2);
+
+      // Driving the queued frame performs the actual re-measure using the
+      // height at flush time, not at observation time.
+      measuredScrollHeight = 160;
+      frameCallbacks.splice(0).forEach((callback) => callback(0));
+      expect(textarea.style.height).toBe('160px');
+
+      const lastResult = raf.mock.results[raf.mock.results.length - 1];
+      const scheduledFrame = lastResult.value as number;
+
+      unmount();
+      expect(caf).toHaveBeenCalledWith(scheduledFrame);
+    } finally {
+      delete (HTMLTextAreaElement.prototype as { scrollHeight?: number })
+        .scrollHeight;
+      raf.mockRestore();
+      caf.mockRestore();
+    }
   });
 
   it('swaps send for stop while streaming', () => {
