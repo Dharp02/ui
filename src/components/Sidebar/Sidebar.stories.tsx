@@ -441,7 +441,7 @@ The application's primary navigation rail. \`SidebarProvider\` holds collapsed /
 An app that opts into [\`@mieweb/ui/motion\`](?path=/docs/foundations-motion--docs) gets animation on both layouts, and they are different animations:
 
 - **Desktop** — labels, badges and group chevrons fade as the rail collapses instead of vanishing on the first frame while the width is still moving. See the **Motion** story.
-- **Mobile** — the drawer springs in and its backdrop fades on both enter and exit rather than sliding on a 300ms CSS transition. See **Motion Drawer**.
+- **Mobile** — the drawer springs in and its backdrop fades on both enter and exit. On the CSS path the drawer still slides, as a 300ms transform transition, but the backdrop appears and disappears instantly. See **Motion Drawer**.
 
 The split is deliberate. Motion holds elements at rest with a \`transform\`, and a transformed nav would become the containing block for every \`position: fixed\` descendant inside it — so on desktop the nav itself opts out and its *contents* animate instead. Desktop collapse still animates \`width\` on both paths.`,
       },
@@ -693,7 +693,7 @@ export const MotionDrawer: Story = {
     docs: {
       description: {
         story:
-          'The same demo at a mobile viewport, where the sidebar is an off-canvas drawer. With motion on it springs in and the backdrop fades on both enter and exit; with it off both run as a 300ms CSS transition and the backdrop simply appears. The drawer itself is the one element that opts out of motion above this breakpoint, so that a transformed nav never becomes the containing block for `position: fixed` descendants — which is why the desktop story animates labels instead.',
+          'The same demo at a mobile viewport, where the sidebar is an off-canvas drawer. With motion on, the drawer springs in and its backdrop fades on both enter and exit. With it off the drawer still slides, on a 300ms CSS transform transition, but the backdrop appears and disappears instantly — it has no CSS fallback, because an element that unmounts on close cannot fade out. The drawer is the one element that opts out of motion above this breakpoint, so that a transformed nav never becomes the containing block for `position: fixed` descendants — which is why the desktop story animates labels instead.',
       },
     },
   },
