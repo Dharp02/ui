@@ -55,12 +55,12 @@ function Presence({
 export interface MotionProviderProps {
   children: React.ReactNode;
   /**
-   * Render children without a runtime, forcing every component back onto its
-   * CSS path.
+   * Withhold the runtime, forcing every component back onto its CSS path.
    *
    * Intended for test runs: real spring animations make screenshot and
    * interaction assertions timing-dependent, and this keeps a suite
-   * deterministic without having to unmount the provider.
+   * deterministic without having to unmount the provider. Safe to flip at
+   * runtime — it does not remount the subtree.
    */
   disabled?: boolean;
   /**
@@ -88,17 +88,19 @@ export function MotionProvider({
     []
   );
 
-  if (disabled) {
-    return <>{children}</>;
-  }
-
   return (
     // `domAnimation` covers transforms, opacity and exit animations — the whole
     // preset vocabulary — at roughly a fifth of the full bundle. `strict`
     // catches any accidental use of the eagerly-loaded `motion.*` components.
+    //
+    // `disabled` withholds the runtime rather than skipping these wrappers, so
+    // the element tree keeps the same shape either way. Changing shape would
+    // make React unmount and remount the whole subtree on every flip, throwing
+    // away component state — which breaks toggling motion on a live component
+    // and would make the flag unusable mid-test.
     <LazyMotion features={domAnimation} strict>
       <MotionConfig reducedMotion={reducedMotion}>
-        <MotionRuntimeContext.Provider value={runtime}>
+        <MotionRuntimeContext.Provider value={disabled ? null : runtime}>
           {children}
         </MotionRuntimeContext.Provider>
       </MotionConfig>
