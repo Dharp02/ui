@@ -183,8 +183,10 @@ export function Sidebar({
         preset="drawerStart"
         mode="toggle"
         // Only the mobile drawer slides. On desktop the sidebar sits in normal
-        // flow, so it stays on the CSS path rather than being pinned at rest by
-        // a transform that would capture `position: fixed` descendants.
+        // flow, so it renders as a plain nav rather than being pinned at rest
+        // by a transform that would capture `position: fixed` descendants.
+        // Crossing the breakpoint therefore remounts the nav — deliberate; see
+        // the render branches in `Animated` for why the alternative is worse.
         enabled={isMobileViewport}
         open={isMobileOpen}
         custom={isRtl}

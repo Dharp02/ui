@@ -75,7 +75,7 @@ Note that import is from \`@mieweb/ui\`, not \`@mieweb/ui/motion\`: \`Animated\`
 - Only \`Modal\` and \`Sidebar\` are wired up so far. Every other component ignores the provider and keeps its CSS transitions.
 - \`reducedMotion\` defaults to \`'user'\`, which drops transforms and keeps opacity when the OS asks for reduced motion. Verify both paths — they are different code.
 - Motion holds an element at rest with a \`transform\`, and a transformed ancestor becomes the containing block for \`position: fixed\` descendants. Components that are only sometimes animated should pass \`enabled={false}\` the rest of the time, as \`Sidebar\` does on desktop.
-- \`disabled\` forces every component back onto the CSS path. It exists for test runs, where springs make assertions timing-dependent. It withholds the runtime without changing the tree shape, so it is safe to flip on a live tree.`,
+- \`disabled\` forces every component back onto the CSS path. It exists for test runs, where springs make assertions timing-dependent. Flipping it remounts \`Animated\` elements (they swap between motion components and plain tags), so set it once per suite rather than toggling it mid-interaction.`,
       },
     },
     catalog: {

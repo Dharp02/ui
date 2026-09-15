@@ -52,21 +52,27 @@ components from CSS transitions to spring-driven motion without making the
   to explain it. A duplicated install of the package fails the same way. Do not
   "simplify" this back to a module-local const.
 
-- **Never swap the rendered element type based on state.** Under a provider,
-  `Animated` always renders the motion component — `disabled` and `enabled`
-  change the _props_, not the tag. Returning a native tag for the "off" case
-  changes the React element type, which remounts the subtree and throws away
-  consumer state and focus every time the flag or a breakpoint flips. That is
-  also why a disabled `MotionProvider` still supplies a runtime carrying
-  `enabled: false` instead of providing `null`. A motion component with no
-  animation props writes no transform, so opting out this way is still safe for
-  the containing-block problem below.
+- **`Animated` renders a plain tag whenever it is not animating** — no provider,
+  a disabled one, or `enabled={false}` — and crossing into or out of that state
+  **remounts** the element. This is deliberate and load-bearing. The tempting
+  alternative (keep the motion component mounted, add/remove only the animation
+  props) corrupts `toggle`-mode elements in both directions: motion only writes
+  variant styles at mount or in response to an animation, so props added in
+  place never apply the resting transform (a drawer crossing into its mobile
+  breakpoint sits fully visible over the page) and props removed in place
+  strand the last inline `transform` (a sidebar returning to desktop stays
+  off-canvas). Fresh mounts are correct in both worlds; the remount at the flip
+  is the fix, and the flips are rare — a breakpoint cross, a test toggling the
+  provider. A disabled `MotionProvider` still supplies a runtime carrying
+  `enabled: false` (rather than `null`) so consumers like `Modal` can tell
+  "disabled" apart from "never opted in".
 
 - **Motion writes a `transform` even at rest.** A transformed ancestor becomes
   the containing block for `position: fixed` descendants, so an element that is
-  only _sometimes_ animated must pass `enabled={false}` the rest of the time.
-  `Sidebar` does this on desktop. Watch for it on any component that can contain
-  arbitrary consumer children.
+  only _sometimes_ animated must pass `enabled={false}` the rest of the time —
+  which renders it as a plain, transform-free tag. `Sidebar` does this on
+  desktop. Watch for it on any component that can contain arbitrary consumer
+  children.
 
 - **CSS keyframes and motion must never drive the same property.** Put a
   component's existing transition in `fallbackClassName`, which `Animated`

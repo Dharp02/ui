@@ -66,8 +66,9 @@ export interface MotionProviderProps {
    * interaction assertions timing-dependent, and this keeps a suite
    * deterministic without having to unmount the provider.
    *
-   * Safe to flip at runtime. The runtime is still supplied while disabled, so
-   * the element tree keeps the same shape and nothing below remounts.
+   * Flipping it at runtime swaps `Animated` elements between motion components
+   * and plain tags, which remounts them and resets their local state — set it
+   * once per suite rather than toggling it mid-interaction.
    */
   disabled?: boolean;
   /**
@@ -106,8 +107,9 @@ export function MotionProvider({
     // That would make an application's own unrelated animations fail the moment
     // it opts in — a root-level provider has no business imposing that.
     //
-    // A disabled provider still supplies the runtime, so the element tree keeps
-    // the same shape in both states and nothing below remounts on a flip.
+    // A disabled provider still supplies the runtime (with `enabled: false`)
+    // rather than `null`, so consumers can distinguish "disabled" from "never
+    // opted in" — see the `enabled` contract in `runtime.ts`.
     <LazyMotion features={domAnimation}>
       <MotionConfig reducedMotion={reducedMotion}>
         <MotionRuntimeContext.Provider value={runtime}>

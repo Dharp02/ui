@@ -329,8 +329,9 @@ export const NoCloseOnOverlay: Story = {
  *
  * A side-by-side comparison is not possible here: `Modal` is `position: fixed`,
  * so two instances would sit on top of each other. One subject with a visible
- * switch is the arrangement that actually reads — and `disabled` no longer
- * remounts the subtree, so the dialog can be left open while flipping it.
+ * switch is the arrangement that actually reads. Flipping the switch remounts
+ * the dialog surface (`Animated` swaps element types), so compare by closing
+ * with the switch set each way rather than flipping it mid-open.
  */
 function MotionDemo() {
   const [motionEnabled, setMotionEnabled] = React.useState(true);

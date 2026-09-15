@@ -49,7 +49,9 @@ export interface AnimatedProps extends React.HTMLAttributes<HTMLElement> {
    * `position: fixed` descendant — so an element that is only sometimes
    * animated should opt out the rest of the time.
    *
-   * The rendered element type is unaffected, so toggling this does not remount.
+   * Flipping this (or the provider's `disabled`) swaps the element back to a
+   * plain tag, which **remounts** it — deliberately. See the note on the
+   * render branches below.
    */
   enabled?: boolean;
 }
@@ -72,11 +74,29 @@ export const Animated = React.forwardRef<HTMLElement, AnimatedProps>(
   ) {
     const runtime = useMotionRuntime();
 
-    // No provider anywhere: a plain element plus the CSS fallback, identical to
-    // the markup these components rendered before motion existed. This branch
-    // is decided by the module graph, not by state, so it never flips at
-    // runtime and cannot cause a remount.
-    if (!runtime) {
+    /*
+     * Anything not animating renders the plain tag with the CSS fallback —
+     * no provider, a disabled provider, or `enabled={false}` alike.
+     *
+     * Crossing between this branch and the motion one changes the element
+     * type, which remounts the subtree. That is deliberate. The obvious
+     * alternative — keeping the motion component mounted and only withholding
+     * its animation props — corrupts `toggle`-mode elements in both
+     * directions, because motion only writes variant styles at mount or in
+     * response to an animation:
+     *
+     * - props added in place (a drawer crossing into its mobile breakpoint
+     *   while closed) never get the `closed` transform, so the drawer sits
+     *   fully visible over the page;
+     * - props removed in place strand whatever inline `transform` motion last
+     *   wrote, so a sidebar returning to desktop stays off-canvas.
+     *
+     * Fresh mounts are correct in both worlds, so remounting at the flip is
+     * the fix. The flips are rare — a breakpoint cross, a test toggling the
+     * provider — and a remount that resets local state beats a stale
+     * transform that removes the navigation.
+     */
+    if (!runtime || !runtime.enabled || !enabled) {
       const Tag = as as React.ElementType;
       return (
         <Tag ref={ref} className={cn(fallbackClassName, className)} {...rest}>
@@ -87,27 +107,6 @@ export const Animated = React.forwardRef<HTMLElement, AnimatedProps>(
 
     const Component =
       as === 'nav' ? runtime.Nav : as === 'span' ? runtime.Span : runtime.Div;
-
-    // Under a provider the element type is always the motion component, even
-    // when nothing is animating. Only the props change.
-    //
-    // Swapping to a native tag here would change the React element type and
-    // remount the subtree — discarding consumer state and focus every time the
-    // provider is disabled or a component crosses a breakpoint that toggles
-    // `enabled`. A motion component with no animation props writes no
-    // transform, so opting out this way still avoids creating a containing
-    // block for `position: fixed` descendants.
-    if (!runtime.enabled || !enabled) {
-      return (
-        <Component
-          ref={ref}
-          className={cn(fallbackClassName, className)}
-          {...rest}
-        >
-          {children}
-        </Component>
-      );
-    }
 
     const motionProps =
       mode === 'toggle'

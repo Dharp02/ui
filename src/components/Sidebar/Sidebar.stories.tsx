@@ -623,8 +623,9 @@ export const MobileView: Story = {
  * `ConfigurableSidebarDemo`, no breakpoint override — so both stories below
  * show the component as it is actually documented.
  *
- * `disabled` does not remount the subtree, so motion can be flipped mid-state:
- * with the rail collapsed, or with the drawer open.
+ * Flipping `disabled` remounts the `Animated` elements (they swap between
+ * motion components and plain tags), so compare by repeating the gesture with
+ * the switch set each way rather than flipping it mid-animation.
  */
 function MotionDemo(args: SidebarStoryArgs & { hint: string }) {
   const [motionEnabled, setMotionEnabled] = React.useState(true);

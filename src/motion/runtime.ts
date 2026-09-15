@@ -43,11 +43,14 @@ export interface MotionRuntime {
   /**
    * Whether animations should actually run.
    *
-   * A disabled provider still supplies a runtime rather than `null`. That is
-   * what lets `Animated` keep rendering the same element type in both states:
-   * swapping between a motion component and a native tag changes the React
-   * element type, which remounts the subtree and discards consumer state and
-   * focus. Only the animation props come and go.
+   * A disabled provider still supplies a runtime rather than `null` so that
+   * consumers can tell "disabled" apart from "never opted in": `Modal` uses it
+   * to decide whether an exit animation will ever report completion, and
+   * `AnimatedPresence` keeps its wrapper element stable across the flip.
+   * `Animated` itself renders the plain fallback tag whenever this is false —
+   * withholding animation props from a mounted motion component corrupts
+   * `toggle`-mode elements, so the swap (and the remount it implies) is the
+   * correct behaviour. See the render branches in `Animated`.
    */
   enabled: boolean;
   /** Animated `div`. */
@@ -86,8 +89,13 @@ export interface MotionRuntime {
  * error to explain why. A duplicated install of the package causes the same
  * failure. Keying off the global symbol registry makes the context a true
  * singleton in every one of those cases.
+ *
+ * The key is versioned. Two copies of this package sharing one page share
+ * whatever lives under the key, so the `v1` suffix is a compatibility
+ * contract: bump it if the `MotionRuntime` interface ever changes shape,
+ * or an old provider will hand a new component a runtime it cannot use.
  */
-const CONTEXT_KEY = Symbol.for('@mieweb/ui.motionRuntimeContext');
+const CONTEXT_KEY = Symbol.for('@mieweb/ui.motionRuntimeContext.v1');
 
 type GlobalWithMotionContext = typeof globalThis & {
   [CONTEXT_KEY]?: React.Context<MotionRuntime | null>;

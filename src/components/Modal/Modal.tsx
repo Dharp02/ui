@@ -33,25 +33,20 @@ const modalOverlayVariants = cva(
 );
 
 /**
- * Keyframe classes for the CSS path only.
+ * Entry keyframes for the CSS path only.
  *
- * These are kept out of the `cva` base so they never run alongside the motion
- * runtime. Both drive opacity and transform; applied together they fight, and
- * the `data-[state=closed]` half would fire against motion's own exit.
+ * Kept out of the `cva` base so they never run alongside the motion runtime —
+ * both drive opacity and transform, and applied together they fight.
  *
- * Note that on the CSS path the `closed` keyframes are effectively dead code:
- * the component unmounts the moment `open` flips to false, so the element is
- * gone before the animation can play. That missing exit is the clearest thing
- * the motion opt-in buys back.
+ * Entry only: there is no CSS exit. The component unmounts the moment `open`
+ * flips to false, so `data-state` is hardcoded `"open"` and closed keyframes
+ * would be unreachable dead code. That missing exit is the clearest thing the
+ * motion opt-in buys back.
  */
-const MODAL_OVERLAY_FALLBACK_ANIMATION =
-  'data-[state=open]:animate-in data-[state=open]:fade-in-0 ' +
-  'data-[state=closed]:animate-out data-[state=closed]:fade-out-0';
+const MODAL_OVERLAY_FALLBACK_ANIMATION = 'animate-in fade-in-0';
 
 const MODAL_CONTENT_FALLBACK_ANIMATION =
-  'duration-200 ' +
-  'data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95 ' +
-  'data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95';
+  'duration-200 animate-in fade-in-0 zoom-in-95';
 
 const modalContentVariants = cva(
   [
@@ -170,6 +165,15 @@ function Modal({
     }
     wasOpen.current = open;
   }, [open, animatesExit]);
+
+  // If the runtime disappears or is disabled mid-exit, `onExitComplete` will
+  // never fire — the subtree is already gone. Without this reset the guards
+  // (and the body scroll lock with them) would be held forever.
+  React.useEffect(() => {
+    if (!animatesExit && isExiting) {
+      setIsExiting(false);
+    }
+  }, [animatesExit, isExiting]);
 
   const isGuarded = open || isExiting;
 
