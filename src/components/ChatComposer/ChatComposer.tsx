@@ -719,7 +719,7 @@ export const ChatComposer = React.forwardRef<
           )}
 
           {micVisible &&
-            (micSlot !== undefined ? (
+            (micSlot != null ? (
               // Normalize slot content (e.g. a RecordButton) to the 32px
               // control row: taller content overflow-centers instead of
               // inflating the pill and pushing the other cells apart.

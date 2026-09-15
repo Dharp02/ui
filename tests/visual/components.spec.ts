@@ -95,6 +95,16 @@ test.describe('Visual Regression Tests - Core Components', () => {
     await expect(page).toHaveScreenshot('chat-composer-with-selectors.png');
   });
 
+  test('ChatComposer - With selectors (mobile stacked)', async ({ page }) => {
+    // Below the md breakpoint the composer stacks the input above the icon
+    // row instead of the single-row pill.
+    await page.setViewportSize({ width: 390, height: 844 });
+    await gotoStory(page, 'chat-chatcomposer--with-selectors');
+    await expect(page).toHaveScreenshot(
+      'chat-composer-with-selectors-mobile.png'
+    );
+  });
+
   test('Avatar - Default', async ({ page }) => {
     await gotoStory(page, 'data-display-avatar--default');
     await expect(page).toHaveScreenshot('avatar-default.png');
