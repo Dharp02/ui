@@ -724,13 +724,14 @@ export const ChatComposer = React.forwardRef<
             (micSlot != null ? (
               // Normalize slot content (e.g. a RecordButton) to the 32px
               // control row: taller content overflow-centers instead of
-              // inflating the pill and pushing the other cells apart.
-              <span
+              // inflating the pill and pushing the other cells apart. A div
+              // so block-level slot content stays valid HTML.
+              <div
                 data-slot="chat-composer-mic-slot"
                 className="flex h-8 shrink-0 items-center"
               >
                 {micSlot}
-              </span>
+              </div>
             ) : (
               <button
                 type="button"
