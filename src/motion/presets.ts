@@ -20,7 +20,8 @@
 // =============================================================================
 
 /** Named animation recipes shared by components. */
-export type MotionPreset = 'drawerStart' | 'overlay' | 'modalContent';
+export type MotionPreset =
+  'drawerStart' | 'overlay' | 'modalContent' | 'sidebarLabel';
 
 /**
  * A variant value. Either a plain target object or a function of the element's
@@ -46,7 +47,7 @@ export interface MotionPresetDefinition {
  * `custom` contract per preset:
  *
  * - `drawerStart` — `boolean`, whether the document direction is RTL.
- * - `overlay`, `modalContent` — unused.
+ * - `overlay`, `modalContent`, `sidebarLabel` — unused.
  */
 export const motionPresets: Record<MotionPreset, MotionPresetDefinition> = {
   /**
@@ -79,5 +80,26 @@ export const motionPresets: Record<MotionPreset, MotionPresetDefinition> = {
       closed: { opacity: 0, scale: 0.96, y: 8 },
     },
     transition: { type: 'spring', stiffness: 500, damping: 40, mass: 0.8 },
+  },
+
+  /**
+   * Text that disappears as its container narrows — sidebar labels on collapse.
+   *
+   * Opacity only, and deliberately so. An inline-axis slide would read slightly
+   * better but would make every label direction-aware, and resolving direction
+   * per nav item is a disproportionate amount of plumbing for an 8px nudge.
+   * Fading also degrades to itself under reduced motion instead of becoming a
+   * different animation.
+   *
+   * Short because it runs on many elements at once and has to finish inside the
+   * container's own width transition, or labels are still fading after the rail
+   * has stopped moving.
+   */
+  sidebarLabel: {
+    variants: {
+      open: { opacity: 1 },
+      closed: { opacity: 0 },
+    },
+    transition: { duration: 0.15, ease: 'easeOut' },
   },
 };

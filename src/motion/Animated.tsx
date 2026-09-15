@@ -21,7 +21,7 @@ import type { MotionPreset } from './presets';
 
 export interface AnimatedProps extends React.HTMLAttributes<HTMLElement> {
   /** Intrinsic element to render. */
-  as?: 'div' | 'nav';
+  as?: 'div' | 'nav' | 'span';
   /** Which shared animation recipe to use. */
   preset: MotionPreset;
   /**
@@ -82,7 +82,8 @@ export const Animated = React.forwardRef<HTMLElement, AnimatedProps>(
       );
     }
 
-    const Component = as === 'nav' ? runtime.Nav : runtime.Div;
+    const Component =
+      as === 'nav' ? runtime.Nav : as === 'span' ? runtime.Span : runtime.Div;
     const motionProps =
       mode === 'toggle'
         ? runtime.toggle(preset, open, custom)

@@ -35,6 +35,8 @@ export interface MotionRuntime {
   Div: React.ElementType;
   /** Animated `nav`. */
   Nav: React.ElementType;
+  /** Animated `span`, for inline content that must not become a block. */
+  Span: React.ElementType;
   /** Enables exit animations for conditionally rendered children. */
   Presence: React.ComponentType<MotionPresenceProps>;
   /**

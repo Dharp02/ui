@@ -82,6 +82,7 @@ export function MotionProvider({
     () => ({
       Div: m.div,
       Nav: m.nav,
+      Span: m.span,
       Presence,
       ...createPresetPropBuilders(),
     }),

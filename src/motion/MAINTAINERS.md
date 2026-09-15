@@ -10,14 +10,14 @@ The opt-in animation layer behind `@mieweb/ui/motion`. It upgrades supporting
 components from CSS transitions to spring-driven motion without making the
 `motion` library a cost for anyone who hasn't asked for it.
 
-| File                                             | Ships in       | Imports `motion`? |
-| ------------------------------------------------ | -------------- | ----------------- |
-| [presets.ts](presets.ts)                         | main entry     | no                |
-| [runtime.ts](runtime.ts)                         | main entry     | no                |
-| [Animated.tsx](Animated.tsx)                     | main entry     | no                |
-| [index.ts](index.ts)                             | main entry     | no                |
-| [MotionProvider.tsx](MotionProvider.tsx)         | `/motion` only | **yes**           |
-| [entry.ts](entry.ts)                             | `/motion` only | via the provider  |
+| File                                     | Ships in       | Imports `motion`? |
+| ---------------------------------------- | -------------- | ----------------- |
+| [presets.ts](presets.ts)                 | main entry     | no                |
+| [runtime.ts](runtime.ts)                 | main entry     | no                |
+| [Animated.tsx](Animated.tsx)             | main entry     | no                |
+| [index.ts](index.ts)                     | main entry     | no                |
+| [MotionProvider.tsx](MotionProvider.tsx) | `/motion` only | **yes**           |
+| [entry.ts](entry.ts)                     | `/motion` only | via the provider  |
 
 ## Design contract (don't break these)
 

@@ -426,19 +426,33 @@ export function SidebarNavGroup({
             {icon}
           </span>
         )}
-        {!showCollapsed && (
-          <>
-            <span className="flex-1 truncate text-start">{label}</span>
-            <span
+        <AnimatedPresence>
+          {!showCollapsed && (
+            <Animated
+              key="label"
+              as="span"
+              preset="sidebarLabel"
+              mode="presence"
+              className="flex-1 truncate text-start"
+            >
+              {label}
+            </Animated>
+          )}
+          {!showCollapsed && (
+            <Animated
+              key="chevron"
+              as="span"
+              preset="sidebarLabel"
+              mode="presence"
               className={cn(
                 'ms-2 flex-shrink-0 transition-transform duration-200',
                 effectiveExpanded && 'rotate-180'
               )}
             >
               <ChevronDownIcon />
-            </span>
-          </>
-        )}
+            </Animated>
+          )}
+        </AnimatedPresence>
       </button>
 
       {/* Group Items */}
@@ -521,23 +535,41 @@ export function SidebarNavItem({
           {icon}
         </span>
       )}
-      {!showCollapsed && (
-        <>
-          <span className="flex-1 truncate text-start">{label}</span>
-          {badge && (
-            <span
-              className={cn(
-                'ms-2 rounded-full px-2 py-0.5 text-xs font-medium',
-                isActive
-                  ? 'bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300'
-                  : 'bg-neutral-100 text-neutral-600 dark:bg-neutral-700 dark:text-neutral-400'
-              )}
-            >
-              {badge}
-            </span>
-          )}
-        </>
-      )}
+      {/*
+        Labels fade out rather than vanishing on the frame the rail starts
+        collapsing. The accessible name is unaffected: once collapsed the
+        control carries `aria-label`, which takes precedence over text content,
+        so a label still finishing its exit is never read twice.
+      */}
+      <AnimatedPresence>
+        {!showCollapsed && (
+          <Animated
+            key="label"
+            as="span"
+            preset="sidebarLabel"
+            mode="presence"
+            className="flex-1 truncate text-start"
+          >
+            {label}
+          </Animated>
+        )}
+        {!showCollapsed && badge && (
+          <Animated
+            key="badge"
+            as="span"
+            preset="sidebarLabel"
+            mode="presence"
+            className={cn(
+              'ms-2 rounded-full px-2 py-0.5 text-xs font-medium',
+              isActive
+                ? 'bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300'
+                : 'bg-neutral-100 text-neutral-600 dark:bg-neutral-700 dark:text-neutral-400'
+            )}
+          >
+            {badge}
+          </Animated>
+        )}
+      </AnimatedPresence>
     </>
   );
 
