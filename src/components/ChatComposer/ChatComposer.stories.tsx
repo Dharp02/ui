@@ -295,8 +295,7 @@ export const CharacterLimit: Story = {
       onSend={() => {}}
       maxLength={200}
       showCharacterCount
-      value="Controlled text near the limit…"
-      onValueChange={() => {}}
+      placeholder="Type to see the character counter…"
     />
   ),
 };
