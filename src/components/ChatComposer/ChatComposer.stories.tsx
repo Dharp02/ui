@@ -231,6 +231,33 @@ export const WithAttachments: Story = {
   ),
 };
 
+export const WithMentions: Story = {
+  render: () => (
+    <ChatComposerDemo
+      onSend={() => {}}
+      placeholder="Type @ to mention a participant…"
+      mentionOptions={[
+        {
+          id: 'a1',
+          label: 'Triage Agent',
+          description: 'agent',
+          meta: 'AI',
+        },
+        { id: 'u1', label: 'Dr. Sarah Chen', description: 'physician' },
+        { id: 'u2', label: 'Tom Rivera', description: 'nurse' },
+      ]}
+    />
+  ),
+  parameters: {
+    docs: {
+      description: {
+        story:
+          'Typing `@` opens the same mention autocomplete used by `MessageComposer` (arrow keys to navigate, Enter/Tab to insert, Escape to dismiss).',
+      },
+    },
+  },
+};
+
 export const Streaming: Story = {
   render: () => (
     <ChatComposerDemo onSend={() => {}} isStreaming onStop={() => {}} />
