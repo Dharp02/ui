@@ -121,6 +121,7 @@ Host integration escape hatches: \`textareaProps\` spreads extra props onto the 
 
 ### Don't use it when
 
+- You want the **complete multi-participant chat surface** — \`SuperChat\` mounts this composer internally (participants become \`mentionOptions\`, attachments reach the host as base64 \`dataUrl\`s) and adds the thread, header, and Markdown pipeline.
 - You are maintaining an existing \`MessageComposer\` surface and don't need the toolbar/selector rows — migrating is encouraged but not required.
 - You need a **reply-to preview row** today — that still lives in \`MessageComposer\` (planned here; see Limitations).
 - A single-line command input fits better — \`CommandPalette\` or a plain \`Input\`.
