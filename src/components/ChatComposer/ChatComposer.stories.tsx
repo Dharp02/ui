@@ -290,20 +290,14 @@ export const MicOnlyWhenEmpty: Story = {
 };
 
 export const CharacterLimit: Story = {
-  render: function CharacterLimitStory() {
-    // Stateful so the controlled composer stays typable; a no-op
-    // onValueChange would discard every keystroke.
-    const [value, setValue] = React.useState('Controlled text near the limit…');
-    return (
-      <ChatComposerDemo
-        onSend={() => {}}
-        maxLength={200}
-        showCharacterCount
-        value={value}
-        onValueChange={setValue}
-      />
-    );
-  },
+  render: () => (
+    <ChatComposerDemo
+      onSend={() => {}}
+      maxLength={200}
+      showCharacterCount
+      placeholder="Type to see the character counter…"
+    />
+  ),
 };
 
 export const ReadOnly: Story = {
