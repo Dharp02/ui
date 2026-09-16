@@ -665,6 +665,36 @@ describe('ChatComposer', () => {
       expect(screen.queryByRole('listbox')).not.toBeInTheDocument();
     });
 
+    it('inserts the visibly highlighted option after the list shrinks under the highlight', () => {
+      // Regression: when the host swaps mentionOptions while the menu is open
+      // and the highlight index falls out of range, Enter must insert the
+      // option the clamped highlight points at — the one the user sees.
+      const { rerender } = renderWithTheme(
+        <ChatComposer mentionOptions={mentionOptions} />
+      );
+      const input = getInput();
+      fireEvent.change(input, { target: { value: '@' } });
+      expect(screen.getAllByRole('option')).toHaveLength(3);
+
+      fireEvent.keyDown(input, { key: 'ArrowDown' });
+      fireEvent.keyDown(input, { key: 'ArrowDown' });
+      expect(screen.getAllByRole('option')[2]).toHaveAttribute(
+        'aria-selected',
+        'true'
+      );
+
+      // Host shrinks the option list; highlight (2) is now out of range.
+      rerender(<ChatComposer mentionOptions={mentionOptions.slice(0, 2)} />);
+      const options = screen.getAllByRole('option');
+      expect(options).toHaveLength(2);
+      expect(options[1]).toHaveAttribute('aria-selected', 'true');
+      expect(input).toHaveAttribute('aria-activedescendant', options[1].id);
+
+      fireEvent.keyDown(input, { key: 'Enter' });
+      // Trish Nurse (index 1, the visible highlight) — not Triage Agent (0).
+      expect(input).toHaveValue('@Trish ');
+    });
+
     it('inserts a mention on mouse down so the textarea keeps focus', () => {
       renderWithTheme(<ChatComposer mentionOptions={mentionOptions} />);
       const input = getInput();

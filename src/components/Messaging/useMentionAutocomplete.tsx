@@ -177,21 +177,29 @@ export function useMentionAutocomplete({
     event: React.KeyboardEvent<HTMLTextAreaElement>
   ): boolean => {
     if (!menuOpen) return false;
+    // All keyboard branches index with the clamped highlight so keyboard
+    // behavior always agrees with the visible/ARIA selection, even when the
+    // list shrank while the menu was open (e.g. the host swapped `options`
+    // asynchronously).
     if (event.key === 'ArrowDown') {
       event.preventDefault();
-      setHighlight((h) => (h + 1) % suggestions.length);
+      setHighlight(
+        (h) => (Math.min(h, suggestions.length - 1) + 1) % suggestions.length
+      );
       return true;
     }
     if (event.key === 'ArrowUp') {
       event.preventDefault();
-      setHighlight((h) => (h - 1 + suggestions.length) % suggestions.length);
+      setHighlight(
+        (h) =>
+          (Math.min(h, suggestions.length - 1) - 1 + suggestions.length) %
+          suggestions.length
+      );
       return true;
     }
     if (event.key === 'Enter' || event.key === 'Tab') {
       event.preventDefault();
-      // `highlight` can fall out of range if the list shrank while the menu
-      // was open; fall back to the first suggestion.
-      const chosen = suggestions[highlight] ?? suggestions[0];
+      const chosen = suggestions[clampedHighlight];
       if (chosen) insert(chosen);
       return true;
     }
