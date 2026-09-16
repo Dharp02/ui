@@ -33,7 +33,7 @@ export type MotionPreset =
  */
 export type MotionVariant =
   | Record<string, unknown>
-  | ((custom: never) => Record<string, unknown>);
+  | ((custom: unknown) => Record<string, unknown>);
 
 export interface MotionPresetDefinition {
   variants: {
@@ -63,7 +63,7 @@ export const motionPresets: Record<MotionPreset, MotionPresetDefinition> = {
       open: { x: '0%' },
       // Off-canvas direction follows writing direction, mirroring the
       // `-translate-x-full rtl:translate-x-full` CSS fallback.
-      closed: (isRtl: never) => ({ x: isRtl ? '100%' : '-100%' }),
+      closed: (isRtl: unknown) => ({ x: isRtl ? '100%' : '-100%' }),
     },
     transition: { type: 'spring', stiffness: 400, damping: 40, mass: 1 },
   },
