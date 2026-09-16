@@ -157,14 +157,21 @@ function Modal({
   const runtime = useMotionRuntime();
   const animatesExit = Boolean(runtime?.enabled);
   const [isExiting, setIsExiting] = React.useState(false);
-  const wasOpen = React.useRef(open);
+  const [prevOpen, setPrevOpen] = React.useState(open);
 
-  React.useEffect(() => {
-    if (wasOpen.current && !open && animatesExit) {
+  // Derived synchronously during render (React's "adjust state when props
+  // change" pattern), not in an effect. An effect runs after commit, which
+  // would leave one committed frame with the dialog still on screen but
+  // `isGuarded` false — the focus trap would tear down, restore focus, then
+  // re-arm and yank focus into the closing dialog, with the scroll lock
+  // flickering alongside. Setting state during render re-renders before
+  // commit, so the guards never observe the gap.
+  if (prevOpen !== open) {
+    setPrevOpen(open);
+    if (!open && animatesExit) {
       setIsExiting(true);
     }
-    wasOpen.current = open;
-  }, [open, animatesExit]);
+  }
 
   // If the runtime disappears or is disabled mid-exit, `onExitComplete` will
   // never fire — the subtree is already gone. Without this reset the guards

@@ -35,9 +35,10 @@ export interface AnimatedProps extends React.HTMLAttributes<HTMLElement> {
   /** Per-preset context value — see the `custom` contract in `presets.ts`. */
   custom?: unknown;
   /**
-   * Classes applied **only** when no motion runtime is present. This is where a
-   * component's existing CSS transition lives, so the two paths never both try
-   * to drive the same property.
+   * Classes applied whenever this element is **not** animating — no provider,
+   * a disabled provider, or `enabled={false}`. This is where a component's
+   * existing CSS transition lives, so the two paths never both try to drive
+   * the same property.
    */
   fallbackClassName?: string;
   /**
