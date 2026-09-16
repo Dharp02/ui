@@ -18,7 +18,7 @@ import { useAnchoredPosition } from '../../hooks/useAnchoredPosition';
  * surface (multi-party chat, agent picker, …) can supply its own list.
  */
 export interface MentionOption {
-  /** Stable id (returned to the host so it can map a selection back). */
+  /** Stable unique key for the suggestion list. */
   id: string;
   /** Display name shown in the suggestion list. */
   label: string;

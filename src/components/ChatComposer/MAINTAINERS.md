@@ -42,10 +42,11 @@ change reason strings without a major-version note.
 
 `mentionOptions` delegates to `useMentionAutocomplete` / `MentionMenu` in
 `../Messaging/useMentionAutocomplete.tsx` — the **same** module MessageComposer
-uses, extracted so both composers stay behavior-identical (SuperChat pins the
-behavior through its own tests). Keyboard priority in the textarea `onKeyDown`
-is: host `textareaProps.onKeyDown` (preventDefault claims the event) → mention
-menu navigation → Enter-to-send. Don't reorder.
+uses; its invariants live in
+[Messaging/MAINTAINERS.md](../Messaging/MAINTAINERS.md). ChatComposer-specific
+contract: keyboard priority in the textarea `onKeyDown` is host
+`textareaProps.onKeyDown` (preventDefault claims the event) → mention menu
+navigation → Enter-to-send. Don't reorder.
 
 ## Drag-and-drop delegates validation
 
