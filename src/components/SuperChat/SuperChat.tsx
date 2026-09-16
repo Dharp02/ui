@@ -205,16 +205,27 @@ export function SuperChat({
     [acceptedFileTypes]
   );
 
+  // Controlled composer draft so a failed send can restore the typed text
+  // (ChatComposer clears optimistically and delegates restore to the host).
+  const [draft, setDraft] = React.useState('');
+
   // Bridge the shared composer's `NewMessage` (File[] attachments) to
   // SuperChat's host callback (mentions + base64 `data:` URL attachments).
   const handleComposerSend = React.useCallback(
     async (message: NewMessage) => {
-      const text = message.content;
-      const mentions = detectMentions(text, conversation.participants);
-      const attachments = await filesToComposerAttachments(
-        message.attachments ?? []
-      );
-      onMessageSent?.(text, { conversation, mentions, attachments });
+      try {
+        const text = message.content;
+        const mentions = detectMentions(text, conversation.participants);
+        const attachments = await filesToComposerAttachments(
+          message.attachments ?? []
+        );
+        onMessageSent?.(text, { conversation, mentions, attachments });
+      } catch {
+        // Parity with the previous MessageComposer: restore the text when
+        // file conversion or the host callback fails (attachments are not
+        // restaged, matching the old behavior).
+        setDraft(message.content);
+      }
     },
     [conversation, onMessageSent]
   );
@@ -345,6 +356,8 @@ export function SuperChat({
       )}
 
       <ChatComposer
+        value={draft}
+        onValueChange={setDraft}
         onSend={handleComposerSend}
         disabled={readOnly}
         placeholder={
@@ -355,6 +368,8 @@ export function SuperChat({
         mentionOptions={mentionOptions}
         allowAttachments={!readOnly}
         acceptedFileTypes={composerAccept}
+        // Same cap MessageComposer applied by default.
+        maxFileSize={25 * 1024 * 1024}
         maxLength={100000}
         inputLabel="Message"
       />

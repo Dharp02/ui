@@ -527,6 +527,45 @@ describe('SuperChat', () => {
     );
   });
 
+  it('restores the typed text when onMessageSent throws', async () => {
+    const onMessageSent = vi.fn(() => {
+      throw new Error('backend down');
+    });
+    const { default: userEvent } = await import('@testing-library/user-event');
+    const user = userEvent.setup();
+    render(
+      <SuperChat
+        conversation={conversation}
+        currentParticipantId="u1"
+        onMessageSent={onMessageSent}
+      />
+    );
+    const input = screen.getByLabelText('Message');
+    await user.type(input, 'important note');
+    await user.click(screen.getByLabelText('Send message'));
+    // The composer clears optimistically; SuperChat restores the draft on
+    // failure (MessageComposer parity — attachments are not restaged).
+    await waitFor(() => expect(input).toHaveValue('important note'));
+  });
+
+  it('rejects files over the 25 MiB cap', async () => {
+    const { default: userEvent } = await import('@testing-library/user-event');
+    const user = userEvent.setup();
+    const { container } = render(
+      <SuperChat conversation={conversation} currentParticipantId="u1" />
+    );
+    const fileInput = container.querySelector(
+      'input[type="file"]'
+    ) as HTMLInputElement;
+    const big = new File(['x'], 'huge.png', { type: 'image/png' });
+    Object.defineProperty(big, 'size', { value: 25 * 1024 * 1024 + 1 });
+    const small = new File(['ok'], 'small.png', { type: 'image/png' });
+    await user.upload(fileInput, [big, small]);
+    // The in-cap file stages; the oversize one is rejected (old default cap).
+    await screen.findByLabelText('Remove small.png');
+    expect(screen.queryByLabelText('Remove huge.png')).toBeNull();
+  });
+
   it('attaches a pasted image and sends it with the message', async () => {
     const onMessageSent = vi.fn();
     const { fireEvent } = await import('@testing-library/react');
