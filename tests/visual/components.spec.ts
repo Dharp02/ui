@@ -157,6 +157,47 @@ test.describe('Visual Regression Tests - Core Components', () => {
     );
   });
 
+  test('ChatComposer - With attachments (condensed)', async ({ page }) => {
+    // Condensed attachment-chip row (chat-composer-attachments rules).
+    await gotoStory(page, 'chat-chatcomposer--with-attachments', {
+      globals: 'density:condensed',
+    });
+    await page
+      .locator("[data-slot='chat-composer-attachments']")
+      .waitFor({ state: 'visible' });
+    await expect(page).toHaveScreenshot(
+      'chat-composer-with-attachments-condensed.png'
+    );
+  });
+
+  test('ChatComposer - With record button (condensed)', async ({ page }) => {
+    // Condensed mic-slot row height (chat-composer-mic-slot rule).
+    await gotoStory(page, 'chat-chatcomposer--with-record-button', {
+      globals: 'density:condensed',
+    });
+    await expect(page).toHaveScreenshot(
+      'chat-composer-with-record-button-condensed.png'
+    );
+  });
+
+  test('ChatComposer - Streaming (condensed)', async ({ page }) => {
+    // Condensed stop button (chat-composer-stop-button rules).
+    await gotoStory(page, 'chat-chatcomposer--streaming', {
+      globals: 'density:condensed',
+    });
+    await expect(page).toHaveScreenshot('chat-composer-streaming-condensed.png');
+  });
+
+  test('ChatComposer - Character limit (condensed)', async ({ page }) => {
+    // Condensed character counter (chat-composer-char-count rule).
+    await gotoStory(page, 'chat-chatcomposer--character-limit', {
+      globals: 'density:condensed',
+    });
+    await expect(page).toHaveScreenshot(
+      'chat-composer-character-limit-condensed.png'
+    );
+  });
+
   test('Avatar - Default', async ({ page }) => {
     await gotoStory(page, 'data-display-avatar--default');
     await expect(page).toHaveScreenshot('avatar-default.png');
