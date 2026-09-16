@@ -541,15 +541,10 @@ describe('SuperChat', () => {
     );
     const input = screen.getByLabelText('Message');
     const file = new File(['fake-bytes'], 'shot.png', { type: 'image/png' });
+    // Browsers expose pasted files via `clipboardData.files`.
     fireEvent.paste(input, {
       clipboardData: {
-        items: [
-          {
-            kind: 'file',
-            type: 'image/png',
-            getAsFile: () => file,
-          },
-        ],
+        files: [file],
       },
     });
     // The pasted image shows up as a removable preview thumbnail.
@@ -584,7 +579,9 @@ describe('SuperChat', () => {
         onMessageSent={onMessageSent}
       />
     );
-    expect(screen.getByLabelText('Attach files')).toBeInTheDocument();
+    // Attaching now goes through the composer's `+` menu.
+    await user.click(screen.getByLabelText('Add to message'));
+    await user.click(screen.getByRole('menuitem', { name: 'Attach files' }));
     const fileInput = container.querySelector(
       'input[type="file"]'
     ) as HTMLInputElement;

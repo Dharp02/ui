@@ -13,7 +13,7 @@
 import * as React from 'react';
 import { cn } from '../../utils/cn';
 import { CloseIcon } from '../AI/icons';
-import { MessageComposer } from '../Messaging/MessageComposer';
+import { ChatComposer } from '../ChatComposer/ChatComposer';
 import type { NewMessage } from '../Messaging/types';
 import { createMarkdownRenderer } from './render/createMarkdownRenderer';
 import {
@@ -344,7 +344,7 @@ export function SuperChat({
         </div>
       )}
 
-      <MessageComposer
+      <ChatComposer
         onSend={handleComposerSend}
         disabled={readOnly}
         placeholder={
@@ -353,10 +353,10 @@ export function SuperChat({
             : 'Type a message… use @ to address an agent'
         }
         mentionOptions={mentionOptions}
-        showAttachmentPicker={!readOnly}
-        showCameraButton={false}
+        allowAttachments={!readOnly}
         acceptedFileTypes={composerAccept}
         maxLength={100000}
+        inputLabel="Message"
       />
     </section>
   );
