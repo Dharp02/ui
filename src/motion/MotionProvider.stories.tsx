@@ -99,7 +99,7 @@ Note that import is from \`@mieweb/ui\`, not \`@mieweb/ui/motion\`: \`Animated\`
     disabled: {
       control: 'boolean',
       description:
-        'Withhold the runtime, forcing every component onto its CSS path.',
+        "Disable this layer's animations, forcing every component onto its CSS fallback. A runtime is still supplied — this is not the same branch as omitting the provider, though the rendered output matches.",
       table: { category: 'Behaviour' },
     },
     reducedMotion: {

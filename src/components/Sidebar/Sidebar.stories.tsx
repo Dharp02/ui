@@ -443,7 +443,9 @@ An app that opts into [\`@mieweb/ui/motion\`](?path=/docs/foundations-motion--do
 - **Desktop** — labels, badges and group chevrons fade as the rail collapses instead of vanishing on the first frame while the width is still moving. See the **Motion** story.
 - **Mobile** — the drawer springs in and its backdrop fades on both enter and exit. On the CSS path the drawer still slides, as a 300ms transform transition, but the backdrop appears and disappears instantly. See **Motion Drawer**.
 
-The split is deliberate. Motion holds elements at rest with a \`transform\`, and a transformed nav would become the containing block for every \`position: fixed\` descendant inside it — so on desktop the nav itself opts out and its *contents* animate instead. Desktop collapse still animates \`width\` on both paths.`,
+The split is deliberate. Motion holds elements at rest with a \`transform\`, and a transformed nav would become the containing block for every \`position: fixed\` descendant inside it — so on desktop the nav itself opts out and its *contents* animate instead. Desktop collapse still animates \`width\` on both paths.
+
+One consequence of opting in: crossing the mobile breakpoint remounts the nav, resetting local state inside it (an uncontrolled search input, scroll position). State that must survive a breakpoint cross — like the provider's own \`isCollapsed\` and \`isMobileOpen\` — belongs above the sidebar. The CSS path never remounts.`,
       },
     },
     catalog: {
