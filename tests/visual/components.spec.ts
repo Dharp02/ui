@@ -1,9 +1,17 @@
 import { test, expect, type Page } from '@playwright/test';
 
 // Helper to navigate to a story and wait for it to render
-async function gotoStory(page: Page, storyId: string) {
+async function gotoStory(
+  page: Page,
+  storyId: string,
+  { globals }: { globals?: string } = {}
+) {
   // Navigate to the story iframe
-  await page.goto(`/iframe.html?id=${storyId}&viewMode=story`);
+  await page.goto(
+    `/iframe.html?id=${storyId}&viewMode=story${
+      globals ? `&globals=${globals}` : ''
+    }`
+  );
 
   // Wait for either success or error state
   const result = await page.waitForFunction(
@@ -110,6 +118,43 @@ test.describe('Visual Regression Tests - Core Components', () => {
     // control row without inflating the pill height.
     await gotoStory(page, 'chat-chatcomposer--with-record-button');
     await expect(page).toHaveScreenshot('chat-composer-with-record-button.png');
+  });
+
+  test('ChatComposer - With selectors (condensed)', async ({ page }) => {
+    // Condensed density: 24px icon buttons, 12px input text, tighter
+    // selector row (body.condensed rules in condensed-view.css).
+    await gotoStory(page, 'chat-chatcomposer--with-selectors', {
+      globals: 'density:condensed',
+    });
+    await expect(page).toHaveScreenshot(
+      'chat-composer-with-selectors-condensed.png'
+    );
+  });
+
+  test('ChatComposer - Read only (condensed)', async ({ page }) => {
+    // The compact banner needs an explicit line-height: Tailwind 3's
+    // text-sm would otherwise pin the row at the comfortable height.
+    await gotoStory(page, 'chat-chatcomposer--read-only', {
+      globals: 'density:condensed',
+    });
+    await expect(page).toHaveScreenshot('chat-composer-read-only-condensed.png');
+  });
+
+  test('ChatComposer - Mention menu open (condensed)', async ({ page }) => {
+    // The @mention listbox is shared with MessageComposer; condensed rules
+    // shrink the menu and its options.
+    await gotoStory(page, 'chat-chatcomposer--with-mentions', {
+      globals: 'density:condensed',
+    });
+    const textarea = page.locator("[data-slot='chat-composer-input']");
+    await textarea.click();
+    await textarea.pressSequentially('@');
+    await page
+      .locator("[data-slot='chat-composer-mention-list']")
+      .waitFor({ state: 'visible' });
+    await expect(page).toHaveScreenshot(
+      'chat-composer-mention-menu-condensed.png'
+    );
   });
 
   test('Avatar - Default', async ({ page }) => {

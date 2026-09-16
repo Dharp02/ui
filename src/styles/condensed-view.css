@@ -6127,6 +6127,10 @@ body.condensed [data-slot='chat-composer'][role='status'] > svg {
 
 body.condensed [data-slot='chat-composer-readonly'] {
   font-size: 0.6875rem !important;
+  /* Explicit: Tailwind 3's text-sm on the root sets a fixed 1.25rem
+     line-height that the span would inherit regardless of its smaller
+     font (Tailwind 4 uses a unitless ratio, so only TW3 needs this). */
+  line-height: 1rem !important;
 }
 
 /* ============================================================================
