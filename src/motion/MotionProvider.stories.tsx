@@ -91,6 +91,21 @@ Note that import is from \`@mieweb/ui\`, not \`@mieweb/ui/motion\`: \`Animated\`
           target: 'overlays-sidebar',
           why: 'MotionProvider fades the rail\u2019s labels on desktop collapse and upgrades the mobile drawer to a spring slide with a fading backdrop.',
         },
+        {
+          type: 'composes with',
+          target: 'feedback-toast',
+          why: 'MotionProvider gives Toast a spring enter, a real exit animation the CSS path cannot do, and an entry direction that follows the stack position.',
+        },
+        {
+          type: 'composes with',
+          target: 'layout-collapsible',
+          why: 'MotionProvider animates the panel to its natural height, which CSS cannot do because height: auto is not interpolable.',
+        },
+        {
+          type: 'composes with',
+          target: 'choice-inputs-dropdown',
+          why: 'MotionProvider scales the menu out of its trigger and gives it a real exit animation, which the CSS path cannot do because the menu unmounts on close.',
+        },
       ],
     },
   },
