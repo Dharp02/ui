@@ -22,4 +22,5 @@ export {
   type MotionPreset,
   type MotionPresetDefinition,
   type MotionVariant,
+  type MotionEdge,
 } from './presets';
