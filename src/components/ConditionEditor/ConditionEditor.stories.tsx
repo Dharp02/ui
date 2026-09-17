@@ -73,12 +73,12 @@ The host owns the concern list, ids and dates; the editor only produces a draft.
 
 ### Limitations
 
-- **Accessibility as implemented.** Built on \`Modal\` (\`size="lg"\`), so focus trapping, Esc and overlay dismissal are inherited. Fields use \`Input\` / \`Textarea\` / \`Select\` labels; coding rows, uncertainty toggles (\`role="group"\`, \`aria-pressed\`), severity (\`role="group"\`) and remove buttons are individually \`aria-label\`led. The revise warning is \`role="alert"\`; nothing else is announced (a save simply closes the dialog). There is no \`ModalClose\` button — cancel is the footer button, Esc or the overlay.
+- **Accessibility as implemented.** Built on \`Modal\` (\`size="2xl"\`), so focus trapping, Esc and overlay dismissal are inherited. Fields use \`Input\` / \`Textarea\` / \`Select\` labels; coding rows, uncertainty toggles (\`role="group"\`, \`aria-pressed\`), severity (\`role="group"\`) and remove buttons are individually \`aria-label\`led. The revise warning is \`role="alert"\`; nothing else is announced (a save simply closes the dialog). There is no \`ModalClose\` button — cancel is the footer button, Esc or the overlay.
 - **Clinical safety.** No code validation (any string is accepted as a code), no check that a picked code matches the typed name, no duplicate-concern detection, and the *coding unknown* flag silently drops any codes on save. Injected lookups return whatever the shards contain — see CodeLookup's dataset caveats.
 - **Progression** is a checkbox that only exists in \`refine\` mode; \`reattribution\` cannot be produced by this editor.
 - **Reseeding** happens on every \`open\` / \`mode\` / \`concern\` change: unsaved edits are lost if the host swaps the concern while open.
-- **Responsive / RTL.** Sections stack vertically; coding and onset rows \`flex-wrap\`. No breakpoint variants and no RTL-specific handling beyond the underlying inputs.
-- **Theming / i18n.** Semantic tokens plus hard-coded amber for the revise alert. All titles, labels, placeholders, option labels and helper copy are English constants — no \`labels\` prop.
+- **Responsive / RTL.** The modal is full-screen on mobile. Coding controls stack with visible field labels below \`sm\`, then align into system / code / display / primary / remove columns; exact and fuzzy onset fields follow the same mobile-first pattern. No RTL-specific handling beyond logical spacing and the underlying inputs.
+- **Theming / i18n.** Semantic theme tokens cover alerts, uncertainty, fields and actions. All titles, labels, placeholders, option labels and helper copy are English constants — no \`labels\` prop.
 - **Dependencies.** \`Modal\`, \`Input\`, \`Textarea\`, \`Select\`, \`Badge\`, \`Button\`, the \`ProblemList\` model types and \`currentAssertion\`, \`CodeLookupProvider\` context; main \`@mieweb/ui\` entry. \`CodeLookup\` itself is not in the package — see its page.`,
       },
     },
@@ -103,7 +103,7 @@ The host owns the concern list, ids and dates; the editor only produces a draft.
         {
           type: 'uses',
           target: 'overlays-modal',
-          why: 'The editor is a size="lg" Modal.',
+          why: 'The editor is a size="2xl" Modal with a scrollable body and fixed header/footer.',
         },
       ],
     },
