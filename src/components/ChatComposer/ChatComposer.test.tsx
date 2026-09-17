@@ -843,4 +843,137 @@ describe('ChatComposer', () => {
       expect(screen.queryByText('dropped.png')).not.toBeInTheDocument();
     });
   });
+
+  describe('reply-to preview', () => {
+    const replyTo = {
+      id: 'msg-1',
+      content: 'Original message text',
+      senderName: 'Ada Lovelace',
+    };
+
+    it('renders no preview row by default', () => {
+      const { container } = renderWithTheme(<ChatComposer onSend={vi.fn()} />);
+      expect(
+        container.querySelector('[data-slot="chat-composer-reply-preview"]')
+      ).not.toBeInTheDocument();
+    });
+
+    it('omits the replyToId key from the payload when not replying', () => {
+      const onSend = vi.fn();
+      renderWithTheme(<ChatComposer onSend={onSend} />);
+
+      const input = getInput();
+      fireEvent.change(input, { target: { value: 'Hi' } });
+      fireEvent.keyDown(input, { key: 'Enter' });
+
+      expect(onSend).toHaveBeenCalledTimes(1);
+      expect(onSend.mock.calls[0][0]).not.toHaveProperty('replyToId');
+    });
+
+    it('shows the sender and content and focuses the input when replyTo is set', () => {
+      const { container, rerender } = renderWithTheme(
+        <ChatComposer onSend={vi.fn()} />
+      );
+      expect(getInput()).not.toHaveFocus();
+
+      rerender(<ChatComposer onSend={vi.fn()} replyTo={replyTo} />);
+
+      expect(
+        container.querySelector('[data-slot="chat-composer-reply-preview"]')
+      ).toBeInTheDocument();
+      expect(screen.getByText('Replying to Ada Lovelace')).toBeInTheDocument();
+      expect(screen.getByText('Original message text')).toBeInTheDocument();
+      expect(getInput()).toHaveFocus();
+    });
+
+    it('does not re-steal focus when a new replyTo object has the same id', () => {
+      const { rerender } = renderWithTheme(
+        <ChatComposer onSend={vi.fn()} replyTo={replyTo} />
+      );
+      expect(getInput()).toHaveFocus();
+
+      // Host moves focus elsewhere, then re-renders with a recreated (inline)
+      // replyTo object for the same message — focus must not be stolen back.
+      const addButton = screen.getByRole('button', { name: /add to message/i });
+      addButton.focus();
+      rerender(<ChatComposer onSend={vi.fn()} replyTo={{ ...replyTo }} />);
+      expect(addButton).toHaveFocus();
+
+      // A different reply target re-focuses the input.
+      rerender(
+        <ChatComposer onSend={vi.fn()} replyTo={{ ...replyTo, id: 'msg-2' }} />
+      );
+      expect(getInput()).toHaveFocus();
+    });
+
+    it('announces the reply target via a polite status region', () => {
+      renderWithTheme(
+        <ChatComposer
+          onSend={vi.fn()}
+          replyTo={replyTo}
+          onCancelReply={vi.fn()}
+        />
+      );
+
+      const status = screen.getByRole('status');
+      expect(status).toHaveTextContent('Replying to Ada Lovelace');
+      expect(status).toHaveTextContent('Original message text');
+      // The cancel button must stay outside the announced region.
+      expect(status.querySelector('button')).toBeNull();
+    });
+
+    it('includes replyToId in the sent message without clearing the reply itself', () => {
+      const onSend = vi.fn();
+      const onCancelReply = vi.fn();
+      renderWithTheme(
+        <ChatComposer
+          onSend={onSend}
+          replyTo={replyTo}
+          onCancelReply={onCancelReply}
+        />
+      );
+
+      const input = getInput();
+      fireEvent.change(input, { target: { value: 'A reply' } });
+      fireEvent.keyDown(input, { key: 'Enter' });
+
+      expect(onSend).toHaveBeenCalledWith({
+        content: 'A reply',
+        attachments: [],
+        replyToId: 'msg-1',
+      });
+      // The host owns replyTo state; sending must not invoke onCancelReply.
+      expect(onCancelReply).not.toHaveBeenCalled();
+    });
+
+    it('fires onCancelReply from the cancel button, with a customizable label', () => {
+      const onCancelReply = vi.fn();
+      renderWithTheme(
+        <ChatComposer
+          replyTo={replyTo}
+          onCancelReply={onCancelReply}
+          replyingToLabel="Respondiendo a"
+          cancelReplyLabel="Cancelar respuesta"
+        />
+      );
+
+      expect(
+        screen.getByText('Respondiendo a Ada Lovelace')
+      ).toBeInTheDocument();
+
+      fireEvent.click(
+        screen.getByRole('button', { name: 'Cancelar respuesta' })
+      );
+      expect(onCancelReply).toHaveBeenCalledTimes(1);
+    });
+
+    it('disables the cancel button while the composer is disabled', () => {
+      renderWithTheme(
+        <ChatComposer replyTo={replyTo} onCancelReply={vi.fn()} disabled />
+      );
+      expect(
+        screen.getByRole('button', { name: /cancel reply/i })
+      ).toBeDisabled();
+    });
+  });
 });

@@ -372,12 +372,15 @@ const MessageComposer = React.forwardRef<
       }
     }, [autoFocus]);
 
-    // Focus when reply is set
+    // Focus when reply is set. Keyed on the id, not the object: hosts often
+    // build `replyTo` inline, so an object dependency would re-steal focus
+    // (and reset the caret) on every parent render while the user is typing.
+    const replyToId = replyTo?.id;
     React.useEffect(() => {
-      if (replyTo) {
+      if (replyToId !== undefined) {
         textareaRef.current?.focus();
       }
-    }, [replyTo]);
+    }, [replyToId]);
 
     // --- @mention autocomplete (opt-in via `mentionOptions`) ---
     const mention = useMentionAutocomplete({

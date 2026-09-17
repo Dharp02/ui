@@ -6052,6 +6052,17 @@ body.condensed [data-slot='chat-composer-card'] {
   border-radius: 0.75rem !important;
 }
 
+/* Reply preview – tighter padding, smaller text, radius matches the card */
+body.condensed [data-slot='chat-composer-reply-preview'] {
+  border-start-start-radius: 0.75rem !important;
+  border-start-end-radius: 0.75rem !important;
+  padding: 0.25rem 0.5rem !important;
+}
+body.condensed [data-slot='chat-composer-reply-preview'] p {
+  font-size: 0.75rem !important;
+  line-height: 1.125rem !important;
+}
+
 /* Attachment previews – smaller thumbnails (mirrors composer-attachments) */
 body.condensed [data-slot='chat-composer-attachments'] {
   padding: 0.375rem 0.375rem 0 !important;
@@ -6065,11 +6076,12 @@ body.condensed [data-slot='chat-composer-input'] {
   padding: 0.375rem 0.5rem 0.25rem !important;
 }
 
-/* Icon buttons (+ / mic / send / stop) – 1.5rem square, smaller glyphs */
+/* Icon buttons (+ / mic / send / stop / cancel-reply) – 1.5rem square, smaller glyphs */
 body.condensed [data-slot='chat-composer-add-button'],
 body.condensed [data-slot='chat-composer-mic-button'],
 body.condensed [data-slot='chat-composer-send-button'],
-body.condensed [data-slot='chat-composer-stop-button'] {
+body.condensed [data-slot='chat-composer-stop-button'],
+body.condensed [data-slot='chat-composer-cancel-reply'] {
   height: 1.5rem !important;
   width: 1.5rem !important;
   border-radius: 0.375rem !important;
@@ -6077,7 +6089,8 @@ body.condensed [data-slot='chat-composer-stop-button'] {
 
 body.condensed [data-slot='chat-composer-add-button'] svg,
 body.condensed [data-slot='chat-composer-mic-button'] svg,
-body.condensed [data-slot='chat-composer-send-button'] svg {
+body.condensed [data-slot='chat-composer-send-button'] svg,
+body.condensed [data-slot='chat-composer-cancel-reply'] svg {
   width: 0.875rem !important;
   height: 0.875rem !important;
 }

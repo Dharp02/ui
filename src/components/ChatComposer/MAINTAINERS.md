@@ -56,6 +56,14 @@ are passed and `maxFiles` is effectively unbounded, so **all** validation and
 error reporting happen once, in `addFiles`, with the structured error contract
 above. Don't add validation props to the zone — you'd double-report.
 
+## Reply-to is host-owned
+
+`replyTo` renders the dismissible preview row, focuses the input, and stamps
+`replyToId` onto the sent `NewMessage`. The component never clears it —
+`MessageComposer` parity (`MessageThread` clears its own state in its send
+handler). `onCancelReply` fires only from the row's ✕ button. Don't add
+auto-clear-on-send; hosts own the state.
+
 ## Extension points (instead of new props)
 
 - `micSlot` — replaces the built-in mic button (e.g. `RecordButton`). The slot
