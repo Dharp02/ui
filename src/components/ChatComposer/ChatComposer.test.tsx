@@ -843,4 +843,89 @@ describe('ChatComposer', () => {
       expect(screen.queryByText('dropped.png')).not.toBeInTheDocument();
     });
   });
+
+  describe('reply-to preview', () => {
+    const replyTo = {
+      id: 'msg-1',
+      content: 'Original message text',
+      senderName: 'Ada Lovelace',
+    };
+
+    it('renders no preview row by default', () => {
+      const { container } = renderWithTheme(<ChatComposer onSend={vi.fn()} />);
+      expect(
+        container.querySelector('[data-slot="chat-composer-reply-preview"]')
+      ).not.toBeInTheDocument();
+    });
+
+    it('shows the sender and content and focuses the input when replyTo is set', () => {
+      const { container, rerender } = renderWithTheme(
+        <ChatComposer onSend={vi.fn()} />
+      );
+      expect(getInput()).not.toHaveFocus();
+
+      rerender(<ChatComposer onSend={vi.fn()} replyTo={replyTo} />);
+
+      expect(
+        container.querySelector('[data-slot="chat-composer-reply-preview"]')
+      ).toBeInTheDocument();
+      expect(screen.getByText('Replying to Ada Lovelace')).toBeInTheDocument();
+      expect(screen.getByText('Original message text')).toBeInTheDocument();
+      expect(getInput()).toHaveFocus();
+    });
+
+    it('includes replyToId in the sent message without clearing the reply itself', () => {
+      const onSend = vi.fn();
+      const onCancelReply = vi.fn();
+      renderWithTheme(
+        <ChatComposer
+          onSend={onSend}
+          replyTo={replyTo}
+          onCancelReply={onCancelReply}
+        />
+      );
+
+      const input = getInput();
+      fireEvent.change(input, { target: { value: 'A reply' } });
+      fireEvent.keyDown(input, { key: 'Enter' });
+
+      expect(onSend).toHaveBeenCalledWith({
+        content: 'A reply',
+        attachments: [],
+        replyToId: 'msg-1',
+      });
+      // The host owns replyTo state; sending must not invoke onCancelReply.
+      expect(onCancelReply).not.toHaveBeenCalled();
+    });
+
+    it('fires onCancelReply from the cancel button, with a customizable label', () => {
+      const onCancelReply = vi.fn();
+      renderWithTheme(
+        <ChatComposer
+          replyTo={replyTo}
+          onCancelReply={onCancelReply}
+          replyingToLabel="Respondiendo a"
+          cancelReplyLabel="Cancelar respuesta"
+        />
+      );
+
+      expect(
+        screen.getByText('Respondiendo a Ada Lovelace')
+      ).toBeInTheDocument();
+
+      fireEvent.click(
+        screen.getByRole('button', { name: 'Cancelar respuesta' })
+      );
+      expect(onCancelReply).toHaveBeenCalledTimes(1);
+    });
+
+    it('disables the cancel button while the composer is disabled', () => {
+      renderWithTheme(
+        <ChatComposer replyTo={replyTo} onCancelReply={vi.fn()} disabled />
+      );
+      expect(
+        screen.getByRole('button', { name: /cancel reply/i })
+      ).toBeDisabled();
+    });
+  });
 });

@@ -29,6 +29,7 @@ import {
   PaperclipIcon,
   PlusIcon,
   StopIcon,
+  XIcon,
 } from '../Icons';
 
 // ============================================================================
@@ -162,6 +163,21 @@ export interface ChatComposerProps {
    */
   mentionOptions?: MentionOption[];
 
+  /**
+   * Message being replied to. When set, a dismissible preview row renders at
+   * the top of the card, the input is focused, and the sent `NewMessage`
+   * carries `replyToId`. The host owns the state: sending does not clear it
+   * (clear it in `onSend`), and the preview's close button only calls
+   * `onCancelReply`. Same contract as `MessageComposer`.
+   */
+  replyTo?: {
+    id: string;
+    content: string;
+    senderName: string;
+  } | null;
+  /** Called when the reply preview's cancel button is clicked. */
+  onCancelReply?: () => void;
+
   /** Show the built-in mic button. @default false */
   showMic?: boolean;
   /** Called when the built-in mic button is clicked. */
@@ -232,6 +248,10 @@ export interface ChatComposerProps {
   mentionListLabel?: string;
   /** Overlay text shown while dragging files over the composer. @default 'Drop files here' */
   dropFilesLabel?: string;
+  /** Prefix shown before the sender name in the reply preview. @default 'Replying to' */
+  replyingToLabel?: string;
+  /** Accessible label for the reply preview's cancel button. @default 'Cancel reply' */
+  cancelReplyLabel?: string;
 
   className?: string;
 }
@@ -293,6 +313,8 @@ export const ChatComposer = React.forwardRef<
     maxFileSize,
     maxAttachments = 10,
     mentionOptions,
+    replyTo = null,
+    onCancelReply,
     showMic = false,
     onMicClick,
     micSlot,
@@ -320,6 +342,8 @@ export const ChatComposer = React.forwardRef<
     agentSelectorLabel = 'Select agent',
     mentionListLabel = 'Mention',
     dropFilesLabel = 'Drop files here',
+    replyingToLabel = 'Replying to',
+    cancelReplyLabel = 'Cancel reply',
     className,
   },
   ref
@@ -337,6 +361,13 @@ export const ChatComposer = React.forwardRef<
 
   const [addMenuOpen, setAddMenuOpen] = React.useState(false);
   const [agentMenuOpen, setAgentMenuOpen] = React.useState(false);
+
+  // Focus the input when a reply target is set (MessageComposer parity).
+  React.useEffect(() => {
+    if (replyTo) {
+      textareaRef.current?.focus();
+    }
+  }, [replyTo]);
 
   const hasText = value.trim().length > 0;
   const hasContent = hasText || attachments.length > 0;
@@ -533,6 +564,7 @@ export const ChatComposer = React.forwardRef<
     const message: NewMessage = {
       content: value.trim(),
       attachments: attachments.map((attachment) => attachment.file),
+      replyToId: replyTo?.id,
     };
     for (const attachment of attachments) {
       if (attachment.previewUrl) URL.revokeObjectURL(attachment.previewUrl);
@@ -614,6 +646,37 @@ export const ChatComposer = React.forwardRef<
 
   const composerCard = (
     <>
+      {replyTo && (
+        <div
+          data-slot="chat-composer-reply-preview"
+          className={cn(
+            'flex items-center gap-2 rounded-t-2xl px-4 py-2',
+            'bg-neutral-50 dark:bg-neutral-800/50',
+            'border-b border-neutral-200 dark:border-neutral-700',
+            'border-s-primary-500 border-s-4'
+          )}
+        >
+          <div className="min-w-0 flex-1">
+            <span className="text-primary-800 dark:text-primary-400 block text-xs font-medium">
+              {replyingToLabel} {replyTo.senderName}
+            </span>
+            <p className="truncate text-sm text-neutral-600 dark:text-neutral-300">
+              {replyTo.content}
+            </p>
+          </div>
+          <button
+            type="button"
+            data-slot="chat-composer-cancel-reply"
+            aria-label={cancelReplyLabel}
+            disabled={disabled}
+            onClick={onCancelReply}
+            className={iconButtonClasses}
+          >
+            <XIcon className="h-4 w-4" aria-hidden="true" />
+          </button>
+        </div>
+      )}
+
       {attachments.length > 0 && (
         <div
           data-slot="chat-composer-attachments"
