@@ -33,13 +33,13 @@ import { Meta } from '@storybook/addon-docs/blocks';
   [SuperChat](?path=/docs/modules-superchat-overview--docs) generalises that into a
   **participant** model (`human` / `agent` / `system`, many of each) with a conversation list and
   a Markdown plugin pipeline — and it _composes_ this family: its rows reuse `ChatBubble`,
-  `AITypingIndicator` and `MCPToolCallDisplay`, and its compose box is Messaging's
-  `MessageComposer`. `Messaging` is the human-to-human kit (`Message` / `Conversation` types with
+  `AITypingIndicator` and `MCPToolCallDisplay`, and its compose box is `ChatComposer` (as is
+  `AIChat`'s). `Messaging` is the human-to-human kit (`Message` / `Conversation` types with
   delivery `status`, read receipts, typing state) that both of the others borrow pieces from.
   Pick by participants first, then by whether you want a finished surface or primitives.
 - **`OzwellChat` and `HeyOzwell` are shells around `AIChat`, not new chats.** `OzwellChat` renders
   `AIChat` headerless and adds widget chrome (thinking modes applied client-side, queued message,
-  `ComposerModelSelector` in the composer's trailing slot). The
+  `ComposerModelSelector` in `ChatComposer`'s selector row). The
   [Voice](?path=/docs/modules-voice-overview--docs) family's `HeyOzwell` opens a `FloatingAIChat`
   and `HandsFreeChat` renders an inline `AIChat`; both feed it `messages` from `useHeyOzwell`.
 - **Text rendering is a seam, and the host owns sanitisation.** Every text block is plain

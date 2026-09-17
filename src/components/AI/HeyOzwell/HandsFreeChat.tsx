@@ -129,9 +129,9 @@ export function HandsFreeChat({
             // Controlled input (value/onValueChange) comes from the hook — it fills the box with the live
             // caption while dictating, else the typed text. We only add the mic button here.
             ...oz.chatProps.composerProps,
-            // The composer's OWN mic button, driven by our shared stream (controlled mode disables its
+            // The composer's OWN mic slot, driven by our shared stream (controlled mode disables its
             // internal recorder). So the built-in mic and "hey ozwell" both do the same thing — one mic.
-            inputTrailing: (
+            micSlot: (
               <span
                 onClickCapture={() => {
                   if (phase === 'dictating') oz.stopDictation();
