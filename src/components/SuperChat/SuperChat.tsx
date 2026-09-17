@@ -87,8 +87,10 @@ export interface SuperChatProps {
 
   // --- callbacks (chat-component-compatible) ---
   /**
-   * Fired when the local user sends a message. May return a promise: a
-   * rejected send restores the typed text into the composer.
+   * Fired when the local user sends a message. If the callback returns a
+   * promise it is awaited, and a rejected send restores the typed text into
+   * the composer (the declared `void` return keeps every previously valid
+   * callback assignable).
    */
   onMessageSent?: (
     text: string,
@@ -232,7 +234,12 @@ export function SuperChat({
         const attachments = await filesToComposerAttachments(
           message.attachments ?? []
         );
-        await onMessageSent?.(text, { conversation, mentions, attachments });
+        // The declared type is `void` for backward compatibility, but a
+        // returned promise (e.g. an async host callback) is awaited so its
+        // rejection follows the same restore path as a synchronous throw.
+        await Promise.resolve(
+          onMessageSent?.(text, { conversation, mentions, attachments })
+        );
       } catch {
         // Parity with the previous MessageComposer: restore the text when
         // file conversion or the host callback fails (attachments are not

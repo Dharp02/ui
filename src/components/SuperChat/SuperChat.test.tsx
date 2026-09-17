@@ -657,7 +657,7 @@ describe('SuperChat', () => {
     );
   });
 
-  it('attaches a file chosen via the paperclip and sends it', async () => {
+  it('attaches a file chosen via the + menu file picker and sends it', async () => {
     const onMessageSent = vi.fn();
     const { default: userEvent } = await import('@testing-library/user-event');
     const user = userEvent.setup();

@@ -464,8 +464,8 @@ the allowed categories with `acceptedFileTypes` (on `SuperChat` or `SuperChatInb
 | `audio`          | `audio/*`         | `audio/*`         |
 | `pdf`            | `application/pdf` | `application/pdf` |
 
-The chosen types drive both the file picker's `accept` filter and which
-pasted files are accepted; anything else is ignored.
+The chosen types drive the file picker's `accept` filter and which pasted or
+dragged-and-dropped files are accepted; anything else is ignored.
 
 Because SuperChat is **controlled**, the component never mutates the thread itself —
 attached files are surfaced to the host through `onMessageSent` so it can embed,
