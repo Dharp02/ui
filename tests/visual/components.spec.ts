@@ -4,13 +4,13 @@ import { test, expect, type Page } from '@playwright/test';
 async function gotoStory(
   page: Page,
   storyId: string,
-  { globals }: { globals?: string } = {}
+  { globals, args }: { globals?: string; args?: string } = {}
 ) {
   // Navigate to the story iframe
   await page.goto(
     `/iframe.html?id=${storyId}&viewMode=story${
       globals ? `&globals=${globals}` : ''
-    }`
+    }${args ? `&args=${args}` : ''}`
   );
 
   // Wait for either success or error state
@@ -196,6 +196,26 @@ test.describe('Visual Regression Tests - Core Components', () => {
     await expect(page).toHaveScreenshot(
       'chat-composer-character-limit-condensed.png'
     );
+  });
+
+  test('SuperChat - Playground', async ({ page }) => {
+    // SuperChat panel with the embedded ChatComposer.
+    await gotoStory(page, 'superchat-superchat-panel--playground');
+    await page
+      .locator("[data-slot='chat-composer-input']")
+      .waitFor({ state: 'visible' });
+    await expect(page).toHaveScreenshot('superchat-playground.png');
+  });
+
+  test('SuperChat - Read only', async ({ page }) => {
+    // Disabled composer with the read-only placeholder.
+    await gotoStory(page, 'superchat-superchat-panel--playground', {
+      args: 'readOnly:!true',
+    });
+    await page
+      .locator("[data-slot='chat-composer-input']")
+      .waitFor({ state: 'visible' });
+    await expect(page).toHaveScreenshot('superchat-read-only.png');
   });
 
   test('Avatar - Default', async ({ page }) => {
