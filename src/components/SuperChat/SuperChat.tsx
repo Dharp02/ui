@@ -55,7 +55,8 @@ export interface SuperChatProps {
   /** Disable the composer. */
   readOnly?: boolean;
   /**
-   * File categories the composer accepts for paste and the paperclip picker.
+   * File categories the composer accepts for paste, drag-and-drop, and the
+   * file picker in the `+` → “Attach files” menu.
    * Defaults to `['image', 'video', 'audio', 'pdf']`.
    */
   acceptedFileTypes?: AttachmentKind[];
