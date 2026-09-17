@@ -23,7 +23,7 @@ const meta: Meta<typeof Assessment> = {
       description: {
         component: `### What it's for
 
-The visit's **Assessment & Plan**: an ordered list (\`items: AssessmentItem[]\` — \`{ concernId, assertionId, note? }\`) of the problems assessed today, each block showing that day's assertion (name, non-confirmed verification badge, \`CodingChips\`) and, with \`showPlan\`, the **orders nested under it**. Orders (\`AssessmentOrder\` — \`type: medication | lab | imaging | procedure | referral\`, \`display\`, \`detail\`, \`code?\`, \`priority\`, \`timing\`, \`indication\`, \`notes\`, \`bodySite\`, \`referTo\`) link to a problem through \`concernId\`, the **durable IndicationLink** that survives recoding; orders without one collect in an amber **unlinked bucket** with one-click link chips, and dragging an order onto another problem re-links it (\`onLinkOrder\`). A **unified add row** (\`renderOrderSearch\`) adds a concern or an order from one coded search: in \`auto\` mode the pick's coding system decides (\`isConditionCodetype\` → \`onAddAssessment\`, otherwise \`orderTypeForCodetype\` → \`onAddOrder\`), free text asks which; \`defaultAddMode\` and \`billableOnly\` tune it. Per-problem **+** opens an inline add-order form filtered by order type. Everything is controlled: \`concerns\` (the \`ConditionConcern[]\` the items point into), \`items\`, \`orders\` in; \`onAction(item, 'refine' | 'revise' | 'add-order')\`, \`onAddOrder\`, \`onAddAssessment\`, \`onLinkOrder\`, \`onEditOrderStart\` / \`onEditOrder\`, \`onRemoveOrder\`, \`onReorderItems\`, \`onReorderOrders\`, \`onShowPlanChange\` out. Exported alongside: \`ORDER_TYPE_META\`, \`ORDER_TYPE_SEARCH_DOMAINS\`, \`orderTypeForCodetype\`, \`isConditionCodetype\`.
+The visit's **Assessment & Plan**: an ordered list (\`items: AssessmentItem[]\` — \`{ concernId, assertionId, note? }\`) of the problems assessed today, each block showing that day's assertion (name, non-confirmed verification badge, \`CodingChips\`) and, with \`showPlan\`, the **orders nested under it**. Orders (\`AssessmentOrder\` — \`type: medication | lab | imaging | procedure | referral\`, \`display\`, \`detail\`, \`code?\`, \`priority\`, \`timing\`, \`indication\`, \`notes\`, \`bodySite\`, \`referTo\`) link to a problem through \`concernId\`, the **durable IndicationLink** that survives recoding; orders without one collect in an amber **unlinked bucket** with one-click link chips, and dragging an order onto another problem re-links it (\`onLinkOrder\`). A **unified add row** (\`renderOrderSearch\`) adds a concern or an order from one coded search: in \`auto\` mode the pick's coding system decides (\`isConditionCodetype\` → \`onAddAssessment\`, otherwise \`orderTypeForCodetype\` → \`onAddOrder\`), free text asks which; \`defaultAddMode\` and \`billableOnly\` tune it. Per-problem **+** opens an inline add-order form filtered by order type. Everything is controlled: \`concerns\` (the \`ConditionConcern[]\` the items point into), \`items\`, \`orders\` in; \`onAction(item, 'refine' | 'revise' | 'add-order')\`, \`onAddOrder\`, \`onAddAssessment\`, \`onLinkOrder\`, \`onEditOrderStart\` / \`onEditOrder\`, \`onRemoveOrder\`, \`onRemoveAssessment\`, \`onReorderItems\`, \`onReorderOrders\`, \`onShowPlanChange\` out. Exported alongside: \`ORDER_TYPE_META\`, \`ORDER_TYPE_SEARCH_DOMAINS\`, \`orderTypeForCodetype\`, \`isConditionCodetype\`.
 
 ### Use it when
 
@@ -57,6 +57,7 @@ const [orderEditing, setOrderEditing] = useState<AssessmentOrder | null>(null);
   onLinkOrder={(order, concernId) => setOrders((prev) => prev.map((o) => (o.orderId === order.orderId ? { ...o, concernId } : o)))}
   onEditOrderStart={(order) => { setOrderEditing(order); return true; }}   // take over with OrderEditor
   onRemoveOrder={(order) => setOrders((prev) => prev.filter((o) => o.orderId !== order.orderId))}
+  onRemoveAssessment={(item) => setItems((prev) => prev.filter((i) => i.concernId !== item.concernId))}
   onReorderItems={(ids) => setItems((prev) => [...prev].sort((a, b) => ids.indexOf(a.concernId) - ids.indexOf(b.concernId)))}
   onReorderOrders={(ids) => setOrders((prev) => [...prev].sort((a, b) => ids.indexOf(a.orderId) - ids.indexOf(b.orderId)))}
   renderOrderSearch={({ domains, preferDomains, preferCodetypes, billableOnly, placeholder, onPick, onFreeText }) => (
@@ -71,7 +72,7 @@ const [orderEditing, setOrderEditing] = useState<AssessmentOrder | null>(null);
 
 ### Limitations
 
-- **Accessibility as implemented.** Problem blocks are an \`<ol>\` of \`<li>\` that are **not** focus stops — reordering a problem block is drag-only, with no keyboard equivalent. Order rows *are* focusable (\`tabIndex={0}\`, \`aria-label\` spelling out the keys): ↑/↓ move between orders in a plan, Alt+↑/↓ reorder, Alt+←/→ move the order to the adjacent problem; a \`Dropdown\` move menu (\`aria-label="Move …"\`) offers the same. Each plan is a \`<ul aria-label="Plan for …">\`; the unlinked bucket is \`aria-label="Orders not linked to a concern"\`; add forms are \`role="form"\` with labelled selects and inputs. Row actions use \`RowActionToolbar\` (hover-revealed on fine pointers, visible on touch, Tab-reachable). Reorders, re-links, edits and removals are announced via \`useLiveAnnouncement\` (\`sr-only\` \`aria-live="polite"\`); adds and link-chip clicks are **not**.
+- **Accessibility as implemented.** Problem blocks are an \`<ol>\` of \`<li>\` that are **not** focus stops — reordering a problem block is drag-only, with no keyboard equivalent. Order rows *are* focusable (\`tabIndex={0}\`, \`aria-label\` spelling out the keys): ↑/↓ move between orders in a plan, Alt+↑/↓ reorder, Alt+←/→ move the order to the adjacent problem; a \`Dropdown\` move menu (\`aria-label="Move …"\`) offers the same. Each plan is a \`<ul aria-label="Plan for …">\`; the unlinked bucket is \`aria-label="Orders not linked to a concern"\`; add forms are \`role="form"\` with labelled selects and inputs. Row actions use \`RowActionToolbar\` (hover-revealed on fine pointers, visible on touch, Tab-reachable), and Add order reports its expanded state and controlled form. Reorders, re-links, edits, removals and per-problem order additions are announced via \`useLiveAnnouncement\` (\`sr-only\` \`aria-live="polite"\`); link-chip clicks are **not**.
 - **Clinical safety.** No duplicate-order detection, no indication-required rule, no interaction / allergy / dose checking, no order-set logic; \`orderTypeForCodetype\` is a heuristic (imaging is never inferred — it is a manual pick) and \`isConditionCodetype\` treats OSHA / FMCSA / NFPA / FAA programs as concerns by design. Free-text picks arrive **uncoded**.
 - **Inline order edit** covers only \`display\` and \`detail\`; everything else needs \`onEditOrderStart\` + \`OrderEditor\`.
 - **Responsive / RTL.** Blocks \`flex-wrap\`; plan indents (\`ml-2.5 pl-4\`), the unlinked bucket and toolbar overlays are physical — no RTL mirroring. The add row's search needs \`min-w-64\`.
@@ -399,6 +400,11 @@ function InteractiveTemplate({
         }
         onRemoveOrder={(order) =>
           setOrders((prev) => prev.filter((o) => o.orderId !== order.orderId))
+        }
+        onRemoveAssessment={(item) =>
+          setItems((prev) =>
+            prev.filter((candidate) => candidate.concernId !== item.concernId)
+          )
         }
         onAction={(item, action) => {
           if (action === 'refine' || action === 'revise') {
