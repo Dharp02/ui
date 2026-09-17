@@ -7,7 +7,9 @@ import { useEscapeKey } from '../../hooks/useEscapeKey';
 import {
   useAnchoredPosition,
   type AnchoredPlacement,
+  type AnchoredSide,
 } from '../../hooks/useAnchoredPosition';
+import { Animated, AnimatedPresence } from '../../motion';
 import { inputVariants } from '../Input';
 
 export type DropdownPlacement = AnchoredPlacement;
@@ -58,6 +60,28 @@ export interface DropdownProps {
 }
 
 const placementOffset = 8; // matches the previous mt-2/mb-2 gap
+
+/**
+ * Scale origin per resolved side, so the menu grows out of its trigger rather
+ * than out of its own middle. Written as whole literal class names because
+ * Tailwind's scanner only matches complete strings.
+ */
+const menuTransformOrigin: Record<AnchoredSide, string> = {
+  bottom: 'origin-top',
+  top: 'origin-bottom',
+  right: 'origin-left',
+  left: 'origin-right',
+};
+
+/**
+ * CSS stand-in used when no motion runtime is active.
+ *
+ * Note this replaces `animate-in fade-in zoom-in-95 duration-100`, which was
+ * dead markup: those are `tailwindcss-animate` utilities and that plugin is not
+ * installed, so none of them were ever emitted into the stylesheet. `animate-fade-in`
+ * is a real utility from this package's own Tailwind preset.
+ */
+const DROPDOWN_FALLBACK_ANIMATION = 'animate-fade-in';
 
 interface DropdownContextValue {
   multiSelect: boolean;
@@ -438,7 +462,7 @@ function Dropdown({
   useEscapeKey(handleClose, isOpen);
 
   // Portal + fixed positioning so the menu escapes overflow-hidden ancestors.
-  const { anchorRef, floatingRef, style } = useAnchoredPosition<
+  const { anchorRef, floatingRef, style, actualSide } = useAnchoredPosition<
     HTMLDivElement,
     HTMLDivElement
   >({
@@ -525,80 +549,97 @@ function Dropdown({
         className="relative inline-flex"
       >
         {triggerElement}
-        {isOpen &&
-          createPortal(
-            <div
-              ref={floatingRef}
-              style={{ ...style, ...widthStyle }}
-              data-slot="dropdown-menu"
-              className={cn(
-                'flex min-w-[12rem] flex-col overflow-hidden',
-                'rounded-xl border border-neutral-200 bg-white shadow-lg',
-                'dark:border-neutral-700 dark:bg-neutral-800',
-                'animate-in fade-in zoom-in-95 duration-100',
-                className
-              )}
-            >
-              {searchable && (
-                <div
-                  className="shrink-0 border-b border-neutral-200 p-2 dark:border-neutral-700"
-                  data-slot="dropdown-search"
-                >
-                  <input
-                    ref={searchInputRef}
-                    type="search"
-                    value={searchQuery}
-                    onChange={(event) => setSearchQuery(event.target.value)}
-                    placeholder={searchPlaceholder}
-                    aria-label={searchAriaLabel}
-                    aria-controls={menuId}
-                    aria-autocomplete="list"
-                    data-slot="dropdown-search-input"
-                    className={cn(
-                      inputVariants({ size: 'sm' }),
-                      'text-sm',
-                      'dark:border-neutral-600 dark:bg-neutral-700 dark:text-neutral-100'
-                    )}
-                  />
-                </div>
-              )}
-              <div id={menuId} role="menu" className="min-h-0 overflow-y-auto">
-                {multiSelect &&
-                  showSelectAll &&
-                  visibleSelectableValues.length > 0 && (
-                    <>
-                      <div className="p-2" data-slot="dropdown-select-all">
-                        <DropdownItem
-                          checked={allVisibleSelected}
-                          indeterminate={
-                            !allVisibleSelected && someVisibleSelected
-                          }
-                          onClick={handleSelectAll}
-                        >
-                          {selectAllLabel}
-                        </DropdownItem>
-                      </div>
-                      <DropdownSeparator />
-                    </>
-                  )}
-                {searchable ? (
-                  hasSearchResults ? (
-                    filteredChildren
-                  ) : (
-                    <div
-                      className="text-muted-foreground px-3 py-4 text-center text-sm"
-                      data-slot="dropdown-empty"
-                    >
-                      {searchEmptyState}
-                    </div>
-                  )
-                ) : (
-                  children
+        {createPortal(
+          <AnimatedPresence>
+            {isOpen && (
+              <Animated
+                key="dropdown-menu"
+                ref={floatingRef as React.Ref<HTMLElement>}
+                preset="menu"
+                mode="presence"
+                // Post-flip side, not the requested `placement`: a menu that
+                // flipped for want of room has to animate from where it
+                // actually landed.
+                custom={actualSide}
+                style={{ ...style, ...widthStyle }}
+                data-slot="dropdown-menu"
+                className={cn(
+                  'flex min-w-[12rem] flex-col overflow-hidden',
+                  'rounded-xl border border-neutral-200 bg-white shadow-lg',
+                  'dark:border-neutral-700 dark:bg-neutral-800',
+                  // Anchors the scale to the trigger. Static per side and never
+                  // animated, so CSS owns it rather than the preset.
+                  menuTransformOrigin[actualSide],
+                  className
                 )}
-              </div>
-            </div>,
-            document.body
-          )}
+                fallbackClassName={DROPDOWN_FALLBACK_ANIMATION}
+              >
+                {searchable && (
+                  <div
+                    className="shrink-0 border-b border-neutral-200 p-2 dark:border-neutral-700"
+                    data-slot="dropdown-search"
+                  >
+                    <input
+                      ref={searchInputRef}
+                      type="search"
+                      value={searchQuery}
+                      onChange={(event) => setSearchQuery(event.target.value)}
+                      placeholder={searchPlaceholder}
+                      aria-label={searchAriaLabel}
+                      aria-controls={menuId}
+                      aria-autocomplete="list"
+                      data-slot="dropdown-search-input"
+                      className={cn(
+                        inputVariants({ size: 'sm' }),
+                        'text-sm',
+                        'dark:border-neutral-600 dark:bg-neutral-700 dark:text-neutral-100'
+                      )}
+                    />
+                  </div>
+                )}
+                <div
+                  id={menuId}
+                  role="menu"
+                  className="min-h-0 overflow-y-auto"
+                >
+                  {multiSelect &&
+                    showSelectAll &&
+                    visibleSelectableValues.length > 0 && (
+                      <>
+                        <div className="p-2" data-slot="dropdown-select-all">
+                          <DropdownItem
+                            checked={allVisibleSelected}
+                            indeterminate={
+                              !allVisibleSelected && someVisibleSelected
+                            }
+                            onClick={handleSelectAll}
+                          >
+                            {selectAllLabel}
+                          </DropdownItem>
+                        </div>
+                        <DropdownSeparator />
+                      </>
+                    )}
+                  {searchable ? (
+                    hasSearchResults ? (
+                      filteredChildren
+                    ) : (
+                      <div
+                        className="text-muted-foreground px-3 py-4 text-center text-sm"
+                        data-slot="dropdown-empty"
+                      >
+                        {searchEmptyState}
+                      </div>
+                    )
+                  ) : (
+                    children
+                  )}
+                </div>
+              </Animated>
+            )}
+          </AnimatedPresence>,
+          document.body
+        )}
       </div>
     </DropdownContext.Provider>
   );
