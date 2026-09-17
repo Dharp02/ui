@@ -55,9 +55,9 @@ export const miewebUISafelist = [
   'pointer-fine:group-has-[[data-order-id]:focus-within]:opacity-0',
   // ConditionEditor coding rows switch from a stacked mobile layout to a
   // shared column grid at the small breakpoint.
-'grid-cols-[minmax(8rem,1.1fr)_minmax(7rem,0.9fr)_minmax(10rem,1.5fr)_5.5rem_2.5rem]',
+  'grid-cols-[minmax(8rem,1.1fr)_minmax(7rem,0.9fr)_minmax(10rem,1.5fr)_5.5rem_2.5rem]',
   'sm:grid-cols-[minmax(8rem,1.1fr)_minmax(7rem,0.9fr)_minmax(10rem,1.5fr)_5.5rem_2.5rem]',
-  'sm:!grid'
+  'sm:!grid',
   'border-border/70',
   '[&_[data-slot=radio-group-items]]:gap-2',
   'sm:[&_[data-slot=radio-group-legend]]:sr-only',
