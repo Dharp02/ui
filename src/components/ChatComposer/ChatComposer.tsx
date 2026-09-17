@@ -363,11 +363,15 @@ export const ChatComposer = React.forwardRef<
   const [agentMenuOpen, setAgentMenuOpen] = React.useState(false);
 
   // Focus the input when a reply target is set (MessageComposer parity).
+  // Keyed on the id, not the object: hosts often build `replyTo` inline, so
+  // an object dependency would re-steal focus (and reset the caret) on every
+  // parent render while the user is typing.
+  const replyToId = replyTo?.id;
   React.useEffect(() => {
-    if (replyTo) {
+    if (replyToId !== undefined) {
       textareaRef.current?.focus();
     }
-  }, [replyTo]);
+  }, [replyToId]);
 
   const hasText = value.trim().length > 0;
   const hasContent = hasText || attachments.length > 0;

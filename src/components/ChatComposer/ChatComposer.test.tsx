@@ -886,6 +886,26 @@ describe('ChatComposer', () => {
       expect(getInput()).toHaveFocus();
     });
 
+    it('does not re-steal focus when a new replyTo object has the same id', () => {
+      const { rerender } = renderWithTheme(
+        <ChatComposer onSend={vi.fn()} replyTo={replyTo} />
+      );
+      expect(getInput()).toHaveFocus();
+
+      // Host moves focus elsewhere, then re-renders with a recreated (inline)
+      // replyTo object for the same message — focus must not be stolen back.
+      const addButton = screen.getByRole('button', { name: /add to message/i });
+      addButton.focus();
+      rerender(<ChatComposer onSend={vi.fn()} replyTo={{ ...replyTo }} />);
+      expect(addButton).toHaveFocus();
+
+      // A different reply target re-focuses the input.
+      rerender(
+        <ChatComposer onSend={vi.fn()} replyTo={{ ...replyTo, id: 'msg-2' }} />
+      );
+      expect(getInput()).toHaveFocus();
+    });
+
     it('announces the reply target via a polite status region', () => {
       renderWithTheme(
         <ChatComposer
