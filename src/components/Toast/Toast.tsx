@@ -1,5 +1,7 @@
 import React from 'react';
 import { cn } from '../../utils/cn';
+import { Animated, AnimatedPresence, type MotionEdge } from '../../motion';
+import { useDirection } from '../../hooks/useDirection';
 import { useOptionalToast } from './ToastProvider';
 import type { ToastData, ToastVariant, ToastPosition } from './ToastProvider';
 
@@ -132,6 +134,14 @@ export interface ToastProps extends ToastData {
   onClose: () => void;
 }
 
+/**
+ * A single toast surface.
+ *
+ * Entering and leaving are **not** this component's job — they belong to
+ * {@link ToastContainer}, which owns the stack and is the only place an exit
+ * can be held open long enough to animate. Rendering a bare `<Toast>` outside a
+ * container therefore shows it immediately, with no transition.
+ */
 export function Toast({
   title,
   message,
@@ -151,7 +161,6 @@ export function Toast({
       className={cn(
         'flex items-start gap-3 rounded-lg border p-4 shadow-lg',
         'max-w-[420px] min-w-[300px]',
-        'animate-slide-in-right rtl:animate-slide-in-left',
         styles.container
       )}
     >
@@ -232,17 +241,62 @@ export interface ToastContainerProps {
   onDismiss: (id: string) => void;
 }
 
+/**
+ * Physical edge a toast should enter from, resolved from its logical position
+ * and the writing direction.
+ *
+ * Centered positions have no meaningful inline edge, so they travel on the
+ * block axis instead — a top-center toast drops in from above rather than
+ * sliding in from a side it isn't near.
+ */
+function toastEdge(position: ToastPosition, isRtl: boolean): MotionEdge {
+  if (position === 'top-center') return 'top';
+  if (position === 'bottom-center') return 'bottom';
+
+  const isStart = position.endsWith('-start') || position.endsWith('-left');
+  // `start` is the left edge in LTR and the right edge in RTL.
+  return isStart === isRtl ? 'right' : 'left';
+}
+
+/**
+ * The CSS stand-in for {@link toastEdge}, used when no motion runtime is
+ * active. Keyframes can't read the resolved edge, so this is the coarser
+ * `rtl:`-flipped pair the component has always shipped — close enough for the
+ * `*-end` positions that are the default, and the reason the motion path
+ * bothers to resolve the edge properly.
+ */
+const TOAST_FALLBACK_ANIMATION =
+  'animate-slide-in-right rtl:animate-slide-in-left';
+
 export function ToastContainer({
   toasts,
   position,
   onDismiss,
-}: ToastContainerProps): React.JSX.Element | null {
+}: ToastContainerProps): React.JSX.Element {
   const context = useOptionalToast();
+  const containerRef = React.useRef<HTMLDivElement>(null);
+  const isRtl = useDirection(containerRef) === 'rtl';
   const resolvedPosition = position ?? context?.position ?? 'bottom-end';
-  if (toasts.length === 0) return null;
+
+  /*
+   * Rendered even while empty, unlike the previous early return.
+   *
+   * `AnimatedPresence` can only animate a child out while it is still
+   * mounted, and unmounting the container the moment the last toast is
+   * dismissed takes the exiting toast down with it. The container is an empty,
+   * pointer-transparent fixed box in that state, so keeping it costs nothing.
+   *
+   * This also fixes a latent accessibility bug: a live region has to be in the
+   * DOM *before* content lands in it for screen readers to reliably announce
+   * the change. Creating the region and its first toast in the same commit —
+   * which the early return guaranteed — is a well-known way to lose that first
+   * announcement entirely.
+   */
+  const edge = toastEdge(resolvedPosition, isRtl);
 
   return (
     <div
+      ref={containerRef}
       data-slot="toast-container"
       className={cn(
         'pointer-events-none fixed z-50 flex flex-col gap-2',
@@ -251,11 +305,20 @@ export function ToastContainer({
       aria-live="polite"
       aria-atomic="true"
     >
-      {toasts.map((toast) => (
-        <div key={toast.id} className="pointer-events-auto">
-          <Toast {...toast} onClose={() => onDismiss(toast.id)} />
-        </div>
-      ))}
+      <AnimatedPresence>
+        {toasts.map((toast) => (
+          <Animated
+            key={toast.id}
+            preset="toast"
+            mode="presence"
+            custom={edge}
+            className="pointer-events-auto"
+            fallbackClassName={TOAST_FALLBACK_ANIMATION}
+          >
+            <Toast {...toast} onClose={() => onDismiss(toast.id)} />
+          </Animated>
+        ))}
+      </AnimatedPresence>
     </div>
   );
 }
