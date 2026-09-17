@@ -86,6 +86,10 @@ export interface SuperChatProps {
   className?: string;
 
   // --- callbacks (chat-component-compatible) ---
+  /**
+   * Fired when the local user sends a message. May return a promise: a
+   * rejected send restores the typed text into the composer.
+   */
   onMessageSent?: (
     text: string,
     meta: {
@@ -93,7 +97,7 @@ export interface SuperChatProps {
       mentions: string[];
       attachments: ComposerAttachment[];
     }
-  ) => void;
+  ) => void | Promise<void>;
   /**
    * Fired when the local user saves an edit to one of their own messages.
    * Providing this enables the inline "Edit" affordance on self-authored
@@ -209,23 +213,34 @@ export function SuperChat({
   // Controlled composer draft so a failed send can restore the typed text
   // (ChatComposer clears optimistically and delegates restore to the host).
   const [draft, setDraft] = React.useState('');
+  // Bumped on every user edit (including the optimistic clear that precedes
+  // a send), so a stale failed send never overwrites newer typed input.
+  const draftEpochRef = React.useRef(0);
+  const handleDraftChange = React.useCallback((value: string) => {
+    draftEpochRef.current += 1;
+    setDraft(value);
+  }, []);
 
   // Bridge the shared composer's `NewMessage` (File[] attachments) to
   // SuperChat's host callback (mentions + base64 `data:` URL attachments).
   const handleComposerSend = React.useCallback(
     async (message: NewMessage) => {
+      const epoch = draftEpochRef.current;
       try {
         const text = message.content;
         const mentions = detectMentions(text, conversation.participants);
         const attachments = await filesToComposerAttachments(
           message.attachments ?? []
         );
-        onMessageSent?.(text, { conversation, mentions, attachments });
+        await onMessageSent?.(text, { conversation, mentions, attachments });
       } catch {
         // Parity with the previous MessageComposer: restore the text when
         // file conversion or the host callback fails (attachments are not
-        // restaged, matching the old behavior).
-        setDraft(message.content);
+        // restaged, matching the old behavior) — unless the user has typed
+        // a newer draft while this send was pending.
+        if (draftEpochRef.current === epoch) {
+          setDraft(message.content);
+        }
       }
     },
     [conversation, onMessageSent]
@@ -358,7 +373,7 @@ export function SuperChat({
 
       <ChatComposer
         value={draft}
-        onValueChange={setDraft}
+        onValueChange={handleDraftChange}
         onSend={handleComposerSend}
         disabled={readOnly}
         placeholder={

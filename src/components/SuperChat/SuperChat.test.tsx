@@ -548,6 +548,56 @@ describe('SuperChat', () => {
     await waitFor(() => expect(input).toHaveValue('important note'));
   });
 
+  it('restores the typed text when an async onMessageSent rejects', async () => {
+    const onMessageSent = vi.fn(() =>
+      Promise.reject(new Error('backend down'))
+    );
+    const { default: userEvent } = await import('@testing-library/user-event');
+    const user = userEvent.setup();
+    render(
+      <SuperChat
+        conversation={conversation}
+        currentParticipantId="u1"
+        onMessageSent={onMessageSent}
+      />
+    );
+    const input = screen.getByLabelText('Message');
+    await user.type(input, 'important note');
+    await user.click(screen.getByLabelText('Send message'));
+    // The rejection is awaited (not a floating promise), so the draft is
+    // restored just like a synchronous throw.
+    await waitFor(() => expect(input).toHaveValue('important note'));
+  });
+
+  it('does not clobber newer input when a stale send fails', async () => {
+    let rejectSend!: (reason: Error) => void;
+    const onMessageSent = vi.fn(
+      () =>
+        new Promise<void>((_resolve, reject) => {
+          rejectSend = reject;
+        })
+    );
+    const { default: userEvent } = await import('@testing-library/user-event');
+    const user = userEvent.setup();
+    render(
+      <SuperChat
+        conversation={conversation}
+        currentParticipantId="u1"
+        onMessageSent={onMessageSent}
+      />
+    );
+    const input = screen.getByLabelText('Message');
+    await user.type(input, 'first message');
+    await user.click(screen.getByLabelText('Send message'));
+    // While the send is pending, the user starts a newer draft.
+    await user.type(input, 'newer draft');
+    rejectSend(new Error('backend down'));
+    // The failed send must not overwrite the newer input.
+    await waitFor(() => expect(onMessageSent).toHaveBeenCalledTimes(1));
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(input).toHaveValue('newer draft');
+  });
+
   it('rejects files over the 25 MiB cap', async () => {
     const { default: userEvent } = await import('@testing-library/user-event');
     const user = userEvent.setup();
