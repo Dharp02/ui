@@ -4,7 +4,10 @@ import * as React from 'react';
 import { cn } from '../../utils/cn';
 import { Badge } from '../Badge/Badge';
 import { Button } from '../Button';
+import { Checkbox } from '../Checkbox';
+import { DateInput } from '../DateInput';
 import { Input } from '../Input';
+import { Radio, RadioGroup } from '../Radio';
 import { Textarea } from '../Textarea';
 import { Select } from '../Select';
 import {
@@ -35,6 +38,10 @@ import {
   useCodeLookupConfig,
   type CodeLookupProviderConfig,
 } from '../CodeLookup/context';
+import {
+  dateToDisplayFormat,
+  displayFormatToDateString,
+} from '../../utils/date';
 
 // =============================================================================
 // Types
@@ -141,12 +148,24 @@ const SEVERITIES = ['mild', 'moderate', 'severe'] as const;
 const CONFIDENCES = ['low', 'medium', 'high'] as const;
 
 /** Map an index codetype (e.g. 'ICD10') onto the ConditionCoding system. */
-function systemForCodetype(codetype: string): string {
+export function normalizeConditionCodingSystem(codetype: string): string {
   const ct = codetype.toUpperCase().replace(/[^A-Z0-9]/g, '');
   if (ct === 'ICD10' || ct === 'ICD10CM') return 'ICD-10-CM';
   if (ct === 'ICD11') return 'ICD-11';
-  if (ct === 'SNOMED' || ct === 'SNOMEDCT') return 'SNOMED';
+  if (ct === 'SNOMED' || ct === 'SNOMEDCT' || ct === 'SNOMEDUS') {
+    return 'SNOMED';
+  }
   return codetype;
+}
+
+function withSinglePrimary(coding: ConditionCoding[]): ConditionCoding[] {
+  if (coding.length === 0) return coding;
+  const primaryIndex = coding.findIndex((entry) => entry.primary);
+  const selectedIndex = primaryIndex >= 0 ? primaryIndex : 0;
+  return coding.map((entry, index) => ({
+    ...entry,
+    primary: index === selectedIndex,
+  }));
 }
 
 /**
@@ -225,7 +244,7 @@ function FieldFlag({
         className={cn(
           'rounded-full border px-2 py-0.5 text-[11px] font-medium transition-colors',
           unknown
-            ? 'border-amber-400 bg-amber-100 text-amber-900 dark:border-amber-600 dark:bg-amber-950 dark:text-amber-200'
+            ? 'border-warning/50 bg-warning/10 text-warning-800 dark:text-warning-200'
             : 'border-border text-muted-foreground hover:text-foreground'
         )}
       >
@@ -359,14 +378,16 @@ export function ConditionEditor({
   React.useEffect(() => {
     if (!open) return;
     setText(prior?.text ?? '');
-    setCoding(prior?.coding ?? []);
+    setCoding(withSinglePrimary(prior?.coding ?? []));
     setVerification(
       mode === 'add'
         ? 'unconfirmed'
         : (prior?.verificationStatus ?? 'confirmed')
     );
     setSeverity(prior?.severity);
-    setOnsetDate(prior?.onset?.date ?? '');
+    setOnsetDate(
+      prior?.onset?.date ? dateToDisplayFormat(prior.onset.date) : ''
+    );
     setOnsetFuzzy(prior?.onset?.fuzzy ?? '');
     setNote('');
     setProgression(false);
@@ -395,19 +416,14 @@ export function ConditionEditor({
   /** A pick from the injected lookup — appends a coding row, fills an empty
    * name, and clears a contradictory "coding unknown" flag. */
   const handleCodePick = (pick: ConditionCodePick) => {
-    const system = systemForCodetype(pick.codetype);
+    const system = normalizeConditionCodingSystem(pick.codetype);
     setCoding((prev) =>
       prev.some((c) => c.system === system && c.code === pick.fullcode)
         ? prev
-        : [
+        : withSinglePrimary([
             ...prev,
-            {
-              system,
-              code: pick.fullcode,
-              display: pick.label,
-              primary: prev.length === 0,
-            },
-          ]
+            { system, code: pick.fullcode, display: pick.label },
+          ])
     );
     setText((prev) => prev || pick.label);
     setFields((prev) => {
@@ -444,14 +460,16 @@ export function ConditionEditor({
       coding:
         fields.coding?.known === false
           ? []
-          : coding
-              .filter((c) => c.code.trim())
-              .map((c) => ({
-                ...c,
-                code: c.code.trim(),
-                display: c.display?.trim() || undefined,
-                mappedFrom: c.mappedFrom?.trim() || undefined,
-              })),
+          : withSinglePrimary(
+              coding
+                .filter((c) => c.code.trim())
+                .map((c) => ({
+                  ...c,
+                  code: c.code.trim(),
+                  display: c.display?.trim() || undefined,
+                  mappedFrom: c.mappedFrom?.trim() || undefined,
+                }))
+            ),
       verificationStatus: verification,
       changeType:
         mode === 'refine'
@@ -465,7 +483,12 @@ export function ConditionEditor({
         fields.onset?.known === false
           ? undefined
           : onsetDate || onsetFuzzy
-            ? { date: onsetDate || undefined, fuzzy: onsetFuzzy || undefined }
+            ? {
+                date: onsetDate
+                  ? displayFormatToDateString(onsetDate)
+                  : undefined,
+                fuzzy: onsetFuzzy || undefined,
+              }
             : undefined,
       uncertainty,
       note: note.trim() || undefined,
@@ -484,7 +507,7 @@ export function ConditionEditor({
     <Modal
       open={open}
       onOpenChange={onOpenChange}
-      size="lg"
+      size="2xl"
       className={className}
     >
       <ModalHeader>
@@ -493,12 +516,12 @@ export function ConditionEditor({
           {prior ? ` — ${prior.text}` : ''}
         </ModalTitle>
       </ModalHeader>
-      <ModalBody data-testid={dataTestId}>
-        <div className="space-y-4">
+      <ModalBody data-testid={dataTestId} className="space-y-5">
+        <div className="space-y-5">
           {mode === 'revise' && (
             <div
               role="alert"
-              className="flex items-start gap-2 rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-900 dark:border-amber-700 dark:bg-amber-950 dark:text-amber-200"
+              className="border-warning/30 bg-warning/10 text-warning-800 dark:text-warning-200 flex items-start gap-2 rounded-md border px-3 py-2 text-sm"
             >
               <AlertTriangleIcon size={16} />
               <span>
@@ -586,22 +609,19 @@ export function ConditionEditor({
               )}
 
               {mode === 'refine' && (
-                <label className="flex items-center gap-2 text-sm">
-                  <input
-                    type="checkbox"
-                    checked={progression}
-                    onChange={(e) => setProgression(e.target.checked)}
-                    className="accent-primary-600 h-4 w-4"
-                  />
-                  Disease progressed (e.g. new complication) rather than a more
-                  specific diagnosis
-                </label>
+                <Checkbox
+                  size="sm"
+                  checked={progression}
+                  onChange={(e) => setProgression(e.target.checked)}
+                  label="Disease progressed (e.g. new complication) rather than a more specific diagnosis"
+                />
               )}
 
               {/* Coding — progressive enrichment, never required */}
-              <fieldset className="space-y-2">
-                <legend className="flex w-full items-center justify-between text-sm font-medium">
-                  <span className="flex items-center gap-2">
+              <fieldset className="space-y-3">
+                <legend className="sr-only">Coding</legend>
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <span className="flex flex-wrap items-center gap-2 text-sm font-medium">
                     Coding
                     <FieldFlag
                       label="Coding"
@@ -625,14 +645,14 @@ export function ConditionEditor({
                       ])
                     }
                     leftIcon={<PlusIcon size={12} />}
-                    className="h-7 text-xs"
+                    className="h-8 shrink-0 text-xs"
                   >
                     Add code
                   </Button>
-                </legend>
+                </div>
                 {effectiveRenderCodeSearch &&
                   !(mode === 'add' && !text.trim()) && (
-                    <div className="max-w-md">
+                    <div>
                       {effectiveRenderCodeSearch({
                         placeholder: 'Search codes — ICD-10-CM / SNOMED…',
                         onPick: handleCodePick,
@@ -646,67 +666,121 @@ export function ConditionEditor({
                     any time.
                   </p>
                 )}
-                {coding.map((c, i) => (
-                  <div key={i} className="flex flex-wrap items-center gap-1.5">
-                    <Select
-                      aria-label={`Coding system ${i + 1}`}
-                      options={CODING_SYSTEMS.map((s) => ({
-                        value: s,
-                        label: s,
-                      }))}
-                      value={c.system}
-                      onValueChange={(v) => updateCoding(i, { system: v })}
-                      disabled={codingUnknown}
-                      className="w-32"
-                    />
-                    <Input
-                      aria-label={`Code ${i + 1}`}
-                      value={c.code}
-                      onChange={(e) =>
-                        updateCoding(i, { code: e.target.value })
-                      }
-                      placeholder="Code"
-                      disabled={codingUnknown}
-                      className="w-28 font-mono"
-                    />
-                    <Input
-                      aria-label={`Display ${i + 1}`}
-                      value={c.display ?? ''}
-                      onChange={(e) =>
-                        updateCoding(i, { display: e.target.value })
-                      }
-                      placeholder="Display"
-                      disabled={codingUnknown}
-                      className="min-w-32 flex-1"
-                    />
-                    <label className="flex items-center gap-1 text-xs">
-                      <input
-                        type="radio"
-                        name="primary-coding"
-                        checked={Boolean(c.primary)}
-                        disabled={codingUnknown}
-                        onChange={() =>
-                          setCoding((prev) =>
-                            prev.map((cc, j) => ({ ...cc, primary: j === i }))
-                          )
-                        }
-                        className="accent-primary-600"
-                      />
-                      primary
-                    </label>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      aria-label={`Remove code ${i + 1}`}
-                      onClick={() =>
-                        setCoding((prev) => prev.filter((_, j) => j !== i))
-                      }
-                      className="h-7 w-7"
-                    >
-                      <TrashIcon size={14} />
-                    </Button>
+                {coding.length > 0 && (
+                  <div
+                    aria-hidden="true"
+                    data-slot="condition-coding-header"
+                    className="text-muted-foreground hidden grid-cols-[minmax(8rem,1.1fr)_minmax(7rem,0.9fr)_minmax(10rem,1.5fr)_5.5rem_2.5rem] items-center gap-2 px-1 text-xs font-medium sm:!grid"
+                  >
+                    <span>System</span>
+                    <span>Code</span>
+                    <span>Display</span>
+                    <span className="text-center">Primary code</span>
+                    <span className="sr-only">Actions</span>
                   </div>
-                ))}
+                )}
+                {coding.length > 0 && (
+                  <RadioGroup
+                    name="primary-coding"
+                    label="Primary display code"
+                    value={String(
+                      Math.max(
+                        0,
+                        coding.findIndex((entry) => entry.primary)
+                      )
+                    )}
+                    onValueChange={(value) => {
+                      const selectedIndex = Number(value);
+                      setCoding((prev) =>
+                        prev.map((entry, index) => ({
+                          ...entry,
+                          primary: index === selectedIndex,
+                        }))
+                      );
+                    }}
+                    size="sm"
+                    className="gap-2 sm:[&_[data-slot=radio-group-legend]]:sr-only [&_[data-slot=radio-group-items]]:gap-2"
+                  >
+                    {coding.map((c, i) => (
+                      <div
+                        key={i}
+                        data-slot="condition-coding-row"
+                        className="border-border/70 grid grid-cols-1 gap-2 rounded-md border p-2 sm:grid-cols-[minmax(8rem,1.1fr)_minmax(7rem,0.9fr)_minmax(10rem,1.5fr)_5.5rem_2.5rem] sm:items-center sm:border-0 sm:p-0"
+                      >
+                        <div className="space-y-1">
+                          <span className="text-muted-foreground text-xs sm:hidden">
+                            System
+                          </span>
+                          <Select
+                            aria-label={`Coding system ${i + 1}`}
+                            options={CODING_SYSTEMS.map((s) => ({
+                              value: s,
+                              label: s,
+                            }))}
+                            value={c.system}
+                            onValueChange={(v) =>
+                              updateCoding(i, { system: v })
+                            }
+                            disabled={codingUnknown}
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <span className="text-muted-foreground text-xs sm:hidden">
+                            Code
+                          </span>
+                          <Input
+                            aria-label={`Code ${i + 1}`}
+                            value={c.code}
+                            onChange={(e) =>
+                              updateCoding(i, { code: e.target.value })
+                            }
+                            placeholder="Code"
+                            disabled={codingUnknown}
+                            className="font-mono"
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <span className="text-muted-foreground text-xs sm:hidden">
+                            Display
+                          </span>
+                          <Input
+                            aria-label={`Display ${i + 1}`}
+                            value={c.display ?? ''}
+                            onChange={(e) =>
+                              updateCoding(i, { display: e.target.value })
+                            }
+                            placeholder="Display"
+                            disabled={codingUnknown}
+                          />
+                        </div>
+                        <div className="flex min-h-10 items-center gap-1.5 text-xs sm:justify-center">
+                          <Radio
+                            value={String(i)}
+                            aria-label={`Primary code: ${c.system} ${c.code || `row ${i + 1}`}`}
+                            disabled={codingUnknown}
+                          />
+                          <span className="sm:sr-only">Primary code</span>
+                        </div>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          aria-label={`Remove code ${i + 1}`}
+                          disabled={codingUnknown}
+                          onClick={() =>
+                            setCoding((prev) =>
+                              withSinglePrimary(
+                                prev.filter((_, index) => index !== i)
+                              )
+                            )
+                          }
+                          className="h-10 w-10 justify-self-start sm:justify-self-center"
+                        >
+                          <TrashIcon size={14} />
+                        </Button>
+                      </div>
+                    ))}
+                  </RadioGroup>
+                )}
               </fieldset>
 
               <Select
@@ -716,43 +790,46 @@ export function ConditionEditor({
                 onValueChange={(v) => setVerification(v as VerificationStatus)}
               />
 
-              {/* Severity with three-state affordance */}
-              <div className="space-y-1">
-                <span className="flex items-center gap-2 text-sm font-medium">
-                  Severity
+              {/* Severity value and its three-state certainty affordance */}
+              <div className="flex flex-wrap items-end gap-x-4 gap-y-2">
+                <div className="space-y-1">
+                  <span className="block text-sm font-medium">Severity</span>
+                  <div
+                    role="group"
+                    aria-label="Severity"
+                    className="border-border inline-flex items-center overflow-hidden rounded-md border"
+                  >
+                    {SEVERITIES.map((s) => {
+                      const active = severity === s;
+                      return (
+                        <button
+                          key={s}
+                          type="button"
+                          aria-pressed={active}
+                          disabled={fields.severity?.known === false}
+                          onClick={() => setSeverity(active ? undefined : s)}
+                          className={cn(
+                            'border-border border-s px-2.5 py-1 text-xs font-medium capitalize transition-colors first:border-s-0',
+                            'disabled:opacity-40',
+                            active
+                              ? 'bg-primary-600 text-white'
+                              : 'bg-background text-muted-foreground hover:text-foreground'
+                          )}
+                        >
+                          {s}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+                <div className="space-y-1">
+                  <span className="block text-sm font-medium">Certainty</span>
                   <FieldFlag
                     label="Severity"
                     value={fields.severity}
                     onChange={setField('severity')}
                     hasValue={Boolean(severity)}
                   />
-                </span>
-                <div
-                  role="group"
-                  aria-label="Severity"
-                  className="border-border inline-flex items-center overflow-hidden rounded-md border"
-                >
-                  {SEVERITIES.map((s) => {
-                    const active = severity === s;
-                    return (
-                      <button
-                        key={s}
-                        type="button"
-                        aria-pressed={active}
-                        disabled={fields.severity?.known === false}
-                        onClick={() => setSeverity(active ? undefined : s)}
-                        className={cn(
-                          'border-border border-s px-2.5 py-1 text-xs font-medium capitalize transition-colors first:border-s-0',
-                          'disabled:opacity-40',
-                          active
-                            ? 'bg-primary-600 text-white'
-                            : 'bg-background text-muted-foreground hover:text-foreground'
-                        )}
-                      >
-                        {s}
-                      </button>
-                    );
-                  })}
                 </div>
               </div>
 
@@ -767,25 +844,31 @@ export function ConditionEditor({
                     hasValue={Boolean(onsetDate || onsetFuzzy)}
                   />
                 </span>
-                <div className="flex flex-wrap items-center gap-1.5">
-                  <Input
-                    type="date"
+                <div className="grid grid-cols-1 items-end gap-2 sm:grid-cols-[minmax(10rem,0.8fr)_auto_minmax(14rem,1.2fr)]">
+                  <DateInput
                     aria-label="Onset date (exact)"
                     value={onsetDate}
-                    onChange={(e) => setOnsetDate(e.target.value)}
+                    onChange={(value) => {
+                      setOnsetDate(value);
+                      if (value) setOnsetFuzzy('');
+                    }}
                     disabled={fields.onset?.known === false}
-                    className="w-40"
+                    width="full"
                   />
-                  <span className="text-muted-foreground text-xs">or</span>
+                  <span className="text-muted-foreground pb-3 text-center text-xs">
+                    or
+                  </span>
                   <Input
                     aria-label="Onset (fuzzy)"
                     value={onsetFuzzy}
-                    onChange={(e) => setOnsetFuzzy(e.target.value)}
+                    onChange={(e) => {
+                      setOnsetFuzzy(e.target.value);
+                      if (e.target.value) setOnsetDate('');
+                    }}
                     disabled={fields.onset?.known === false}
                     placeholder={
                       'Fuzzy — "since her twenties", "~3 months ago"'
                     }
-                    className="min-w-48 flex-1"
                   />
                 </div>
               </div>
@@ -807,7 +890,7 @@ export function ConditionEditor({
                       .map(([k, f]) =>
                         f?.known === false
                           ? `${k} unknown`
-                          : `${k} ${f?.confidence ?? 'soft'}`
+                          : `${f?.confidence ?? 'unspecified'} confidence in ${k}`
                       )
                       .join(', ')}
                   </span>

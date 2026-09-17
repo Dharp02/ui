@@ -134,6 +134,9 @@ export interface RowIconButtonProps {
   onClick: () => void;
   /** Toggle-button state (renders `aria-pressed` + tinted background). */
   active?: boolean;
+  /** Disclosure state and the id of the controlled region. */
+  expanded?: boolean;
+  controls?: string;
   /** `md` = 32px button / 16px icon; `sm` = 28px / 14px. @default 'md' */
   size?: 'md' | 'sm';
 }
@@ -144,6 +147,8 @@ export function RowIconButton({
   icon: Icon,
   onClick,
   active,
+  expanded,
+  controls,
   size = 'md',
 }: RowIconButtonProps) {
   return (
@@ -154,6 +159,8 @@ export function RowIconButton({
         size="icon"
         aria-label={label}
         aria-pressed={active}
+        aria-expanded={expanded}
+        aria-controls={controls}
         onClick={(e) => {
           e.stopPropagation();
           onClick();
@@ -161,7 +168,7 @@ export function RowIconButton({
         className={cn(
           size === 'sm' ? 'h-7 w-7' : 'h-8 w-8',
           'shrink-0',
-          active &&
+          (active || expanded) &&
             'bg-primary-50 text-primary-700 dark:bg-primary-950 dark:text-primary-400'
         )}
       >
