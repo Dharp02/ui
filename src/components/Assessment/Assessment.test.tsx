@@ -164,6 +164,43 @@ describe('Assessment actions', () => {
     ).toBeInTheDocument();
   });
 
+  it('keeps add-order form ids unique across instances', () => {
+    renderWithTheme(
+      <>
+        <Assessment
+          concerns={concerns}
+          items={items}
+          renderOrderSearch={false}
+          onAddOrder={vi.fn()}
+        />
+        <Assessment
+          concerns={concerns}
+          items={items}
+          renderOrderSearch={false}
+          onAddOrder={vi.fn()}
+        />
+      </>
+    );
+
+    const addOrderButtons = screen.getAllByRole('button', {
+      name: /add order/i,
+    });
+    addOrderButtons.forEach((button) => fireEvent.click(button));
+
+    const orderForms = screen.getAllByRole('form', {
+      name: /add order for essential hypertension/i,
+    });
+    expect(orderForms[0].id).not.toBe(orderForms[1].id);
+    expect(addOrderButtons[0]).toHaveAttribute(
+      'aria-controls',
+      orderForms[0].id
+    );
+    expect(addOrderButtons[1]).toHaveAttribute(
+      'aria-controls',
+      orderForms[1].id
+    );
+  });
+
   it('does not render mutation actions when read only', () => {
     renderAssessment({
       readOnly: true,

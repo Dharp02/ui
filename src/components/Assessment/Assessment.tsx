@@ -854,6 +854,7 @@ export const Assessment = React.forwardRef<HTMLDivElement, AssessmentProps>(
     },
     ref
   ) => {
+    const instanceId = React.useId();
     const [addingFor, setAddingFor] = React.useState<string | null>(null);
     const [addMode, setAddMode] = React.useState<'auto' | 'problem' | 'order'>(
       defaultAddMode
@@ -1154,6 +1155,7 @@ export const Assessment = React.forwardRef<HTMLDivElement, AssessmentProps>(
               );
               const bp = blockProps(item.concernId);
               const formOpen = addingFor === item.concernId;
+              const addOrderFormId = `${instanceId}-add-order-${item.concernId}`;
               return (
                 <li
                   key={item.concernId}
@@ -1222,7 +1224,6 @@ export const Assessment = React.forwardRef<HTMLDivElement, AssessmentProps>(
                           {(Object.keys(ACTION_META) as AssessmentAction[]).map(
                             (action) => {
                               const meta = ACTION_META[action];
-                              const addOrderFormId = `assessment-add-order-${item.concernId}`;
                               if (action !== 'add-order' && !onAction)
                                 return null;
                               if (
@@ -1303,7 +1304,7 @@ export const Assessment = React.forwardRef<HTMLDivElement, AssessmentProps>(
 
                   {!readOnly && onAddOrder && addingFor === item.concernId && (
                     <AddOrderForm
-                      id={`assessment-add-order-${item.concernId}`}
+                      id={addOrderFormId}
                       problemText={assertion.text}
                       onSubmit={(order) => {
                         onAddOrder(item, order);

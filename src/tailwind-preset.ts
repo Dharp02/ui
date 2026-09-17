@@ -47,6 +47,19 @@ export const miewebUISafelist = [
   'max-w-[60%]',
   'md:hidden',
   'md:inline-flex',
+  // Assessment nested order toolbars suppress the concern-row toolbar for
+  // fine pointers while an order toolbar is active.
+  'pointer-fine:group-has-[[data-order-id]:hover]:pointer-events-none',
+  'pointer-fine:group-has-[[data-order-id]:hover]:opacity-0',
+  'pointer-fine:group-has-[[data-order-id]:focus-within]:pointer-events-none',
+  'pointer-fine:group-has-[[data-order-id]:focus-within]:opacity-0',
+  // ConditionEditor coding rows switch from a stacked mobile layout to a
+  // shared column grid at the small breakpoint.
+  'grid-cols-[minmax(8rem,1.1fr)_minmax(7rem,0.9fr)_minmax(10rem,1.5fr)_5.5rem_2.5rem]',
+  'sm:!grid',
+  'border-border/70',
+  '[&_[data-slot=radio-group-items]]:gap-2',
+  'sm:[&_[data-slot=radio-group-legend]]:sr-only',
   // PatientHeader showCountBadges={false} — hides CountBadge roots in the
   // actions slot (ui#367):
   '[&_[data-slot=count-badge-root]]:hidden',
@@ -375,6 +388,7 @@ export const miewebUISafelist = [
   'border-warning-300',
   'dark:bg-warning-900',
   'dark:bg-warning-950',
+  'dark:text-warning-200',
   'dark:text-warning-300',
   'dark:text-warning-400',
   // Info scale
