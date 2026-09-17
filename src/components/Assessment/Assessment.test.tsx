@@ -71,6 +71,22 @@ describe('Assessment actions', () => {
     ).toBeInTheDocument();
   });
 
+  it('delegates add order without advertising an inline form', () => {
+    const onAction = vi.fn();
+    renderAssessment({ onAction });
+
+    const addOrderButton = screen.getByRole('button', { name: /add order/i });
+    expect(addOrderButton).not.toHaveAttribute('aria-expanded');
+    expect(addOrderButton).not.toHaveAttribute('aria-controls');
+
+    fireEvent.click(addOrderButton);
+
+    expect(onAction).toHaveBeenCalledWith(items[0], 'add-order');
+    expect(
+      screen.queryByRole('form', { name: /add order for/i })
+    ).not.toBeInTheDocument();
+  });
+
   it('removes a concern through its row action and announces it', async () => {
     const onRemoveAssessment = vi.fn();
     renderAssessment({ onRemoveAssessment });

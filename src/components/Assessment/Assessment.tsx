@@ -1238,12 +1238,12 @@ export const Assessment = React.forwardRef<HTMLDivElement, AssessmentProps>(
                                   icon={meta.icon}
                                   size="sm"
                                   expanded={
-                                    action === 'add-order'
+                                    action === 'add-order' && onAddOrder
                                       ? addingFor === item.concernId
                                       : undefined
                                   }
                                   controls={
-                                    action === 'add-order'
+                                    action === 'add-order' && onAddOrder
                                       ? addOrderFormId
                                       : undefined
                                   }

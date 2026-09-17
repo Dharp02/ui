@@ -41,6 +41,7 @@ import {
 import {
   dateToDisplayFormat,
   displayFormatToDateString,
+  isValidDate,
 } from '../../utils/date';
 
 // =============================================================================
@@ -385,10 +386,9 @@ export function ConditionEditor({
         : (prior?.verificationStatus ?? 'confirmed')
     );
     setSeverity(prior?.severity);
-    setOnsetDate(
-      prior?.onset?.date ? dateToDisplayFormat(prior.onset.date) : ''
-    );
-    setOnsetFuzzy(prior?.onset?.fuzzy ?? '');
+    const priorOnsetDate = prior?.onset?.date;
+    setOnsetDate(priorOnsetDate ? dateToDisplayFormat(priorOnsetDate) : '');
+    setOnsetFuzzy(priorOnsetDate ? '' : (prior?.onset?.fuzzy ?? ''));
     setNote('');
     setProgression(false);
     setFields(prior?.uncertainty?.fields ?? {});
@@ -412,6 +412,10 @@ export function ConditionEditor({
   // Coding explicitly marked unknown: handleSave() drops the codes, so the
   // coding inputs disable to keep the UI and the saved output consistent.
   const codingUnknown = fields.coding?.known === false;
+  const hasInvalidOnsetDate =
+    fields.onset?.known !== false &&
+    Boolean(onsetDate) &&
+    !isValidDate(onsetDate);
 
   /** A pick from the injected lookup — appends a coding row, fills an empty
    * name, and clears a contradictory "coding unknown" flag. */
@@ -447,7 +451,7 @@ export function ConditionEditor({
       onOpenChange(false);
       return;
     }
-    if (!text.trim()) return;
+    if (!text.trim() || hasInvalidOnsetDate) return;
     if (observation.trim()) onAddObservation?.(observation.trim());
     const uncertainty: Uncertainty | undefined =
       Object.keys(fields).length > 0 ? { fields } : undefined;
@@ -501,7 +505,7 @@ export function ConditionEditor({
       ? !relTarget
       : mode === 'observe'
         ? !observation.trim()
-        : !text.trim();
+        : !text.trim() || hasInvalidOnsetDate;
 
   return (
     <Modal
@@ -853,6 +857,7 @@ export function ConditionEditor({
                       if (value) setOnsetFuzzy('');
                     }}
                     disabled={fields.onset?.known === false}
+                    validateOnBlur
                     width="full"
                   />
                   <span className="text-muted-foreground pb-3 text-center text-xs">

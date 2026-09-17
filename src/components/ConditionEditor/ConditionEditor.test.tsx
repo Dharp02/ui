@@ -166,6 +166,42 @@ describe('ConditionEditor', () => {
     });
   });
 
+  it('prefers an exact onset when prior data also contains a fuzzy onset', () => {
+    const conflictingOnsetConcern: ConditionConcern = {
+      ...concern,
+      assertions: concern.assertions.map((assertion) => ({
+        ...assertion,
+        onset: { date: '2020-09-01', fuzzy: 'since childhood' },
+      })),
+    };
+
+    editor({ concern: conflictingOnsetConcern });
+
+    expect(screen.getByLabelText('Onset date (exact)')).toHaveValue(
+      '09/01/2020'
+    );
+    expect(screen.getByLabelText('Onset (fuzzy)')).toHaveValue('');
+  });
+
+  it.each(['09/01', '02/31/2020'])(
+    'blocks an invalid exact onset date: %s',
+    (onsetDate) => {
+      const { onSave } = editor();
+      const exact = screen.getByLabelText('Onset date (exact)');
+
+      fireEvent.change(exact, { target: { value: onsetDate } });
+      fireEvent.blur(exact);
+
+      const saveButton = screen.getByRole('button', { name: 'Save' });
+      expect(
+        screen.getByText('Please enter a valid date (MM/DD/YYYY)')
+      ).toBeVisible();
+      expect(saveButton).toBeDisabled();
+      fireEvent.click(saveButton);
+      expect(onSave).not.toHaveBeenCalled();
+    }
+  );
+
   it('disables coding inputs when coding is explicitly unknown', () => {
     editor();
     const certainty = screen.getByRole('group', {

@@ -57,6 +57,7 @@ const [orderEditing, setOrderEditing] = useState<AssessmentOrder | null>(null);
   onLinkOrder={(order, concernId) => setOrders((prev) => prev.map((o) => (o.orderId === order.orderId ? { ...o, concernId } : o)))}
   onEditOrderStart={(order) => { setOrderEditing(order); return true; }}   // take over with OrderEditor
   onRemoveOrder={(order) => setOrders((prev) => prev.filter((o) => o.orderId !== order.orderId))}
+  onRemoveAssessment={(item) => setItems((prev) => prev.filter((i) => i.concernId !== item.concernId))}
   onReorderItems={(ids) => setItems((prev) => [...prev].sort((a, b) => ids.indexOf(a.concernId) - ids.indexOf(b.concernId)))}
   onReorderOrders={(ids) => setOrders((prev) => [...prev].sort((a, b) => ids.indexOf(a.orderId) - ids.indexOf(b.orderId)))}
   renderOrderSearch={({ domains, preferDomains, preferCodetypes, billableOnly, placeholder, onPick, onFreeText }) => (
@@ -399,6 +400,11 @@ function InteractiveTemplate({
         }
         onRemoveOrder={(order) =>
           setOrders((prev) => prev.filter((o) => o.orderId !== order.orderId))
+        }
+        onRemoveAssessment={(item) =>
+          setItems((prev) =>
+            prev.filter((candidate) => candidate.concernId !== item.concernId)
+          )
         }
         onAction={(item, action) => {
           if (action === 'refine' || action === 'revise') {
