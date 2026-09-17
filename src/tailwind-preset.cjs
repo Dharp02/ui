@@ -141,6 +141,7 @@ module.exports = {
     'border-e-4',
     'border-s-[3px]',
     'border-s-warning',
+    'border-s-primary-500',
     'ps-1.5',
     '-start-px',
     'md:border-e',

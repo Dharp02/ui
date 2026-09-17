@@ -564,7 +564,8 @@ export const ChatComposer = React.forwardRef<
     const message: NewMessage = {
       content: value.trim(),
       attachments: attachments.map((attachment) => attachment.file),
-      replyToId: replyTo?.id,
+      // Only add the key when replying — hosts may key-check the payload.
+      ...(replyTo ? { replyToId: replyTo.id } : {}),
     };
     for (const attachment of attachments) {
       if (attachment.previewUrl) URL.revokeObjectURL(attachment.previewUrl);

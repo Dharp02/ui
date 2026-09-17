@@ -858,6 +858,18 @@ describe('ChatComposer', () => {
       ).not.toBeInTheDocument();
     });
 
+    it('omits the replyToId key from the payload when not replying', () => {
+      const onSend = vi.fn();
+      renderWithTheme(<ChatComposer onSend={onSend} />);
+
+      const input = getInput();
+      fireEvent.change(input, { target: { value: 'Hi' } });
+      fireEvent.keyDown(input, { key: 'Enter' });
+
+      expect(onSend).toHaveBeenCalledTimes(1);
+      expect(onSend.mock.calls[0][0]).not.toHaveProperty('replyToId');
+    });
+
     it('shows the sender and content and focuses the input when replyTo is set', () => {
       const { container, rerender } = renderWithTheme(
         <ChatComposer onSend={vi.fn()} />

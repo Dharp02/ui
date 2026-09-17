@@ -170,6 +170,27 @@ test.describe('Visual Regression Tests - Core Components', () => {
     );
   });
 
+  test('ChatComposer - With reply-to preview', async ({ page }) => {
+    await gotoStory(page, 'chat-chatcomposer--with-reply-to');
+    await page
+      .locator("[data-slot='chat-composer-reply-preview']")
+      .waitFor({ state: 'visible' });
+    await expect(page).toHaveScreenshot('chat-composer-with-reply-to.png');
+  });
+
+  test('ChatComposer - With reply-to preview (condensed)', async ({ page }) => {
+    // Condensed reply-preview row (chat-composer-reply-preview rules).
+    await gotoStory(page, 'chat-chatcomposer--with-reply-to', {
+      globals: 'density:condensed',
+    });
+    await page
+      .locator("[data-slot='chat-composer-reply-preview']")
+      .waitFor({ state: 'visible' });
+    await expect(page).toHaveScreenshot(
+      'chat-composer-with-reply-to-condensed.png'
+    );
+  });
+
   test('ChatComposer - With record button (condensed)', async ({ page }) => {
     // Condensed mic-slot row height (chat-composer-mic-slot rule).
     await gotoStory(page, 'chat-chatcomposer--with-record-button', {
