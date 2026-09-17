@@ -1,5 +1,6 @@
 export {
   ConditionEditor,
+  normalizeConditionCodingSystem,
   type ConditionEditorProps,
   type ConditionEditorMode,
   type ConditionAssertionDraft,

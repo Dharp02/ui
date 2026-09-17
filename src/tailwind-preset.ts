@@ -47,6 +47,20 @@ export const miewebUISafelist = [
   'max-w-[60%]',
   'md:hidden',
   'md:inline-flex',
+  // Assessment nested order toolbars suppress the concern-row toolbar for
+  // fine pointers while an order toolbar is active.
+  'pointer-fine:group-has-[[data-order-id]:hover]:pointer-events-none',
+  'pointer-fine:group-has-[[data-order-id]:hover]:opacity-0',
+  'pointer-fine:group-has-[[data-order-id]:focus-within]:pointer-events-none',
+  'pointer-fine:group-has-[[data-order-id]:focus-within]:opacity-0',
+  // ConditionEditor coding rows switch from a stacked mobile layout to a
+  // shared column grid at the small breakpoint.
+  'grid-cols-[minmax(8rem,1.1fr)_minmax(7rem,0.9fr)_minmax(10rem,1.5fr)_5.5rem_2.5rem]',
+  'sm:grid-cols-[minmax(8rem,1.1fr)_minmax(7rem,0.9fr)_minmax(10rem,1.5fr)_5.5rem_2.5rem]',
+  'sm:!grid',
+  'border-border/70',
+  '[&_[data-slot=radio-group-items]]:gap-2',
+  'sm:[&_[data-slot=radio-group-legend]]:sr-only',
   // PatientHeader showCountBadges={false} — hides CountBadge roots in the
   // actions slot (ui#367):
   '[&_[data-slot=count-badge-root]]:hidden',
@@ -375,6 +389,7 @@ export const miewebUISafelist = [
   'border-warning-300',
   'dark:bg-warning-900',
   'dark:bg-warning-950',
+  'dark:text-warning-200',
   'dark:text-warning-300',
   'dark:text-warning-400',
   // Info scale
@@ -539,6 +554,14 @@ export const miewebUISafelist = [
   // RTL Phase 2: Toast slide-in animation + RTL mirror
   'animate-slide-in-right',
   'rtl:animate-slide-in-left',
+  // Motion CSS fallbacks — applied by `<Animated>` only when no motion runtime
+  // is active, so the scanner never sees them on a literal element.
+  'animate-fade-in',
+  // Scale origin for anchored menus, picked at runtime from the post-flip side.
+  'origin-top',
+  'origin-bottom',
+  'origin-left',
+  'origin-right',
   // RTL Phase 2: directional icon mirroring (chevrons/arrows)
   'rtl:-scale-x-100',
   // RTL shell/misc batch: command palette, site chrome, superchat, toolbars

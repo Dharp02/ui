@@ -8,6 +8,9 @@ import {
   DropdownLabel,
 } from './Dropdown';
 import { Button } from '../Button';
+// Story-only import. Stories are not tsup entries, so this never reaches dist
+// and `motion` stays an optional peer dependency for consumers.
+import { MotionProvider } from '../../motion/MotionProvider';
 
 function MultiSelectStoryDemo() {
   const [selectedValues, setSelectedValues] = React.useState(['schedule']);
@@ -119,7 +122,13 @@ Choosing an item does **not** close the menu by itself — close it from \`onCli
 - \`searchable\` filtering inspects rendered children (\`getNodeText\` + \`searchText\`) — it only understands \`DropdownItem\`, \`DropdownContent\`, \`DropdownSeparator\`, \`DropdownLabel\`, \`DropdownHeader\` and fragments; arbitrary wrappers are filtered by their nested children.
 - Not a form control: no \`name\`, nothing submits; \`multiSelect\` values live in state only.
 - Strings default to English but are props: \`searchPlaceholder\` ("Search..."), \`searchAriaLabel\` ("Search dropdown items"), \`searchEmptyState\` ("No results found"), \`selectAllLabel\` ("Select all").
-- RTL: \`placement\` uses logical \`start\` / \`end\`, item text uses \`text-start\`, and the submenu chevron mirrors (\`rtl:-scale-x-100\`). Theming: panel and items use hard-coded \`neutral-*\` / \`red-*\` palette classes with \`dark:\` variants, not semantic tokens; the checkbox glyph uses \`primary-*\`. Depends on \`Input\`'s \`inputVariants\` for the search box.`,
+- RTL: \`placement\` uses logical \`start\` / \`end\`, item text uses \`text-start\`, and the submenu chevron mirrors (\`rtl:-scale-x-100\`). Theming: panel and items use hard-coded \`neutral-*\` / \`red-*\` palette classes with \`dark:\` variants, not semantic tokens; the checkbox glyph uses \`primary-*\`. Depends on \`Input\`'s \`inputVariants\` for the search box.
+
+### Motion
+
+The menu fades in by default. An app that opts into [\`@mieweb/ui/motion\`](?path=/docs/foundations-motion--docs) gets a spring that scales out of the trigger and a real **exit** animation — which the CSS path cannot do, because the menu unmounts on close and leaves nothing to transition. The scale is anchored to the side the menu actually landed on **after flipping**, not the requested \`placement\`, so a menu that flipped for want of room still grows out of its trigger rather than away from it. See the **Motion** story below; nothing changes at the call site either way.
+
+Note for anyone auditing the diff: the previous fallback was \`animate-in fade-in zoom-in-95\`, which emitted no CSS at all — those are \`tailwindcss-animate\` utilities and that plugin is not installed. The menu had no enter animation before this. The fallback is now \`animate-fade-in\`, which this package's Tailwind preset actually defines.`,
       },
     },
     catalog: {
@@ -149,6 +158,11 @@ Choosing an item does **not** close the menu by itself — close it from \`onCli
           type: 'composes with',
           target: 'chat-chatcomposer',
           why: "ChatComposer's + menu and agent selector are Dropdown menus opening above the composer.",
+        },
+        {
+          type: 'composes with',
+          target: 'foundations-motion',
+          why: 'MotionProvider scales the menu out of its trigger and gives it a real exit animation, which the CSS path cannot do because the menu unmounts on close.',
         },
       ],
     },
@@ -355,4 +369,77 @@ export const MultiSelect: Story = {
 
 export const SearchableMultiSelect: Story = {
   render: () => <SearchableMultiSelectStoryDemo />,
+};
+
+// ============================================================================
+// Motion
+// ============================================================================
+
+/**
+ * A/B harness for the motion opt-in.
+ *
+ * Two triggers with opposite placements, because the whole point of the preset
+ * is that the scale is anchored to the side the menu lands on — a single
+ * `bottom-start` menu would look identical to a plain fade and prove nothing.
+ *
+ * Flipping the switch remounts the `Animated` element (it swaps between a
+ * motion component and a plain tag), so compare by repeating the gesture with
+ * the switch set each way rather than flipping it mid-animation.
+ */
+function MotionDemo() {
+  const [motionEnabled, setMotionEnabled] = React.useState(true);
+
+  return (
+    <MotionProvider disabled={!motionEnabled}>
+      <div className="flex flex-col items-center gap-6">
+        <div className="flex items-center gap-3">
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={() => setMotionEnabled((enabled) => !enabled)}
+            aria-pressed={motionEnabled}
+          >
+            Motion: {motionEnabled ? 'on' : 'off'}
+          </Button>
+          <p className="text-muted-foreground text-xs">
+            Open and close each menu with the switch set each way.
+          </p>
+        </div>
+
+        <div className="flex items-center gap-4">
+          <Dropdown
+            placement="bottom-start"
+            trigger={<Button>Opens below</Button>}
+          >
+            <DropdownItem>Schedule Visit</DropdownItem>
+            <DropdownItem>Message Patient</DropdownItem>
+            <DropdownSeparator />
+            <DropdownItem destructive>Cancel Visit</DropdownItem>
+          </Dropdown>
+
+          <Dropdown
+            placement="top-start"
+            trigger={<Button>Opens above</Button>}
+          >
+            <DropdownItem>Schedule Visit</DropdownItem>
+            <DropdownItem>Message Patient</DropdownItem>
+            <DropdownSeparator />
+            <DropdownItem destructive>Cancel Visit</DropdownItem>
+          </Dropdown>
+        </div>
+      </div>
+    </MotionProvider>
+  );
+}
+
+export const Motion: Story = {
+  render: () => <MotionDemo />,
+  parameters: {
+    docs: {
+      description: {
+        story:
+          'Dropdown under `@mieweb/ui/motion`. With motion on, each menu springs out of its trigger — the one placed above scales from its bottom edge, the one below from its top — and animates back on close. With it off both fade in and then disappear on the frame they close, because the menu unmounts and CSS has nothing left to transition. The origin follows the side the menu actually lands on, so a menu that flips near a viewport edge still grows out of its trigger. The provider is normally mounted once at the app root; it is local here so the comparison can be toggled.',
+      },
+    },
+  },
 };

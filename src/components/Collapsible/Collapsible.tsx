@@ -1,5 +1,7 @@
 import * as React from 'react';
 import { cn } from '../../utils/cn';
+import { Animated, AnimatedPresence } from '../../motion';
+import { usePrefersReducedMotion } from '../../hooks/usePrefersReducedMotion';
 
 interface CollapsibleContextValue {
   open: boolean;
@@ -143,23 +145,63 @@ const CollapsibleContent = React.forwardRef<
 >(({ className, forceMount, children, ...props }, ref) => {
   const { open, contentId, triggerId } =
     useCollapsibleContext('CollapsibleContent');
+  const prefersReducedMotion = usePrefersReducedMotion();
 
-  if (!open && !forceMount) return null;
+  const sharedProps = {
+    id: contentId,
+    role: 'region' as const,
+    'aria-labelledby': triggerId,
+    'data-slot': 'collapsible-content',
+    'data-state': open ? ('open' as const) : ('closed' as const),
+  };
+
+  /*
+   * `forceMount` keeps the old instant behaviour, deliberately.
+   *
+   * It exists so consumers can keep collapsed content in the DOM, and it relies
+   * on `hidden` to keep that content out of the tab order and the accessibility
+   * tree. `hidden` is `display: none`, which an animated height cannot run
+   * through — and dropping it for the duration would leave keyboard users able
+   * to tab into content that is visually collapsed. Sequencing `hidden` around
+   * the animation is the real fix; until then, not animating is the safe
+   * answer, and the default (unmounting) path below covers the common case.
+   */
+  if (forceMount) {
+    return (
+      <div
+        ref={ref}
+        {...sharedProps}
+        hidden={!open}
+        className={cn(className)}
+        {...props}
+      >
+        {children}
+      </div>
+    );
+  }
 
   return (
-    <div
-      ref={ref}
-      id={contentId}
-      role="region"
-      aria-labelledby={triggerId}
-      data-slot="collapsible-content"
-      data-state={open ? 'open' : 'closed'}
-      hidden={!open}
-      className={cn(className)}
-      {...props}
-    >
-      {children}
-    </div>
+    <AnimatedPresence initial={false}>
+      {open && (
+        <Animated
+          key="collapsible-content"
+          ref={ref as React.Ref<HTMLElement>}
+          preset="collapse"
+          mode="presence"
+          // `collapse` animates height, which `MotionConfig reducedMotion="user"`
+          // does not treat as a transform or layout animation and so leaves
+          // running. Honouring the preference is the component's job here.
+          enabled={!prefersReducedMotion}
+          {...sharedProps}
+          // Content must be clipped or it spills past the box while the height
+          // is still travelling.
+          className={cn('overflow-hidden', className)}
+          {...props}
+        >
+          {children}
+        </Animated>
+      )}
+    </AnimatedPresence>
   );
 });
 
