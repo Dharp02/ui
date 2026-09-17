@@ -530,6 +530,12 @@ module.exports = {
     'md:pe-0.5',
     'md:ps-0.5',
     'md:gap-0.5',
+    // Motion preset safelist: fallback animations and runtime-selected scale origins
+    'animate-fade-in',
+    'origin-top',
+    'origin-bottom',
+    'origin-left',
+    'origin-right',
   ],
   theme: {
     extend: {

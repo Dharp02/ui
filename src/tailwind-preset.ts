@@ -554,6 +554,14 @@ export const miewebUISafelist = [
   // RTL Phase 2: Toast slide-in animation + RTL mirror
   'animate-slide-in-right',
   'rtl:animate-slide-in-left',
+  // Motion CSS fallbacks — applied by `<Animated>` only when no motion runtime
+  // is active, so the scanner never sees them on a literal element.
+  'animate-fade-in',
+  // Scale origin for anchored menus, picked at runtime from the post-flip side.
+  'origin-top',
+  'origin-bottom',
+  'origin-left',
+  'origin-right',
   // RTL Phase 2: directional icon mirroring (chevrons/arrows)
   'rtl:-scale-x-100',
   // RTL shell/misc batch: command palette, site chrome, superchat, toolbars

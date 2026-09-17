@@ -72,7 +72,7 @@ Note that import is from \`@mieweb/ui\`, not \`@mieweb/ui/motion\`: \`Animated\`
 
 ### Limitations
 
-- Only \`Modal\` and \`Sidebar\` are wired up so far. Every other component ignores the provider and keeps its CSS transitions.
+- \`Modal\`, \`Sidebar\`, \`Toast\`, \`Dropdown\`, and \`Collapsible\` are wired up. Every other component ignores the provider and keeps its CSS transitions.
 - \`reducedMotion\` defaults to \`'user'\`, which drops transforms and keeps opacity when the OS asks for reduced motion. Verify both paths — they are different code.
 - Motion holds an element at rest with a \`transform\`, and a transformed ancestor becomes the containing block for \`position: fixed\` descendants. Components that are only sometimes animated should pass \`enabled={false}\` the rest of the time, as \`Sidebar\` does on desktop.
 - \`disabled\` forces every component back onto the CSS path. It exists for test runs, where springs make assertions timing-dependent. Flipping it remounts \`Animated\` elements (they swap between motion components and plain tags), so set it once per suite rather than toggling it mid-interaction.`,
@@ -90,6 +90,21 @@ Note that import is from \`@mieweb/ui\`, not \`@mieweb/ui/motion\`: \`Animated\`
           type: 'composes with',
           target: 'overlays-sidebar',
           why: 'MotionProvider fades the rail\u2019s labels on desktop collapse and upgrades the mobile drawer to a spring slide with a fading backdrop.',
+        },
+        {
+          type: 'composes with',
+          target: 'feedback-toast',
+          why: 'MotionProvider gives Toast a spring enter, a real exit animation the CSS path cannot do, and an entry direction that follows the stack position.',
+        },
+        {
+          type: 'composes with',
+          target: 'layout-collapsible',
+          why: 'MotionProvider animates the panel to its natural height, which CSS cannot do because height: auto is not interpolable.',
+        },
+        {
+          type: 'composes with',
+          target: 'choice-inputs-dropdown',
+          why: 'MotionProvider scales the menu out of its trigger and gives it a real exit animation, which the CSS path cannot do because the menu unmounts on close.',
         },
       ],
     },

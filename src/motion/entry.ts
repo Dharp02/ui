@@ -36,4 +36,5 @@ export {
   type AnimatedProps,
   type MotionRuntime,
   type MotionPreset,
+  type MotionEdge,
 } from './index';
