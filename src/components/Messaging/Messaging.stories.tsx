@@ -325,7 +325,7 @@ const { messages, sendMessage, retryMessage, loadMore } = useMessages({
         {
           type: 'alternative to',
           target: 'chat-chatcomposer',
-          why: 'MessageComposer keeps reply-to for existing messaging threads (both composers share the same @mention autocomplete module); ChatComposer is the standardized input (+ menu, mic, stop, agent/model selectors) preferred for new work.',
+          why: 'Both composers share the same @mention autocomplete module and reply-to contract (replyTo / onCancelReply); MessageComposer remains the composer wired into MessageThread today, while ChatComposer is the standardized input (+ menu, mic, stop, agent/model selectors) preferred for new work.',
         },
       ],
     },
