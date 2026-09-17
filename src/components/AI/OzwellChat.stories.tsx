@@ -518,20 +518,26 @@ export const Playground: Story = {
     const canvas = within(canvasElement);
     const composer = canvas.getByRole('textbox', { name: 'Message' });
 
-    await expect(composer.closest('[data-slot="ai-chat"]')).toHaveClass(
-      '[&_[data-slot="composer-input"]]:pe-[min(160px,44vw)]'
-    );
+    // The model selector renders in ChatComposer's selector row below the
+    // input (this demo supplies multiple models).
+    await expect(
+      canvasElement.querySelector('[data-slot="chat-composer-selectors"]')
+    ).toBeInTheDocument();
 
     await userEvent.type(composer, 'hi');
     await userEvent.keyboard('{Enter}');
 
-    await expect(canvas.getByText('Reviewing your message…')).toBeVisible();
+    // ChatComposer's submit path is async — wait for the demo's optimistic
+    // thinking block rather than asserting synchronously.
+    await expect(
+      canvas.findByText('Reviewing your message…')
+    ).resolves.toBeVisible();
     await userEvent.type(
       canvas.getByRole('textbox', { name: 'Message' }),
       'Follow-up'
     );
     await userEvent.keyboard('{Enter}');
-    await expect(canvas.getAllByText('Follow-up')).toHaveLength(1);
+    await expect(canvas.findAllByText('Follow-up')).resolves.toHaveLength(1);
     await expect(
       canvas.findByRole('heading', { name: 'Hello' })
     ).resolves.toBeVisible();

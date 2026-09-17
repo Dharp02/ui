@@ -50,9 +50,11 @@ should plug into — don't fork the message renderer.
   pages. Don't recombine them.
 - **`storyData.ts` is shared fixtures, not stories.** It must never match the
   Storybook stories glob (no `.stories.` in the name) or it will fail to load.
-- The composer is **reused from the Messaging module** — visual/behavioral
-  changes to the input may belong in `Messaging`, not here. Inline images use the
-  Messaging attachment lightbox.
+- The composer is **the shared `ChatComposer`** (`src/components/ChatComposer/`)
+  — visual/behavioral changes to the input may belong there, not here. Legacy
+  `MessageComposer`-era `composerProps` keys are mapped in `AIChat.tsx` (see
+  `AIChatLegacyComposerProps`). Inline images use the Messaging attachment
+  lightbox.
 - Content block types live in `AIMessageContent` (`text` / `tool_use` /
   `tool_result` / `thinking` / `code`). Adding a block type means updating both
   the type union and `AIMessageDisplay`'s switch.

@@ -433,12 +433,17 @@ export function AIChat({
     };
   }, [composerValue, isTyping, onTypingStart, onTypingStop]);
 
+  // MessageComposer parity: typing stops immediately on send — its submit
+  // path fired this even when the host overrode `onSend`.
+  const stopTypingOnSend = () => {
+    setIsTyping(false);
+    onTypingStop?.();
+  };
+
   const handleSend = async (message: NewMessage) => {
     const content = message.content.trim();
     if (!content || !onSendMessage) return;
-    // MessageComposer parity: typing stops immediately on send.
-    setIsTyping(false);
-    onTypingStop?.();
+    stopTypingOnSend();
     const epoch = draftEpochRef.current;
     try {
       // A returned promise is awaited so an async rejection follows the
@@ -585,7 +590,14 @@ export function AIChat({
         {/* Same p-3 breathing room MessageComposer's input area used. */}
         <div data-slot="ai-chat-composer" className="p-3">
           <ChatComposer
-            onSend={hostOnSend ?? handleSend}
+            onSend={
+              hostOnSend
+                ? (message: NewMessage) => {
+                    stopTypingOnSend();
+                    return hostOnSend(message);
+                  }
+                : handleSend
+            }
             placeholder={inputPlaceholder}
             disabled={isGenerating}
             isSending={isGenerating}

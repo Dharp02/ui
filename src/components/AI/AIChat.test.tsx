@@ -319,5 +319,28 @@ describe('AIChat (ChatComposer integration)', () => {
       );
       expect(onSendMessage).not.toHaveBeenCalled();
     });
+
+    it('stops typing on send even when composerProps overrides onSend', async () => {
+      const onTypingStart = vi.fn();
+      const onTypingStop = vi.fn();
+      const onSend = vi.fn();
+      render(
+        <AIChat
+          messages={messages}
+          onSendMessage={vi.fn()}
+          composerProps={{ onSend, onTypingStart, onTypingStop }}
+        />
+      );
+      const input = screen.getByLabelText('Message');
+      fireEvent.change(input, { target: { value: 'host send' } });
+      expect(onTypingStart).toHaveBeenCalledTimes(1);
+      // MessageComposer parity: its submit path stopped typing even when
+      // the host overrode onSend.
+      fireEvent.click(screen.getByLabelText('Send message'));
+      expect(onTypingStop).toHaveBeenCalledTimes(1);
+      expect(onSend).toHaveBeenCalledWith(
+        expect.objectContaining({ content: 'host send' })
+      );
+    });
   });
 });

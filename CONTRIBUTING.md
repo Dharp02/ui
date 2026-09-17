@@ -346,7 +346,7 @@ Current notes:
 
 | Module                                                                       | Why it has notes                                                                                                                        |
 | ---------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
-| [AI](src/components/AI/MAINTAINERS.md)                                       | `renderTextContent` extension point; host owns sanitization; reuses the Messaging composer                                              |
+| [AI](src/components/AI/MAINTAINERS.md)                                       | `renderTextContent` extension point; host owns sanitization; reuses `ChatComposer` (legacy composerProps keys mapped)                   |
 | [AGGrid (deprecated)](src/components/AGGrid/MAINTAINERS.md)                  | Legacy maintenance only; retained for existing consumers. Use [DataVis NITRO](src/components/DataVisNITRO/MAINTAINERS.md) for new work. |
 | [ChatComposer](src/components/ChatComposer/MAINTAINERS.md)                   | Object-URL lifecycle with an `attachmentsRef` mirror; pure state updaters; controlled menus; stable `onError` reason keys               |
 | [CountryCodeDropdown](src/components/CountryCodeDropdown/MAINTAINERS.md)     | Base shared with `CountryDropdown` with diverging defaults (US vs. empty); empty-state contract; lazy `google-libphonenumber` singletons |
