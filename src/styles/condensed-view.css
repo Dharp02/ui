@@ -6076,11 +6076,12 @@ body.condensed [data-slot='chat-composer-input'] {
   padding: 0.375rem 0.5rem 0.25rem !important;
 }
 
-/* Icon buttons (+ / mic / send / stop) – 1.5rem square, smaller glyphs */
+/* Icon buttons (+ / mic / send / stop / cancel-reply) – 1.5rem square, smaller glyphs */
 body.condensed [data-slot='chat-composer-add-button'],
 body.condensed [data-slot='chat-composer-mic-button'],
 body.condensed [data-slot='chat-composer-send-button'],
-body.condensed [data-slot='chat-composer-stop-button'] {
+body.condensed [data-slot='chat-composer-stop-button'],
+body.condensed [data-slot='chat-composer-cancel-reply'] {
   height: 1.5rem !important;
   width: 1.5rem !important;
   border-radius: 0.375rem !important;
@@ -6088,7 +6089,8 @@ body.condensed [data-slot='chat-composer-stop-button'] {
 
 body.condensed [data-slot='chat-composer-add-button'] svg,
 body.condensed [data-slot='chat-composer-mic-button'] svg,
-body.condensed [data-slot='chat-composer-send-button'] svg {
+body.condensed [data-slot='chat-composer-send-button'] svg,
+body.condensed [data-slot='chat-composer-cancel-reply'] svg {
   width: 0.875rem !important;
   height: 0.875rem !important;
 }

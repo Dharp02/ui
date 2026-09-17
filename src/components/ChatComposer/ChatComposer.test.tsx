@@ -886,6 +886,22 @@ describe('ChatComposer', () => {
       expect(getInput()).toHaveFocus();
     });
 
+    it('announces the reply target via a polite status region', () => {
+      renderWithTheme(
+        <ChatComposer
+          onSend={vi.fn()}
+          replyTo={replyTo}
+          onCancelReply={vi.fn()}
+        />
+      );
+
+      const status = screen.getByRole('status');
+      expect(status).toHaveTextContent('Replying to Ada Lovelace');
+      expect(status).toHaveTextContent('Original message text');
+      // The cancel button must stay outside the announced region.
+      expect(status.querySelector('button')).toBeNull();
+    });
+
     it('includes replyToId in the sent message without clearing the reply itself', () => {
       const onSend = vi.fn();
       const onCancelReply = vi.fn();

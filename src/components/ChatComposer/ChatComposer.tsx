@@ -657,7 +657,10 @@ export const ChatComposer = React.forwardRef<
             'border-s-primary-500 border-s-4'
           )}
         >
-          <div className="min-w-0 flex-1">
+          {/* role="status" politely announces the reply target to screen readers
+              when the row is inserted (focus jumps to the textarea, so the text
+              would otherwise be skipped). The cancel button stays outside it. */}
+          <div role="status" className="min-w-0 flex-1">
             <span className="text-primary-800 dark:text-primary-400 block text-xs font-medium">
               {replyingToLabel} {replyTo.senderName}
             </span>
