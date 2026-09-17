@@ -192,6 +192,8 @@ const CollapsibleContent = React.forwardRef<
           // does not treat as a transform or layout animation and so leaves
           // running. Honouring the preference is the component's job here.
           enabled={!prefersReducedMotion}
+          aria-hidden={!open || undefined}
+          inert={!open || undefined}
           {...sharedProps}
           // Content must be clipped or it spills past the box while the height
           // is still travelling.

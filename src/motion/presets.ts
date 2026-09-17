@@ -166,7 +166,7 @@ export const motionPresets: Record<MotionPreset, MotionPresetDefinition> = {
       closed: (edge: unknown) => ({
         opacity: 0,
         scale: 0.95,
-        ...offsetFromEdge(edge, 4),
+        ...offsetFromEdge(edge, -4),
       }),
     },
     transition: { type: 'spring', stiffness: 600, damping: 40, mass: 0.6 },
@@ -248,8 +248,8 @@ export const motionPresets: Record<MotionPreset, MotionPresetDefinition> = {
    */
   pop: {
     variants: {
-      open: { opacity: 1, scale: 1 },
-      closed: { opacity: 0, scale: 0.8 },
+      open: { opacity: 1, scale: 1.1 },
+      closed: { opacity: 0, scale: 1 },
     },
     transition: { type: 'spring', stiffness: 700, damping: 30, mass: 0.5 },
   },

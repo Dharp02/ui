@@ -549,20 +549,23 @@ function Dropdown({
         className="relative inline-flex"
       >
         {triggerElement}
-        {createPortal(
-          <AnimatedPresence>
-            {isOpen && (
-              <Animated
-                key="dropdown-menu"
-                ref={floatingRef as React.Ref<HTMLElement>}
-                preset="menu"
-                mode="presence"
+        {typeof document !== 'undefined' &&
+          createPortal(
+            <AnimatedPresence>
+              {isOpen && (
+                <Animated
+                  key="dropdown-menu"
+                  ref={floatingRef as React.Ref<HTMLElement>}
+                  preset="menu"
+                  mode="presence"
                 // Post-flip side, not the requested `placement`: a menu that
                 // flipped for want of room has to animate from where it
                 // actually landed.
                 custom={actualSide}
                 style={{ ...style, ...widthStyle }}
                 data-slot="dropdown-menu"
+                aria-hidden={!isOpen || undefined}
+                inert={!isOpen || undefined}
                 className={cn(
                   'flex min-w-[12rem] flex-col overflow-hidden',
                   'rounded-xl border border-neutral-200 bg-white shadow-lg',
@@ -637,9 +640,9 @@ function Dropdown({
                 </div>
               </Animated>
             )}
-          </AnimatedPresence>,
-          document.body
-        )}
+            </AnimatedPresence>,
+            document.body
+          )}
       </div>
     </DropdownContext.Provider>
   );
@@ -1088,39 +1091,46 @@ function DropdownSubmenu({
           className="shrink-0 text-neutral-400 rtl:-scale-x-100"
         />
       </button>
-      {open &&
+      {typeof document !== 'undefined' &&
         createPortal(
-          <div
-            ref={floatingRef}
-            style={style}
-            id={menuId}
-            role="menu"
-            // Programmatically focusable (a11y: interactive role); focus lands
-            // on the menu items themselves.
-            tabIndex={-1}
-            data-slot="dropdown-submenu"
-            className={cn(
-              // min() keeps the preferred width from beating the hook's
-              // maxWidth viewport clamp on very narrow screens.
-              'flex min-w-[min(10rem,calc(100vw-1rem))] flex-col overflow-hidden',
-              'rounded-xl border border-neutral-200 bg-white shadow-lg',
-              'dark:border-neutral-700 dark:bg-neutral-800',
-              'animate-in fade-in zoom-in-95 duration-100'
+          <AnimatedPresence>
+            {open && (
+              <Animated
+                key="dropdown-submenu"
+                ref={floatingRef}
+                style={style}
+                preset="menu"
+                mode="presence"
+                custom="bottom"
+                id={menuId}
+                role="menu"
+                aria-hidden={!open || undefined}
+                inert={!open || undefined}
+                tabIndex={-1}
+                data-slot="dropdown-submenu"
+                className={cn(
+                  // min() keeps the preferred width from beating the hook's
+                  // maxWidth viewport clamp on very narrow screens.
+                  'flex min-w-[min(10rem,calc(100vw-1rem))] flex-col overflow-hidden',
+                  'rounded-xl border border-neutral-200 bg-white shadow-lg',
+                  'dark:border-neutral-700 dark:bg-neutral-800'
+                )}
+                onPointerEnter={cancelClose}
+                onPointerLeave={(event) => {
+                  if (event.pointerType === 'mouse') scheduleClose();
+                }}
+                onKeyDown={(event) => {
+                  if (event.key === 'ArrowLeft' || event.key === 'Escape') {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    closeAndRefocus();
+                  }
+                }}
+              >
+                <div className="min-h-0 overflow-y-auto">{children}</div>
+              </Animated>
             )}
-            onPointerEnter={cancelClose}
-            onPointerLeave={(event) => {
-              if (event.pointerType === 'mouse') scheduleClose();
-            }}
-            onKeyDown={(event) => {
-              if (event.key === 'ArrowLeft' || event.key === 'Escape') {
-                event.preventDefault();
-                event.stopPropagation();
-                closeAndRefocus();
-              }
-            }}
-          >
-            <div className="min-h-0 overflow-y-auto">{children}</div>
-          </div>,
+          </AnimatedPresence>,
           document.body
         )}
     </>
