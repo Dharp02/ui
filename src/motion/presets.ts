@@ -242,15 +242,24 @@ export const motionPresets: Record<MotionPreset, MotionPresetDefinition> = {
   /**
    * Small element arriving with emphasis — a count badge, a status pill.
    *
-   * Scales from noticeably under size so the arrival is legible on an element
-   * too small for movement to register. Reserve it for things that appear in
-   * response to an event worth noticing; on anything large it reads as a bounce.
+   * Overshoots past full size and settles back (`1 → 1.1 → 1`) so the arrival
+   * is legible on an element too small for movement to register. Reserve it
+   * for things that appear in response to an event worth noticing; on anything
+   * large it reads as a bounce.
+   *
+   * The overshoot is a keyframe rather than a spring because the resting open
+   * state has to be `scale: 1`. Expressing the emphasis as a spring target
+   * would leave a mounted consumer parked at 1.1 — permanently 10% oversized —
+   * since the open variant is also the at-rest state.
    */
   pop: {
     variants: {
-      open: { opacity: 1, scale: 1.1 },
+      open: { opacity: 1, scale: [1, 1.1, 1] },
       closed: { opacity: 0, scale: 1 },
     },
-    transition: { type: 'spring', stiffness: 700, damping: 30, mass: 0.5 },
+    // `times` front-loads the overshoot so it reads as a pop rather than an
+    // even swell. Keyframe arrays need a duration-based tween; a spring has no
+    // way to run through intermediate values.
+    transition: { duration: 0.28, ease: 'easeOut', times: [0, 0.45, 1] },
   },
 };

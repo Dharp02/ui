@@ -558,88 +558,86 @@ function Dropdown({
                   ref={floatingRef as React.Ref<HTMLElement>}
                   preset="menu"
                   mode="presence"
-                // Post-flip side, not the requested `placement`: a menu that
-                // flipped for want of room has to animate from where it
-                // actually landed.
-                custom={actualSide}
-                style={{ ...style, ...widthStyle }}
-                data-slot="dropdown-menu"
-                aria-hidden={!isOpen || undefined}
-                inert={!isOpen || undefined}
-                className={cn(
-                  'flex min-w-[12rem] flex-col overflow-hidden',
-                  'rounded-xl border border-neutral-200 bg-white shadow-lg',
-                  'dark:border-neutral-700 dark:bg-neutral-800',
-                  // Anchors the scale to the trigger. Static per side and never
-                  // animated, so CSS owns it rather than the preset.
-                  menuTransformOrigin[actualSide],
-                  className
-                )}
-                fallbackClassName={DROPDOWN_FALLBACK_ANIMATION}
-              >
-                {searchable && (
-                  <div
-                    className="shrink-0 border-b border-neutral-200 p-2 dark:border-neutral-700"
-                    data-slot="dropdown-search"
-                  >
-                    <input
-                      ref={searchInputRef}
-                      type="search"
-                      value={searchQuery}
-                      onChange={(event) => setSearchQuery(event.target.value)}
-                      placeholder={searchPlaceholder}
-                      aria-label={searchAriaLabel}
-                      aria-controls={menuId}
-                      aria-autocomplete="list"
-                      data-slot="dropdown-search-input"
-                      className={cn(
-                        inputVariants({ size: 'sm' }),
-                        'text-sm',
-                        'dark:border-neutral-600 dark:bg-neutral-700 dark:text-neutral-100'
-                      )}
-                    />
-                  </div>
-                )}
-                <div
-                  id={menuId}
-                  role="menu"
-                  className="min-h-0 overflow-y-auto"
-                >
-                  {multiSelect &&
-                    showSelectAll &&
-                    visibleSelectableValues.length > 0 && (
-                      <>
-                        <div className="p-2" data-slot="dropdown-select-all">
-                          <DropdownItem
-                            checked={allVisibleSelected}
-                            indeterminate={
-                              !allVisibleSelected && someVisibleSelected
-                            }
-                            onClick={handleSelectAll}
-                          >
-                            {selectAllLabel}
-                          </DropdownItem>
-                        </div>
-                        <DropdownSeparator />
-                      </>
-                    )}
-                  {searchable ? (
-                    hasSearchResults ? (
-                      filteredChildren
-                    ) : (
-                      <div
-                        className="text-muted-foreground px-3 py-4 text-center text-sm"
-                        data-slot="dropdown-empty"
-                      >
-                        {searchEmptyState}
-                      </div>
-                    )
-                  ) : (
-                    children
+                  // Post-flip side, not the requested `placement`: a menu that
+                  // flipped for want of room has to animate from where it
+                  // actually landed.
+                  custom={actualSide}
+                  style={{ ...style, ...widthStyle }}
+                  data-slot="dropdown-menu"
+                  className={cn(
+                    'flex min-w-[12rem] flex-col overflow-hidden',
+                    'rounded-xl border border-neutral-200 bg-white shadow-lg',
+                    'dark:border-neutral-700 dark:bg-neutral-800',
+                    // Anchors the scale to the trigger. Static per side and never
+                    // animated, so CSS owns it rather than the preset.
+                    menuTransformOrigin[actualSide],
+                    className
                   )}
-                </div>
-              </Animated>
-            )}
+                  fallbackClassName={DROPDOWN_FALLBACK_ANIMATION}
+                >
+                  {searchable && (
+                    <div
+                      className="shrink-0 border-b border-neutral-200 p-2 dark:border-neutral-700"
+                      data-slot="dropdown-search"
+                    >
+                      <input
+                        ref={searchInputRef}
+                        type="search"
+                        value={searchQuery}
+                        onChange={(event) => setSearchQuery(event.target.value)}
+                        placeholder={searchPlaceholder}
+                        aria-label={searchAriaLabel}
+                        aria-controls={menuId}
+                        aria-autocomplete="list"
+                        data-slot="dropdown-search-input"
+                        className={cn(
+                          inputVariants({ size: 'sm' }),
+                          'text-sm',
+                          'dark:border-neutral-600 dark:bg-neutral-700 dark:text-neutral-100'
+                        )}
+                      />
+                    </div>
+                  )}
+                  <div
+                    id={menuId}
+                    role="menu"
+                    className="min-h-0 overflow-y-auto"
+                  >
+                    {multiSelect &&
+                      showSelectAll &&
+                      visibleSelectableValues.length > 0 && (
+                        <>
+                          <div className="p-2" data-slot="dropdown-select-all">
+                            <DropdownItem
+                              checked={allVisibleSelected}
+                              indeterminate={
+                                !allVisibleSelected && someVisibleSelected
+                              }
+                              onClick={handleSelectAll}
+                            >
+                              {selectAllLabel}
+                            </DropdownItem>
+                          </div>
+                          <DropdownSeparator />
+                        </>
+                      )}
+                    {searchable ? (
+                      hasSearchResults ? (
+                        filteredChildren
+                      ) : (
+                        <div
+                          className="text-muted-foreground px-3 py-4 text-center text-sm"
+                          data-slot="dropdown-empty"
+                        >
+                          {searchEmptyState}
+                        </div>
+                      )
+                    ) : (
+                      children
+                    )}
+                  </div>
+                </Animated>
+              )}
             </AnimatedPresence>,
             document.body
           )}
@@ -982,7 +980,7 @@ function DropdownSubmenu({
     undefined
   );
 
-  const { anchorRef, floatingRef, style } = useAnchoredPosition<
+  const { anchorRef, floatingRef, style, actualSide } = useAnchoredPosition<
     HTMLButtonElement,
     HTMLDivElement
   >({ open, placement: 'right-start', offset: 4 });
@@ -1101,11 +1099,14 @@ function DropdownSubmenu({
                 style={style}
                 preset="menu"
                 mode="presence"
-                custom="bottom"
+                // A submenu opens to the side and flips when it runs out of
+                // room, so it has to animate from the side it actually landed
+                // on — same contract as the root menu.
+                custom={actualSide}
                 id={menuId}
                 role="menu"
-                aria-hidden={!open || undefined}
-                inert={!open || undefined}
+                // Programmatically focusable (a11y: interactive role); focus
+                // lands on the menu items themselves.
                 tabIndex={-1}
                 data-slot="dropdown-submenu"
                 className={cn(
@@ -1113,8 +1114,11 @@ function DropdownSubmenu({
                   // maxWidth viewport clamp on very narrow screens.
                   'flex min-w-[min(10rem,calc(100vw-1rem))] flex-col overflow-hidden',
                   'rounded-xl border border-neutral-200 bg-white shadow-lg',
-                  'dark:border-neutral-700 dark:bg-neutral-800'
+                  'dark:border-neutral-700 dark:bg-neutral-800',
+                  // Anchors the scale to the trigger, as on the root menu.
+                  menuTransformOrigin[actualSide]
                 )}
+                fallbackClassName={DROPDOWN_FALLBACK_ANIMATION}
                 onPointerEnter={cancelClose}
                 onPointerLeave={(event) => {
                   if (event.pointerType === 'mouse') scheduleClose();
