@@ -699,7 +699,7 @@ export function ConditionEditor({
                       );
                     }}
                     size="sm"
-                    className="gap-2 sm:[&_[data-slot=radio-group-legend]]:sr-only [&_[data-slot=radio-group-items]]:gap-2"
+                    className="gap-2 [&_[data-slot=radio-group-items]]:gap-2 sm:[&_[data-slot=radio-group-legend]]:sr-only"
                   >
                     {coding.map((c, i) => (
                       <div
