@@ -79,7 +79,13 @@ export interface ChatComposerAgentOption {
 
 /** Imperative handle exposed via `ref` for host-level integrations. */
 export interface ChatComposerHandle {
-  /** Stage files programmatically (e.g. from a page-level drop zone). */
+  /**
+   * Stage files programmatically (e.g. from a page-level drop zone or a
+   * camera capture in `micSlot`). Deliberately NOT gated by
+   * `allowAttachments` — that prop only hides the composer's own attach
+   * affordances (the + button, paste, internal drop zone). Imperative calls
+   * are explicit host actions; validation and `onError` still apply.
+   */
   addFiles: (files: File[]) => void;
   /** Focus the text input. */
   focus: () => void;
@@ -450,7 +456,11 @@ export const ChatComposer = React.forwardRef<
 
   const addFiles = React.useCallback(
     (files: File[]) => {
-      if (!allowAttachments || files.length === 0) return;
+      // No `allowAttachments` gate here: every user-facing entry point
+      // (paste handler, + button, internal drop zone) is gated separately,
+      // so this only opens the imperative `ref.addFiles()` path for hosts
+      // (e.g. MessageThread's camera capture with the picker disabled).
+      if (files.length === 0) return;
       // Staging happens outside the state updater so object-URL creation,
       // id generation and onError stay out of a function React may re-invoke.
       const limitMessage =
@@ -499,7 +509,6 @@ export const ChatComposer = React.forwardRef<
       }
     },
     [
-      allowAttachments,
       maxAttachments,
       acceptedFileTypes,
       maxFileSize,

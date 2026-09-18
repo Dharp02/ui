@@ -3,6 +3,36 @@
 Short notes on the invariants that are easy to break. User-facing docs live in
 [Messaging.stories.tsx](./Messaging.stories.tsx).
 
+## MessageThread mounts ChatComposer
+
+[MessageThread.tsx](./MessageThread.tsx) mounts the shared `ChatComposer`
+(`../ChatComposer/ChatComposer.tsx`), not `MessageComposer`, while keeping
+MessageThread's public props unchanged:
+
+- **Failed-send restore is host-side.** ChatComposer clears the draft
+  optimistically; MessageThread controls `value`/`onValueChange` and restores
+  the text when `eventHandlers.onSendMessage` rejects, epoch-guarded so a
+  stale failure never clobbers newer typed input (same pattern as SuperChat
+  and AIChat). The send handler **rethrows** so ChatComposer reports
+  `'Failed to send message'` through `onError` — don't swallow the error.
+- **Typing callbacks are emulated** via `useTypingEmulation` in
+  [hooks.ts](./hooks.ts) — the extracted MessageComposer state machine
+  (start on non-empty draft, stop after 2s idle, keepalive loop, stop on
+  send). `AIChat` uses the same hook; run both suites when touching it.
+- **Attachment validation defaults** (`DEFAULT_ACCEPTED_FILE_TYPES`,
+  `DEFAULT_MAX_FILE_SIZE` in [AttachmentPicker.tsx](./AttachmentPicker.tsx))
+  are applied by MessageThread because ChatComposer leaves types/size
+  unrestricted. MessageComposer's destructuring defaults use the same
+  constants — keep them in sync by keeping them shared.
+- `showCameraButton` renders `CameraButton` in ChatComposer's `micSlot`;
+  captures route through the composer's imperative `addFiles`, which
+  deliberately bypasses `allowAttachments` — camera staging works even with
+  `showAttachmentPicker={false}`. Files dropped on the message list also
+  route through `addFiles`, but the list-level `DragDropZone` is gated on
+  `showAttachmentPicker`. Validation and error reporting happen once, in
+  `addFiles`.
+- Suite: [MessageThread.test.tsx](./MessageThread.test.tsx).
+
 ## Shared @mention module
 
 [useMentionAutocomplete.tsx](./useMentionAutocomplete.tsx) is the single
