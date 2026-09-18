@@ -207,6 +207,90 @@ describe('AIChat (ChatComposer integration)', () => {
       expect(screen.getByTestId('legacy-trailing')).toBeInTheDocument();
     });
 
+    it('applies MessageComposer attachment validation defaults on the legacy path', () => {
+      const { container, rerender } = render(
+        <AIChat
+          messages={messages}
+          onSendMessage={vi.fn()}
+          composerProps={{ showAttachmentPicker: true }}
+        />
+      );
+      // MessageComposer's defaults; ChatComposer alone leaves this unset.
+      const fileInput = container.querySelector('input[type="file"]');
+      expect(fileInput).toHaveAttribute(
+        'accept',
+        'image/*,video/*,.pdf,.doc,.docx'
+      );
+      // Explicit composerProps values still win over the legacy defaults.
+      rerender(
+        <AIChat
+          messages={messages}
+          onSendMessage={vi.fn()}
+          composerProps={{
+            showAttachmentPicker: true,
+            acceptedFileTypes: ['.png'],
+          }}
+        />
+      );
+      expect(container.querySelector('input[type="file"]')).toHaveAttribute(
+        'accept',
+        '.png'
+      );
+      // The new API path stays unrestricted (ChatComposer semantics).
+      rerender(
+        <AIChat
+          messages={messages}
+          onSendMessage={vi.fn()}
+          composerProps={{ allowAttachments: true }}
+        />
+      );
+      expect(container.querySelector('input[type="file"]')).not.toHaveAttribute(
+        'accept'
+      );
+    });
+
+    it('passes mentionOptions through to the ChatComposer mention menu', () => {
+      render(
+        <AIChat
+          messages={messages}
+          onSendMessage={vi.fn()}
+          composerProps={{
+            mentionOptions: [
+              { id: 'u1', label: 'Trish Nurse' },
+              { id: 'u2', label: 'Sam Clerk' },
+            ],
+          }}
+        />
+      );
+      fireEvent.change(screen.getByLabelText('Message'), {
+        target: { value: 'Hi @tri' },
+      });
+      expect(
+        screen.getByRole('listbox', { name: 'Mention' })
+      ).toBeInTheDocument();
+      expect(
+        screen.getByRole('option', { name: /Trish Nurse/ })
+      ).toBeInTheDocument();
+      expect(screen.queryByRole('option', { name: /Sam Clerk/ })).toBeNull();
+    });
+
+    it('suppresses the mic when inputTrailing is explicitly null', () => {
+      const { container } = render(
+        <AIChat
+          messages={messages}
+          onSendMessage={vi.fn()}
+          talkToText
+          composerProps={{ inputTrailing: null }}
+        />
+      );
+      // No AIChat RecordButton, no ChatComposer default mic button.
+      expect(screen.queryByLabelText('Start recording')).toBeNull();
+      expect(screen.queryByLabelText('Start voice input')).toBeNull();
+      expect(
+        container.querySelector('[data-slot="chat-composer-mic-slot"]')
+      ).toBeNull();
+    });
+
     it('lets composerProps micSlot win over inputTrailing and talkToText', () => {
       render(
         <AIChat

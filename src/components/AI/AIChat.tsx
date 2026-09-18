@@ -274,6 +274,19 @@ export interface AIChatLegacyComposerProps {
 export type AIChatComposerProps = Partial<ChatComposerProps> &
   AIChatLegacyComposerProps;
 
+// MessageComposer's attachment validation defaults, applied when a legacy
+// consumer enables attachments via `showAttachmentPicker` (ChatComposer
+// itself leaves file types and size unrestricted). Explicit
+// `acceptedFileTypes` / `maxFileSize` in composerProps still win.
+const LEGACY_ACCEPTED_FILE_TYPES = [
+  'image/*',
+  'video/*',
+  '.pdf',
+  '.doc',
+  '.docx',
+];
+const LEGACY_MAX_FILE_SIZE = 25 * 1024 * 1024;
+
 export interface AIChatProps
   extends VariantProps<typeof chatVariants>, AIChatCallbacks {
   /** Chat session data */
@@ -384,6 +397,13 @@ export function AIChat({
   // the deprecation notes); strip them so they never reach the composer.
   delete composerRest.showCameraButton;
   delete composerRest.variant;
+
+  // Legacy parity: an explicitly supplied mic slot — including `null` —
+  // overrides the built-in talkToText button (the old `{...composerProps}`
+  // spread let explicit nulls win). Presence-checked because `??` would let
+  // `null` fall through and mount the RecordButton.
+  const hasHostMicSlot = !!composerProps && 'micSlot' in composerProps;
+  const hasInputTrailing = !!composerProps && 'inputTrailing' in composerProps;
 
   // Controlled composer draft so a failed send can restore the typed text
   // (ChatComposer clears optimistically and delegates restore to the host;
@@ -611,14 +631,27 @@ export function AIChat({
             // MessageComposer parity: attachments off, 1600-char cap and
             // the same accessible input label. All overridable below.
             allowAttachments={showAttachmentPicker ?? false}
+            // Legacy attachment validation defaults (MessageComposer applied
+            // these; ChatComposer is unrestricted). Only on the legacy path —
+            // explicit values in composerProps win via the spread below.
+            acceptedFileTypes={
+              showAttachmentPicker ? LEGACY_ACCEPTED_FILE_TYPES : undefined
+            }
+            maxFileSize={
+              showAttachmentPicker ? LEGACY_MAX_FILE_SIZE : undefined
+            }
             maxLength={1600}
             inputLabel="Message"
             // composerProps wins over the built-in talkToText slot (same
-            // override order as the old {...composerProps} spread).
+            // override order as the old {...composerProps} spread), and an
+            // explicit null suppresses the mic entirely — normalized to
+            // undefined so ChatComposer doesn't render its default mic button.
             micSlot={
-              hostMicSlot ??
-              inputTrailing ??
-              (talkToText ? (
+              hasHostMicSlot ? (
+                (hostMicSlot ?? undefined)
+              ) : hasInputTrailing ? (
+                (inputTrailing ?? undefined)
+              ) : talkToText ? (
                 <RecordButton
                   variant="ghost"
                   size="sm"
@@ -628,7 +661,7 @@ export function AIChat({
                   onRecordingStart={onRecordingStart}
                   onRecordingComplete={onRecordingComplete}
                 />
-              ) : undefined)
+              ) : undefined
             }
             {...composerRest}
             value={composerValue}
