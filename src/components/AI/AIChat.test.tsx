@@ -129,6 +129,35 @@ describe('AIChat (ChatComposer integration)', () => {
     expect(input).toHaveValue('newer draft');
   });
 
+  it('does not restore a stale failed send over a newer in-flight send', async () => {
+    // Two sends in flight: the first rejects after the second was submitted.
+    // ChatComposer's optimistic clear bumps the draft epoch before onSend
+    // runs, so the stale failure must not resurrect the first message — and
+    // the second send's own failure must still restore the second message.
+    const rejecters: Array<(reason: Error) => void> = [];
+    const onSendMessage = vi.fn(
+      () =>
+        new Promise<void>((_resolve, reject) => {
+          rejecters.push(reject);
+        })
+    );
+    const user = await setupUser();
+    render(<AIChat messages={messages} onSendMessage={onSendMessage} />);
+    const input = screen.getByLabelText('Message');
+    await user.type(input, 'first message');
+    await user.click(screen.getByLabelText('Send message'));
+    await user.type(input, 'second message');
+    await user.click(screen.getByLabelText('Send message'));
+    expect(onSendMessage).toHaveBeenCalledTimes(2);
+    rejecters[0](new Error('backend down'));
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    // The stale failure must not restore the first message.
+    expect(input).toHaveValue('');
+    rejecters[1](new Error('backend down'));
+    // The latest send's failure still restores its own draft.
+    await waitFor(() => expect(input).toHaveValue('second message'));
+  });
+
   it('restores a host-controlled draft through onValueChange on failure', async () => {
     const onSendMessage = vi.fn(() =>
       Promise.reject(new Error('backend down'))
@@ -231,6 +260,24 @@ describe('AIChat (ChatComposer integration)', () => {
         />
       );
       expect(screen.getByLabelText('Add to message')).toBeInTheDocument();
+    });
+
+    it('treats a present-but-undefined showAttachmentPicker as enabled', () => {
+      // MessageComposer defaulted showAttachmentPicker to true, so the old
+      // {...composerProps} spread turned an explicit undefined into
+      // "enabled" (with the legacy accept/size defaults).
+      const { container } = render(
+        <AIChat
+          messages={messages}
+          onSendMessage={vi.fn()}
+          composerProps={{ showAttachmentPicker: undefined }}
+        />
+      );
+      expect(screen.getByLabelText('Add to message')).toBeInTheDocument();
+      expect(container.querySelector('input[type="file"]')).toHaveAttribute(
+        'accept',
+        'image/*,video/*,.pdf,.doc,.docx'
+      );
     });
 
     it('renders a legacy inputTrailing node in the mic slot', () => {
@@ -380,6 +427,34 @@ describe('AIChat (ChatComposer integration)', () => {
       expect(screen.getByTestId('new-mic-slot')).toBeInTheDocument();
       expect(screen.queryByTestId('legacy-trailing')).toBeNull();
       expect(screen.queryByLabelText('Start recording')).toBeNull();
+    });
+
+    it('passes micSlot null through to ChatComposer semantics', () => {
+      // micSlot is a ChatComposerProps passthrough, not a legacy key: null
+      // must forward raw, where ChatComposer renders its default mic button
+      // — it must not be normalized away like a falsy inputTrailing.
+      render(
+        <AIChat
+          messages={messages}
+          onSendMessage={vi.fn()}
+          talkToText
+          composerProps={{ micSlot: null }}
+        />
+      );
+      expect(screen.queryByLabelText('Start recording')).toBeNull();
+      expect(screen.getByLabelText('Start voice input')).toBeInTheDocument();
+    });
+
+    it('falls back to talkToText when micSlot is explicitly undefined', () => {
+      render(
+        <AIChat
+          messages={messages}
+          onSendMessage={vi.fn()}
+          talkToText
+          composerProps={{ micSlot: undefined }}
+        />
+      );
+      expect(screen.getByLabelText('Start recording')).toBeInTheDocument();
     });
 
     it('accepts legacy variant and showCameraButton without effect', () => {

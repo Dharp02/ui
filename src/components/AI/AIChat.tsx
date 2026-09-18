@@ -405,12 +405,16 @@ export function AIChat({
   delete composerRest.showCameraButton;
   delete composerRest.variant;
 
-  // Legacy parity: an explicitly supplied mic slot — including `null` —
-  // overrides the built-in talkToText button (the old `{...composerProps}`
-  // spread let explicit nulls win). Presence-checked because `??` would let
-  // `null` fall through and mount the RecordButton.
-  const hasHostMicSlot = !!composerProps && 'micSlot' in composerProps;
   const hasInputTrailing = !!composerProps && 'inputTrailing' in composerProps;
+
+  // `showAttachmentPicker` needs a presence check: MessageComposer defaulted
+  // it to true, so the old `{...composerProps}` spread turned a
+  // present-but-undefined key into "enabled" (it erased AIChat's own
+  // explicit `false`), while an absent key left attachments off.
+  const legacyAttachments =
+    !!composerProps && 'showAttachmentPicker' in composerProps
+      ? (showAttachmentPicker ?? true)
+      : false;
 
   // Controlled composer draft so a failed send can restore the typed text
   // (ChatComposer clears optimistically and delegates restore to the host;
@@ -640,12 +644,15 @@ export function AIChat({
             disabled={isGenerating}
             isSending={isGenerating}
             // composerProps wins over the built-in talkToText slot (same
-            // override order as the old {...composerProps} spread); falsy
-            // slot values suppress the mic entirely (normalized so
-            // ChatComposer doesn't mount its slot wrapper or default button).
+            // override order as the old {...composerProps} spread). micSlot
+            // is a ChatComposer passthrough prop, so non-undefined values —
+            // including null — forward raw and keep ChatComposer's own
+            // semantics (null mounts its default mic button); only the
+            // legacy inputTrailing path normalizes falsy values, preserving
+            // MessageComposer's `{inputTrailing && …}` suppression.
             micSlot={
-              hasHostMicSlot ? (
-                normalizeLegacySlot(hostMicSlot)
+              hostMicSlot !== undefined ? (
+                hostMicSlot
               ) : hasInputTrailing ? (
                 normalizeLegacySlot(inputTrailing)
               ) : talkToText ? (
@@ -666,17 +673,17 @@ export function AIChat({
             // (MessageComposer's destructuring defaults treated undefined
             // as absent); explicit values still win.
             allowAttachments={
-              composerRest.allowAttachments ?? showAttachmentPicker ?? false
+              composerRest.allowAttachments ?? legacyAttachments
             }
             maxLength={composerRest.maxLength ?? 1600}
             inputLabel={composerRest.inputLabel ?? 'Message'}
             acceptedFileTypes={
               composerRest.acceptedFileTypes ??
-              (showAttachmentPicker ? LEGACY_ACCEPTED_FILE_TYPES : undefined)
+              (legacyAttachments ? LEGACY_ACCEPTED_FILE_TYPES : undefined)
             }
             maxFileSize={
               composerRest.maxFileSize ??
-              (showAttachmentPicker ? LEGACY_MAX_FILE_SIZE : undefined)
+              (legacyAttachments ? LEGACY_MAX_FILE_SIZE : undefined)
             }
             value={composerValue}
             onValueChange={handleComposerValueChange}
