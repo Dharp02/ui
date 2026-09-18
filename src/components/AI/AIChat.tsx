@@ -25,6 +25,7 @@ import {
   ChatComposer,
   type ChatComposerProps,
 } from '../ChatComposer/ChatComposer';
+import { notifyComposerMigrationOnce } from '../ChatComposer/migration-notice';
 import type { NewMessage } from '../Messaging/types';
 import {
   DEFAULT_ACCEPTED_FILE_TYPES,
@@ -366,6 +367,10 @@ export function AIChat({
   renderMessageFooter,
 }: AIChatProps) {
   const messagesContainerRef = React.useRef<HTMLDivElement>(null);
+
+  React.useEffect(() => {
+    notifyComposerMigrationOnce('AIChat');
+  }, []);
 
   const messages = React.useMemo(
     () => session?.messages || messagesProp || [],

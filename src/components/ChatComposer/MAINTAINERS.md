@@ -55,8 +55,8 @@ change reason strings without a major-version note.
 ## Shared mention module
 
 `mentionOptions` delegates to `useMentionAutocomplete` / `MentionMenu` in
-`../Messaging/useMentionAutocomplete.tsx` — the **same** module MessageComposer
-uses; its invariants live in
+`../Messaging/useMentionAutocomplete.tsx` — the module extracted from the
+retired MessageComposer; its invariants live in
 [Messaging/MAINTAINERS.md](../Messaging/MAINTAINERS.md). ChatComposer-specific
 contract: keyboard priority in the textarea `onKeyDown` is host
 `textareaProps.onKeyDown` (preventDefault claims the event) → mention menu

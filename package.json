@@ -220,6 +220,7 @@
     "dist",
     "agent",
     "README.md",
+    "MIGRATION.md",
     "LICENSE"
   ],
   "bin": {

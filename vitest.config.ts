@@ -9,6 +9,7 @@ export default defineConfig({
     exclude: [
       '**/node_modules/**',
       'dist/**',
+      '.attic/**',
       'packages/esheet/**',
       'artipod-sync/**',
       'tests/visual/**',
