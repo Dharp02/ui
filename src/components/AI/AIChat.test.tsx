@@ -342,5 +342,29 @@ describe('AIChat (ChatComposer integration)', () => {
         expect.objectContaining({ content: 'host send' })
       );
     });
+
+    it('restores the draft when a composerProps onSend rejects', async () => {
+      const onSend = vi.fn(() => Promise.reject(new Error('backend down')));
+      const onError = vi.fn();
+      const user = await setupUser();
+      render(
+        <AIChat
+          messages={messages}
+          onSendMessage={vi.fn()}
+          composerProps={{ onSend, onError }}
+        />
+      );
+      const input = screen.getByLabelText('Message');
+      await user.type(input, 'important question');
+      await user.click(screen.getByLabelText('Send message'));
+      // MessageComposer restored the draft on failure for host onSend too.
+      await waitFor(() => expect(input).toHaveValue('important question'));
+      await waitFor(() =>
+        expect(onError).toHaveBeenCalledWith(
+          'Failed to send message',
+          expect.objectContaining({ reason: 'send-failed' })
+        )
+      );
+    });
   });
 });

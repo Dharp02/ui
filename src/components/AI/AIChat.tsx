@@ -440,15 +440,19 @@ export function AIChat({
     onTypingStop?.();
   };
 
-  const handleSend = async (message: NewMessage) => {
-    const content = message.content.trim();
-    if (!content || !onSendMessage) return;
+  // Shared send path: stop typing, await the handler, and restore the draft
+  // on failure (epoch-guarded so a stale failure never clobbers newer input).
+  // MessageComposer applied this to host-supplied `onSend` too.
+  const sendWithRestore = async (
+    message: NewMessage,
+    send: (message: NewMessage) => void | Promise<void>
+  ) => {
     stopTypingOnSend();
     const epoch = draftEpochRef.current;
     try {
       // A returned promise is awaited so an async rejection follows the
       // same draft-restore path as a synchronous throw.
-      await Promise.resolve(onSendMessage(content));
+      await Promise.resolve(send(message));
     } catch (error) {
       if (draftEpochRef.current === epoch) {
         setDraft(message.content);
@@ -458,6 +462,12 @@ export function AIChat({
       // ('Failed to send message' — the same copy MessageComposer used).
       throw error;
     }
+  };
+
+  const handleSend = async (message: NewMessage) => {
+    const content = message.content.trim();
+    if (!content || !onSendMessage) return;
+    await sendWithRestore(message, () => onSendMessage(content));
   };
 
   const handleSuggestionSelect = (action: AISuggestedAction) => {
@@ -592,10 +602,7 @@ export function AIChat({
           <ChatComposer
             onSend={
               hostOnSend
-                ? (message: NewMessage) => {
-                    stopTypingOnSend();
-                    return hostOnSend(message);
-                  }
+                ? (message: NewMessage) => sendWithRestore(message, hostOnSend)
                 : handleSend
             }
             placeholder={inputPlaceholder}
