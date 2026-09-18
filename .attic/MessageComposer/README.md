@@ -23,3 +23,8 @@ depends on them.
 
 Consumer migration guide: `MIGRATION.md#chat-composer` at the repo root
 (shipped in the npm package).
+
+Note: the files here are archived verbatim, so their relative imports
+(`./types`, `./AttachmentPicker`, …) intentionally do not resolve from this
+directory. `.attic/` is excluded from tsc, eslint, prettier, and vitest and
+is never built or shipped.
