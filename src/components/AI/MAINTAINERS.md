@@ -63,5 +63,7 @@ should plug into — don't fork the message renderer.
 
 ## Testing
 
-- Unit: [Reconciliation.test.tsx](Reconciliation.test.tsx).
+- Unit: [Reconciliation.test.tsx](Reconciliation.test.tsx) and
+  [AIChat.test.tsx](AIChat.test.tsx) (the ChatComposer integration and legacy
+  `composerProps` parity suite — run it for any composer-related change).
 - Docs/visual: verify the three autodocs pages still render after story changes.

@@ -247,6 +247,23 @@ describe('AIChat (ChatComposer integration)', () => {
       expect(container.querySelector('input[type="file"]')).not.toHaveAttribute(
         'accept'
       );
+      // Forwarding `acceptedFileTypes: undefined` (optional host config) must
+      // not erase the legacy defaults — MessageComposer treated it as absent.
+      rerender(
+        <AIChat
+          messages={messages}
+          onSendMessage={vi.fn()}
+          composerProps={{
+            showAttachmentPicker: true,
+            acceptedFileTypes: undefined,
+            maxFileSize: undefined,
+          }}
+        />
+      );
+      expect(container.querySelector('input[type="file"]')).toHaveAttribute(
+        'accept',
+        'image/*,video/*,.pdf,.doc,.docx'
+      );
     });
 
     it('passes mentionOptions through to the ChatComposer mention menu', () => {
@@ -284,6 +301,24 @@ describe('AIChat (ChatComposer integration)', () => {
         />
       );
       // No AIChat RecordButton, no ChatComposer default mic button.
+      expect(screen.queryByLabelText('Start recording')).toBeNull();
+      expect(screen.queryByLabelText('Start voice input')).toBeNull();
+      expect(
+        container.querySelector('[data-slot="chat-composer-mic-slot"]')
+      ).toBeNull();
+    });
+
+    it('suppresses the mic for a false conditional inputTrailing node', () => {
+      // Legacy hosts write `inputTrailing={cond && <Mic />}` — the false
+      // branch must not mount an empty ChatComposer mic slot.
+      const { container } = render(
+        <AIChat
+          messages={messages}
+          onSendMessage={vi.fn()}
+          talkToText
+          composerProps={{ inputTrailing: false }}
+        />
+      );
       expect(screen.queryByLabelText('Start recording')).toBeNull();
       expect(screen.queryByLabelText('Start voice input')).toBeNull();
       expect(

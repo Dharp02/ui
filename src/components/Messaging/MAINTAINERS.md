@@ -10,7 +10,7 @@ implementation of `@mention` autocomplete, consumed by **two** composers:
 `MessageComposer` (here) and `ChatComposer`. It was extracted **verbatim**
 from MessageComposer so both stay behavior-identical.
 
-- **Run both suites** when touching it: `MessageComposer` has
+- **Run all affected suites** when touching it: `MessageComposer` has
   `MessageComposer.test.tsx`, and `ChatComposer` has its own `@mentions`
   describe block in `ChatComposer.test.tsx` plus consumer coverage in
   `SuperChat.test.tsx` and `AIChat.test.tsx`.

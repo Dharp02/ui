@@ -66,10 +66,11 @@ import { Meta } from '@storybook/addon-docs/blocks';
   "Close chat", "Stop", "Thinking", "Failed to send", the MCP friendly-name map and tense
   rewriting, "Powered by Ozwell", "Today" / "Yesterday", "Apply n updates" — externalise before
   localising. Timestamps use `toLocaleTimeString` / `toLocaleDateString`.
-- **Physical layout.** User messages use `flex-row-reverse`; composer trailing slots sit at
-  `right-1`; modal/trigger positions are `right-4` / `left-4`; `ChatBubble accent` is a physical
-  `borderLeft`; Messaging's reply preview is `border-l-4`. Thinking blocks use logical
-  `border-s` / `ps-3`.
+- **Physical layout.** User messages use `flex-row-reverse`; the legacy Messaging composer's
+  trailing slot sits at `right-1` (`AIChat` and `OzwellChat` now use `ChatComposer`, which is
+  logical-property/RTL-safe); modal/trigger positions are `right-4` / `left-4`; `ChatBubble
+  accent` is a physical `borderLeft`; Messaging's reply preview is `border-l-4`. Thinking blocks
+  use logical `border-s` / `ps-3`.
 - **Theming.** Most surfaces use hard-coded `neutral-*` / `white` / `primary-800` utilities rather
   than semantic tokens; `OzwellChat`, `ComposerModelSelector` and `AIReconciliationPanel` use
   `bg-card` / `border-border` / `text-muted-foreground`. `prose` classes on message text need

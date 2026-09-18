@@ -287,6 +287,13 @@ const LEGACY_ACCEPTED_FILE_TYPES = [
 ];
 const LEGACY_MAX_FILE_SIZE = 25 * 1024 * 1024;
 
+// MessageComposer rendered its trailing slot behind `{inputTrailing && …}`,
+// so any falsy value (e.g. `false` from `cond && <Mic />`, null, '')
+// suppressed it. ChatComposer only skips `undefined` — anything else mounts
+// the slot wrapper — so normalize falsy legacy slot values to undefined.
+const normalizeLegacySlot = (node: React.ReactNode): React.ReactNode =>
+  node || undefined;
+
 export interface AIChatProps
   extends VariantProps<typeof chatVariants>, AIChatCallbacks {
   /** Chat session data */
@@ -631,26 +638,17 @@ export function AIChat({
             // MessageComposer parity: attachments off, 1600-char cap and
             // the same accessible input label. All overridable below.
             allowAttachments={showAttachmentPicker ?? false}
-            // Legacy attachment validation defaults (MessageComposer applied
-            // these; ChatComposer is unrestricted). Only on the legacy path —
-            // explicit values in composerProps win via the spread below.
-            acceptedFileTypes={
-              showAttachmentPicker ? LEGACY_ACCEPTED_FILE_TYPES : undefined
-            }
-            maxFileSize={
-              showAttachmentPicker ? LEGACY_MAX_FILE_SIZE : undefined
-            }
             maxLength={1600}
             inputLabel="Message"
             // composerProps wins over the built-in talkToText slot (same
-            // override order as the old {...composerProps} spread), and an
-            // explicit null suppresses the mic entirely — normalized to
-            // undefined so ChatComposer doesn't render its default mic button.
+            // override order as the old {...composerProps} spread); falsy
+            // slot values suppress the mic entirely (normalized so
+            // ChatComposer doesn't mount its slot wrapper or default button).
             micSlot={
               hasHostMicSlot ? (
-                (hostMicSlot ?? undefined)
+                normalizeLegacySlot(hostMicSlot)
               ) : hasInputTrailing ? (
-                (inputTrailing ?? undefined)
+                normalizeLegacySlot(inputTrailing)
               ) : talkToText ? (
                 <RecordButton
                   variant="ghost"
@@ -664,6 +662,18 @@ export function AIChat({
               ) : undefined
             }
             {...composerRest}
+            // After the spread so `acceptedFileTypes: undefined` /
+            // `maxFileSize: undefined` in composerProps can't erase the
+            // legacy defaults (MessageComposer's destructuring defaults
+            // treated undefined as absent); explicit values still win.
+            acceptedFileTypes={
+              composerRest.acceptedFileTypes ??
+              (showAttachmentPicker ? LEGACY_ACCEPTED_FILE_TYPES : undefined)
+            }
+            maxFileSize={
+              composerRest.maxFileSize ??
+              (showAttachmentPicker ? LEGACY_MAX_FILE_SIZE : undefined)
+            }
             value={composerValue}
             onValueChange={handleComposerValueChange}
           />

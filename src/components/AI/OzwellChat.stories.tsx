@@ -402,7 +402,7 @@ const [queued, setQueued] = useState<string | null>(null);
         {
           type: 'contains',
           target: 'chat-composermodelselector',
-          why: 'The `models` prop mounts ComposerModelSelector in the composer’s trailing slot.',
+          why: 'The `models` prop mounts ComposerModelSelector in ChatComposer’s selector row below the input.',
         },
         {
           type: 'uses',
