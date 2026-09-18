@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { screen, fireEvent } from '@testing-library/react';
 import { renderWithTheme } from '../../test/test-utils';
 import { SidebarNavGroup } from './Sidebar';
@@ -90,6 +90,40 @@ describe('SidebarNavGroup', () => {
     fireEvent.click(trigger);
     expect(document.activeElement).toBe(outside);
     outside.remove();
+  });
+
+  /*
+   * The toggle handler records focus synchronously, so the common path does not
+   * depend on `focusin` firing at all. That matters: focus events are suppressed
+   * whenever the window itself is unfocused, which is the normal state of an
+   * automated browser — a `focusin`-only implementation silently no-ops there.
+   *
+   * Simulated by dropping the component's `focusin` registration on the floor,
+   * so the only thing that can restore focus is the toggle-time capture.
+   */
+  it('restores focus without relying on focus events', () => {
+    const addEventListener = document.addEventListener.bind(document);
+    const spy = vi
+      .spyOn(document, 'addEventListener')
+      .mockImplementation((
+        ...args: Parameters<typeof document.addEventListener>
+      ) => {
+        if (args[0] === 'focusin') return;
+        addEventListener(...args);
+      });
+
+    try {
+      renderGroup({ defaultExpanded: true });
+      const trigger = screen.getByRole('button', { name: /reports/i });
+      const item = screen.getByRole('button', { name: 'Daily' });
+
+      item.focus();
+      fireEvent.click(trigger);
+
+      expect(document.activeElement).toBe(trigger);
+    } finally {
+      spy.mockRestore();
+    }
   });
 
   describe('forceMount', () => {

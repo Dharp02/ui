@@ -427,28 +427,41 @@ export function SidebarNavGroup({
    * mode, expanding one group collapses its siblings, so focus parked in a
    * sibling evaporates on a click the user made somewhere else entirely.
    *
-   * The state has to be tracked while the group is open rather than read after
-   * it closes. By the time an effect can observe the collapse, React has
-   * already removed the focused node and `activeElement` is `<body>`, so the
-   * answer is always "no" and the restore never fires.
+   * Whether focus was inside has to be recorded *before* the collapse. By the
+   * time an effect can observe it, React has already removed the focused node
+   * and `activeElement` is `<body>`, so a check made there always answers "no"
+   * and the restore never fires.
    *
-   * Tracking focus rather than only handling the trigger's own click also
-   * covers collapses this component did not initiate — an accordion sibling
-   * opening, or a controlled `groupId` changing underneath it.
+   * Two recorders, because neither covers both cases:
+   *
+   * - `captureFocusInside()` runs synchronously in the toggle handler, before
+   *   the state change. This is the common path and it depends on nothing but
+   *   `document.activeElement`, so it still works where focus events do not
+   *   fire at all — an unfocused window, which is also what most automated
+   *   browsers run in.
+   * - the `focusin` listener covers collapses this component did not initiate,
+   *   where there is no handler to hook: an accordion sibling opening, or a
+   *   controlled `groupId` changing underneath it.
    */
   const focusWasInsideRef = useRef(false);
+
+  const captureFocusInside = useCallback(() => {
+    const active = document.activeElement;
+    focusWasInsideRef.current =
+      active !== triggerRef.current &&
+      groupRef.current?.contains(active) === true;
+  }, []);
 
   useEffect(() => {
     if (!effectiveExpanded) return;
 
-    function trackFocus() {
-      const active = document.activeElement;
+    function trackFocus(event: FocusEvent) {
+      const target = event.target as Node | null;
       focusWasInsideRef.current =
-        active !== triggerRef.current &&
-        groupRef.current?.contains(active) === true;
+        target !== triggerRef.current &&
+        groupRef.current?.contains(target) === true;
     }
 
-    trackFocus();
     document.addEventListener('focusin', trackFocus);
     return () => document.removeEventListener('focusin', trackFocus);
   }, [effectiveExpanded]);
@@ -462,12 +475,13 @@ export function SidebarNavGroup({
   }, [effectiveExpanded, forceMount]);
 
   const handleToggle = useCallback(() => {
+    captureFocusInside();
     if (groupId) {
       toggleGroup(groupId);
     } else {
       setLocalExpanded((prev) => !prev);
     }
-  }, [groupId, toggleGroup]);
+  }, [captureFocusInside, groupId, toggleGroup]);
 
   const items = <div className="mt-1 ps-2">{children}</div>;
 
