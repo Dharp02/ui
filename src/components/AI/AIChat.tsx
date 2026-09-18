@@ -421,13 +421,17 @@ export function AIChat({
   // newer typed input.
   const draftEpochRef = React.useRef(0);
   const composerValue = hostValue ?? draft;
+  // MessageComposer only invoked onValueChange when controlled
+  // (value !== undefined); preserve that contract for legacy hosts that
+  // pass onValueChange alone.
+  const isHostControlled = hostValue !== undefined;
   const handleComposerValueChange = React.useCallback(
     (value: string) => {
       draftEpochRef.current += 1;
       setDraft(value);
-      hostOnValueChange?.(value);
+      if (isHostControlled) hostOnValueChange?.(value);
     },
-    [hostOnValueChange]
+    [isHostControlled, hostOnValueChange]
   );
 
   // Emulate MessageComposer's typing callbacks for legacy composerProps
@@ -483,7 +487,7 @@ export function AIChat({
     } catch (error) {
       if (draftEpochRef.current === epoch) {
         setDraft(message.content);
-        hostOnValueChange?.(message.content);
+        if (isHostControlled) hostOnValueChange?.(message.content);
       }
       // Rethrow so ChatComposer reports the failure through `onError`
       // ('Failed to send message' — the same copy MessageComposer used).
@@ -635,11 +639,6 @@ export function AIChat({
             placeholder={inputPlaceholder}
             disabled={isGenerating}
             isSending={isGenerating}
-            // MessageComposer parity: attachments off, 1600-char cap and
-            // the same accessible input label. All overridable below.
-            allowAttachments={showAttachmentPicker ?? false}
-            maxLength={1600}
-            inputLabel="Message"
             // composerProps wins over the built-in talkToText slot (same
             // override order as the old {...composerProps} spread); falsy
             // slot values suppress the mic entirely (normalized so
@@ -662,10 +661,15 @@ export function AIChat({
               ) : undefined
             }
             {...composerRest}
-            // After the spread so `acceptedFileTypes: undefined` /
-            // `maxFileSize: undefined` in composerProps can't erase the
-            // legacy defaults (MessageComposer's destructuring defaults
-            // treated undefined as absent); explicit values still win.
+            // MessageComposer-parity defaults, applied after the spread so
+            // explicit `undefined` in composerProps can't erase them
+            // (MessageComposer's destructuring defaults treated undefined
+            // as absent); explicit values still win.
+            allowAttachments={
+              composerRest.allowAttachments ?? showAttachmentPicker ?? false
+            }
+            maxLength={composerRest.maxLength ?? 1600}
+            inputLabel={composerRest.inputLabel ?? 'Message'}
             acceptedFileTypes={
               composerRest.acceptedFileTypes ??
               (showAttachmentPicker ? LEGACY_ACCEPTED_FILE_TYPES : undefined)

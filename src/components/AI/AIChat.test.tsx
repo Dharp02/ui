@@ -151,6 +151,45 @@ describe('AIChat (ChatComposer integration)', () => {
     await waitFor(() => expect(input).toHaveValue('controlled draft'));
   });
 
+  it('does not invoke onValueChange when uncontrolled (no value prop)', async () => {
+    // MessageComposer only fired onValueChange in controlled mode
+    // (value !== undefined); the legacy contract must hold.
+    const onValueChange = vi.fn();
+    const user = await setupUser();
+    render(
+      <AIChat
+        messages={messages}
+        onSendMessage={vi.fn()}
+        composerProps={{ onValueChange }}
+      />
+    );
+    const input = screen.getByLabelText('Message');
+    await user.type(input, 'hi');
+    expect(input).toHaveValue('hi');
+    expect(onValueChange).not.toHaveBeenCalled();
+  });
+
+  it('keeps parity defaults when composerProps forwards explicit undefined', () => {
+    // A shared host config object may contain these keys set to undefined;
+    // MessageComposer's destructuring defaults treated that as absent.
+    render(
+      <AIChat
+        messages={messages}
+        onSendMessage={vi.fn()}
+        composerProps={{
+          showAttachmentPicker: true,
+          allowAttachments: undefined,
+          maxLength: undefined,
+          inputLabel: undefined,
+        }}
+      />
+    );
+    // inputLabel falls back to "Message" (not ChatComposer's default) and
+    // the legacy showAttachmentPicker mapping survives.
+    expect(screen.getByLabelText('Message')).toBeInTheDocument();
+    expect(screen.getByLabelText('Add to message')).toBeInTheDocument();
+  });
+
   it('renders a RecordButton in the mic slot when talkToText is on', () => {
     const { container } = render(
       <AIChat messages={messages} onSendMessage={vi.fn()} talkToText />
