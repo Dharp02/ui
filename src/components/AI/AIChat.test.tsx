@@ -280,6 +280,45 @@ describe('AIChat (ChatComposer integration)', () => {
       );
     });
 
+    it('forwards staged attachments to onSendMessage', async () => {
+      const user = await setupUser();
+      const onSendMessage = vi.fn();
+      const { container } = render(
+        <AIChat
+          messages={messages}
+          onSendMessage={onSendMessage}
+          composerProps={{ showAttachmentPicker: true }}
+        />
+      );
+      const file = new File(['data'], 'notes.pdf', { type: 'application/pdf' });
+      fireEvent.change(container.querySelector('input[type="file"]')!, {
+        target: { files: [file] },
+      });
+      await user.type(screen.getByLabelText('Message'), 'see attached');
+      await user.click(screen.getByLabelText('Send message'));
+      expect(onSendMessage).toHaveBeenCalledWith('see attached', [file]);
+    });
+
+    it('delivers attachment-only sends instead of dropping the files', async () => {
+      // ChatComposer clears its staged files before `onSend` resolves, so a
+      // swallowed attachment-only send would silently destroy them.
+      const user = await setupUser();
+      const onSendMessage = vi.fn();
+      const { container } = render(
+        <AIChat
+          messages={messages}
+          onSendMessage={onSendMessage}
+          composerProps={{ showAttachmentPicker: true }}
+        />
+      );
+      const file = new File(['data'], 'notes.pdf', { type: 'application/pdf' });
+      fireEvent.change(container.querySelector('input[type="file"]')!, {
+        target: { files: [file] },
+      });
+      await user.click(screen.getByLabelText('Send message'));
+      expect(onSendMessage).toHaveBeenCalledWith('', [file]);
+    });
+
     it('renders a legacy inputTrailing node in the mic slot', () => {
       render(
         <AIChat

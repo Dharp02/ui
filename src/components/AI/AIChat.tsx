@@ -500,9 +500,19 @@ export function AIChat({
   };
 
   const handleSend = async (message: NewMessage) => {
+    if (!onSendMessage) return;
     const content = message.content.trim();
-    if (!content || !onSendMessage) return;
-    await sendWithRestore(message, () => onSendMessage(content));
+    const attachments = message.attachments?.length
+      ? message.attachments
+      : undefined;
+    // ChatComposer has already cleared its staged files by the time `onSend`
+    // runs, so attachment-only messages must still reach the host — dropping
+    // them here would silently destroy the user's files.
+    if (!content && !attachments) return;
+    await sendWithRestore(message, () =>
+      // Keep the exact legacy call shape for text-only sends.
+      attachments ? onSendMessage(content, attachments) : onSendMessage(content)
+    );
   };
 
   const handleSuggestionSelect = (action: AISuggestedAction) => {
