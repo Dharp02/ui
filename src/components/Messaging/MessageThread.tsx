@@ -14,6 +14,7 @@ import {
   ChatComposer,
   type ChatComposerHandle,
 } from '../ChatComposer/ChatComposer';
+import { notifyComposerMigrationOnce } from '../ChatComposer/migration-notice';
 import { ConversationHeader } from './ConversationHeader';
 import {
   CameraButton,
@@ -275,6 +276,10 @@ const MessageThread = React.forwardRef<HTMLDivElement, MessageThreadProps>(
     // Composer handle so files dropped on the message list (and camera
     // captures) are staged in the composer.
     const composerRef = React.useRef<ChatComposerHandle>(null);
+
+    React.useEffect(() => {
+      notifyComposerMigrationOnce('MessageThread');
+    }, []);
 
     // Controlled composer draft so a failed send can restore the typed text
     // (ChatComposer clears optimistically and delegates restore to the host;
