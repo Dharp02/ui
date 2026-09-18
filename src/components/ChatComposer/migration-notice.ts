@@ -14,6 +14,6 @@ export function notifyComposerMigrationOnce(surface: string): void {
       'MessageComposer was retired in 0.10.0. If your CSS or tests reach into ' +
       'composer internals, see MIGRATION.md#chat-composer ' +
       '(https://github.com/mieweb/ui/blob/main/MIGRATION.md#chat-composer). ' +
-      'This dev-only notice will be removed in the next release.'
+      'This dev-only notice will be removed in 0.11.0.'
   );
 }
