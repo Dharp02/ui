@@ -3,6 +3,9 @@
 Short notes on the invariants that are easy to break. User-facing docs live in
 [ChatComposer.stories.tsx](./ChatComposer.stories.tsx).
 
+In-repo hosts: `SuperChat`, `AIChat` and Messaging's `MessageThread` all mount
+this composer — run their suites too when changing send/attachment behavior.
+
 ## Object-URL lifecycle
 
 Staged image/video attachments get a `URL.createObjectURL` preview. Every URL

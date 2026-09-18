@@ -123,7 +123,8 @@ Host integration escape hatches: \`textareaProps\` spreads extra props onto the 
 
 - You want the **complete multi-participant chat surface** — \`SuperChat\` mounts this composer internally (participants become \`mentionOptions\`, attachments reach the host as base64 \`dataUrl\`s) and adds the thread, header, and Markdown pipeline.
 - You want a **complete AI assistant surface** — \`AIChat\` mounts this composer internally (legacy \`MessageComposer\`-style \`composerProps\` keys are mapped for compatibility) and adds the message thread, streaming/generating states, and suggestion chips.
-- You are maintaining an existing \`MessageComposer\` surface and don't need the toolbar/selector rows — migrating is encouraged but not required.
+- You want a **human-to-human messaging thread** — \`MessageThread\` mounts this composer internally and adds the conversation header, message list, typing-callback emulation and lightbox.
+- You are maintaining an existing standalone \`MessageComposer\` surface and don't need the toolbar/selector rows — migrating is encouraged but not required.
 - A single-line command input fits better — \`CommandPalette\` or a plain \`Input\`.
 
 ### Example
@@ -166,7 +167,7 @@ const composerRef = useRef<ChatComposerHandle>(null);
         {
           type: 'alternative to',
           target: 'chat-messaging',
-          why: 'MessageComposer is the earlier messaging-thread composer; both share the same @mention autocomplete module and reply-to contract (replyTo / onCancelReply); ChatComposer is the standardized input with + menu, mic, stop, drag-and-drop and agent/model selector rows — prefer it for new work.',
+          why: 'MessageComposer is the earlier messaging-thread composer; both share the same @mention autocomplete module and reply-to contract (replyTo / onCancelReply); ChatComposer is the standardized input with + menu, mic, stop, drag-and-drop and agent/model selector rows — MessageThread now mounts it, and it is preferred for new work.',
         },
         {
           type: 'composes with',

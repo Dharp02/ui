@@ -86,6 +86,7 @@ export {
   useTypingIndicator,
   useMessageScroll,
   useReadReceipts,
+  useTypingEmulation,
   type UseMessagesOptions,
   type UseMessagesReturn,
   type UseTypingIndicatorOptions,
@@ -93,4 +94,6 @@ export {
   type UseMessageScrollOptions,
   type UseMessageScrollReturn,
   type UseReadReceiptsOptions,
+  type UseTypingEmulationOptions,
+  type UseTypingEmulationReturn,
 } from './hooks';

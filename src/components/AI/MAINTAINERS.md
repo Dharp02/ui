@@ -53,7 +53,10 @@ should plug into — don't fork the message renderer.
 - The composer is **the shared `ChatComposer`** (`src/components/ChatComposer/`)
   — visual/behavioral changes to the input may belong there, not here. Legacy
   `MessageComposer`-era `composerProps` keys are mapped in `AIChat.tsx` (see
-  `AIChatLegacyComposerProps`). Inline images use the Messaging attachment
+  `AIChatLegacyComposerProps`). Typing emulation (`useTypingEmulation`) and the
+  attachment defaults (`DEFAULT_ACCEPTED_FILE_TYPES` / `DEFAULT_MAX_FILE_SIZE`)
+  are shared from the Messaging module — `MessageThread` consumes the same
+  ones. Inline images use the Messaging attachment
   lightbox.
 - Content block types live in `AIMessageContent` (`text` / `tool_use` /
   `tool_result` / `thinking` / `code`). Adding a block type means updating both
