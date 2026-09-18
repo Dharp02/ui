@@ -427,7 +427,10 @@ export function AIChat({
   const composerValue = hostValue ?? draft;
   // MessageComposer only invoked onValueChange when controlled
   // (value !== undefined); preserve that contract for legacy hosts that
-  // pass onValueChange alone.
+  // pass onValueChange alone. This is a deliberate AIChat-owned exception
+  // to the ChatComposer API: `composerProps.onValueChange` without `value`
+  // receives no callbacks here (raw ChatComposer would fire it on every
+  // edit). Pass `value` too if you need change notifications.
   const isHostControlled = hostValue !== undefined;
   const handleComposerValueChange = React.useCallback(
     (value: string) => {
