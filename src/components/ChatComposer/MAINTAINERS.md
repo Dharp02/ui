@@ -27,6 +27,17 @@ add/remove/send so same-batch calls see accurate room and the unmount cleanup
 never re-revokes. The updaters themselves are pure merges/filters. Keep it
 that way.
 
+## Imperative `addFiles` bypasses `allowAttachments`
+
+`allowAttachments` gates only the composer's own attach affordances — the `+`
+button, the paste handler, and the internal `DragDropZone`. The imperative
+`ref.addFiles()` path deliberately has **no** gate: hosts that call it (e.g.
+MessageThread's camera capture with `showAttachmentPicker={false}`) have
+already opted in, and legacy MessageComposer parity requires camera-only
+staging to work. Validation and structured `onError` reporting still apply.
+Don't re-add an `allowAttachments` check inside `addFiles`; gate new
+user-facing entry points at the entry point instead.
+
 ## Menus are controlled
 
 The `+` menu and agent menu use controlled `open`/`onOpenChange` because

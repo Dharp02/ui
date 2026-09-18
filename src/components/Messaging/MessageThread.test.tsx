@@ -220,6 +220,28 @@ describe('MessageThread (ChatComposer integration)', () => {
     expect(screen.getByText('capture.png')).toBeInTheDocument();
   });
 
+  it('stages camera captures even when the attachment picker is disabled', () => {
+    // Parity with the legacy composer: the camera path never depended on
+    // showAttachmentPicker, which only gates the + menu / paste / drop.
+    renderWithTheme(
+      <MessageThread
+        messages={messages}
+        currentUser={me}
+        eventHandlers={{ onSendMessage: vi.fn() }}
+        showCameraButton
+        showAttachmentPicker={false}
+      />
+    );
+
+    const cameraInput = screen.getByLabelText('Take a photo', {
+      selector: 'input',
+    });
+    const photo = new File(['x'], 'camera-only.png', { type: 'image/png' });
+    fireEvent.change(cameraInput, { target: { files: [photo] } });
+
+    expect(screen.getByText('camera-only.png')).toBeInTheDocument();
+  });
+
   it('sends staged attachments with the message', () => {
     const onSendMessage = vi.fn();
     renderWithTheme(

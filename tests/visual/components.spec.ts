@@ -241,6 +241,44 @@ test.describe('Visual Regression Tests - Core Components', () => {
     );
   });
 
+  test('MessageThread - Full thread with shared composer', async ({ page }) => {
+    // MessageThread now embeds the shared ChatComposer in its border-t frame
+    // (composer unification #465). Message footers show wall-clock times, so
+    // mask them to keep the snapshot deterministic.
+    await gotoStory(page, 'chat-messaging--full-thread');
+    await page
+      .locator("[data-slot='chat-composer-input']")
+      .waitFor({ state: 'visible' });
+    await expect(page).toHaveScreenshot('message-thread-full.png', {
+      mask: [page.locator("[data-slot='message-footer']")],
+    });
+  });
+
+  test('MessageThread - Full thread with shared composer (dark)', async ({
+    page,
+  }) => {
+    // Dark-mode composer frame (border-t dark:border-neutral-700) around the
+    // shared ChatComposer card.
+    await gotoStory(page, 'chat-messaging--full-thread', {
+      globals: 'theme:dark',
+    });
+    await page
+      .locator("[data-slot='chat-composer-input']")
+      .waitFor({ state: 'visible' });
+    await expect(page).toHaveScreenshot('message-thread-full-dark.png', {
+      mask: [page.locator("[data-slot='message-footer']")],
+    });
+  });
+
+  test('MessageThread - Composer frame', async ({ page }) => {
+    // The new composer region in isolation: border-t p-3 wrapper holding the
+    // ChatComposer card (no timestamps, so no masking needed).
+    await gotoStory(page, 'chat-messaging--full-thread');
+    const composer = page.locator("[data-slot='message-thread-composer']");
+    await composer.waitFor({ state: 'visible' });
+    await expect(composer).toHaveScreenshot('message-thread-composer.png');
+  });
+
   test('SuperChat - Playground', async ({ page }) => {
     // SuperChat panel with the embedded ChatComposer.
     await gotoStory(page, 'superchat-superchat-panel--playground');
