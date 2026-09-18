@@ -25,9 +25,12 @@ MessageThread's public props unchanged:
   unrestricted. MessageComposer's destructuring defaults use the same
   constants — keep them in sync by keeping them shared.
 - `showCameraButton` renders `CameraButton` in ChatComposer's `micSlot`;
-  captures route through the composer's `addFiles` (so they require
-  attachments enabled). Files dropped on the message list are staged the same
-  way — validation and error reporting happen once, in `addFiles`.
+  captures route through the composer's imperative `addFiles`, which
+  deliberately bypasses `allowAttachments` — camera staging works even with
+  `showAttachmentPicker={false}`. Files dropped on the message list also
+  route through `addFiles`, but the list-level `DragDropZone` is gated on
+  `showAttachmentPicker`. Validation and error reporting happen once, in
+  `addFiles`.
 - Suite: [MessageThread.test.tsx](./MessageThread.test.tsx).
 
 ## Shared @mention module

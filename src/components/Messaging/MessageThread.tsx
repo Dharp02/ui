@@ -182,8 +182,9 @@ export interface MessageThreadProps {
   showAttachmentPicker?: boolean;
   /**
    * Show a camera capture button in the composer's action row (mobile).
-   * Captured photos go through the attachment pipeline, so this requires
-   * `showAttachmentPicker` (the default).
+   * Captured photos are staged via the composer's imperative `addFiles`,
+   * which works independently of `showAttachmentPicker` — that prop only
+   * gates the `+` menu, paste, and drag-and-drop affordances.
    */
   showCameraButton?: boolean;
   /** Accepted file types */
