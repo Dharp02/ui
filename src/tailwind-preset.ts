@@ -67,7 +67,7 @@ export const miewebUISafelist = [
   // OzwellChat's compact widget shell and portaled menus. These arbitrary
   // utilities must remain available to Tailwind 3 consumers that do not scan
   // package source files.
-  'max-w-[min(142px,38vw)]',
+  'max-w-[min(160px,44vw)]',
   'max-w-[190px]',
   'max-w-[min(248px,calc(100vw-24px))]',
   'max-w-[min(260px,calc(100vw-24px))]',
@@ -80,7 +80,6 @@ export const miewebUISafelist = [
   'text-[11px]',
   'leading-[1.35]',
   'py-[7px]',
-  '[&_[data-slot="composer-input"]]:pe-[min(160px,44vw)]',
   '[&_[data-slot="ai-chat"]]:min-h-0',
   '[&_[data-slot="ai-chat-messages"]]:min-h-0',
   '[&_[data-slot="ai-tool-call"]]:p-2',

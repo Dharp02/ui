@@ -261,6 +261,36 @@ test.describe('Visual Regression Tests - Core Components', () => {
     await expect(page).toHaveScreenshot('superchat-read-only.png');
   });
 
+  test('AIChat - Playground', async ({ page }) => {
+    // AIChat with the embedded ChatComposer.
+    await gotoStory(page, 'chat-aichat--playground');
+    await page
+      .locator("[data-slot='chat-composer-input']")
+      .waitFor({ state: 'visible' });
+    await expect(page).toHaveScreenshot('ai-chat-playground.png');
+  });
+
+  test('AIChat - Talk to text', async ({ page }) => {
+    // RecordButton in the composer's mic slot.
+    await gotoStory(page, 'chat-aichat--talk-to-text');
+    await page
+      .locator("[data-slot='chat-composer-mic-slot']")
+      .waitFor({ state: 'visible' });
+    await expect(page).toHaveScreenshot('ai-chat-talk-to-text.png');
+  });
+
+  test('AIChat - Playground (condensed)', async ({ page }) => {
+    // body.condensed tightens the ai-chat-composer padding
+    // (condensed-view.css) on top of the composer's own condensed rules.
+    await gotoStory(page, 'chat-aichat--playground', {
+      globals: 'density:condensed',
+    });
+    await page
+      .locator("[data-slot='chat-composer-input']")
+      .waitFor({ state: 'visible' });
+    await expect(page).toHaveScreenshot('ai-chat-playground-condensed.png');
+  });
+
   test('Avatar - Default', async ({ page }) => {
     await gotoStory(page, 'data-display-avatar--default');
     await expect(page).toHaveScreenshot('avatar-default.png');

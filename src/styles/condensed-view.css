@@ -6437,6 +6437,12 @@ body.condensed [data-slot='ai-chat-input'] {
   padding: 0 !important;
 }
 
+/* ChatComposer wrapper inside the input section – tighter padding around the
+   pill card (normal mode uses p-3, matching the old MessageComposer area) */
+body.condensed [data-slot='ai-chat-composer'] {
+  padding: 0.375rem !important;
+}
+
 /* ---------------------------------------------------------------------------
    AIChat – Suggested Actions
    --------------------------------------------------------------------------- */

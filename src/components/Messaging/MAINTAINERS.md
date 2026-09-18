@@ -10,9 +10,10 @@ implementation of `@mention` autocomplete, consumed by **two** composers:
 `MessageComposer` (here) and `ChatComposer`. It was extracted **verbatim**
 from MessageComposer so both stay behavior-identical.
 
-- **Run both suites** when touching it: `MessageComposer` is exercised by
-  `SuperChat.test.tsx` (SuperChat pins mention behavior through it) and
-  `ChatComposer.test.tsx` has its own `@mentions` describe block.
+- **Run all affected suites** when touching it: `MessageComposer` has
+  `MessageComposer.test.tsx`, and `ChatComposer` has its own `@mentions`
+  describe block in `ChatComposer.test.tsx` plus consumer coverage in
+  `SuperChat.test.tsx` and `AIChat.test.tsx`.
 - `useMentionAutocomplete().handleKeyDown(event)` returns `true` when it
   consumed the key — callers **must** check it before their own Enter-to-send
   handling. Each composer also runs host key handlers first (preventDefault

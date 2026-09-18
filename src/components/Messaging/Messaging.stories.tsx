@@ -253,7 +253,7 @@ const bubbleMeta: Meta<typeof MessageBubble> = {
 ### Use it when
 
 - Staff ↔ patient or staff ↔ staff **messaging**: delivery states, read receipts, typing indicators, file/image attachments with a lightbox, reply-to, and a conversation switcher — and you want to own the layout and transport.
-- You need only one piece — e.g. \`MessageComposer\` under something that is not a chat (\`AIChat\` and \`SuperChat\` both mount it), or \`MessageBubble\` inside a notification feed.
+- You need only one piece — e.g. \`MessageComposer\` under something that is not a chat, or \`MessageBubble\` inside a notification feed.
 
 ### Don't use it when
 
@@ -315,7 +315,7 @@ const { messages, sendMessage, retryMessage, loadMore } = useMessages({
         {
           type: 'composes with',
           target: 'chat-aichat',
-          why: 'AIChat reuses MessageComposer and EmptyState from the Messaging module for its input and empty thread.',
+          why: 'AIChat reuses EmptyState from the Messaging module for its empty thread (its input is ChatComposer).',
         },
         {
           type: 'alternative to',

@@ -18,6 +18,8 @@ module.exports = {
     'max-w-[60%]',
     'md:hidden',
     'md:inline-flex',
+    // OzwellChatView — model selector width cap in ChatComposer's selector row
+    'max-w-[min(160px,44vw)]',
     // Semantic colors
     'border-border',
     'border-input',

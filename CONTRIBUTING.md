@@ -346,7 +346,7 @@ Current notes:
 
 | Module                                                                       | Why it has notes                                                                                                                        |
 | ---------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
-| [AI](src/components/AI/MAINTAINERS.md)                                       | `renderTextContent` extension point; host owns sanitization; reuses the Messaging composer                                              |
+| [AI](src/components/AI/MAINTAINERS.md)                                       | `renderTextContent` extension point; host owns sanitization; reuses `ChatComposer` (legacy composerProps keys mapped)                   |
 | [AGGrid (deprecated)](src/components/AGGrid/MAINTAINERS.md)                  | Legacy maintenance only; retained for existing consumers. Use [DataVis NITRO](src/components/DataVisNITRO/MAINTAINERS.md) for new work. |
 | [ChatComposer](src/components/ChatComposer/MAINTAINERS.md)                   | Object-URL lifecycle with an `attachmentsRef` mirror; pure state updaters; controlled menus; stable `onError` reason keys               |
 | [CountryCodeDropdown](src/components/CountryCodeDropdown/MAINTAINERS.md)     | Base shared with `CountryDropdown` with diverging defaults (US vs. empty); empty-state contract; lazy `google-libphonenumber` singletons |
@@ -354,7 +354,7 @@ Current notes:
 | [ESheet](src/components/ESheet/MAINTAINERS.md)                               | Implementation is a submodule (nx); needs `build:esheet`; Storybook-only `src`                                                          |
 | [DataVisNITRO](src/components/DataVisNITRO/MAINTAINERS.md)                   | Wraps `datavis-ace` + the `@mieweb/datavis` npm package; context/source/grid wiring                                                     |
 | [FloatingWindow](src/components/FloatingWindow/MAINTAINERS.md)               | Manual drag/resize math; modal vs. floating modes; fully controlled                                                                     |
-| [Messaging](src/components/Messaging/MAINTAINERS.md)                         | Shared @mention module consumed by both `MessageComposer` and `ChatComposer` (run both suites); `DragDropZone` reused as a pure drop target |
+| [Messaging](src/components/Messaging/MAINTAINERS.md)                         | Shared @mention module consumed by both `MessageComposer` and `ChatComposer` (run all affected suites — see notes); `DragDropZone` reused as a pure drop target |
 | [Motion](src/motion/MAINTAINERS.md)                                          | Optional `motion` peer isolated to the `@mieweb/ui/motion` entry; cross-entry context pinned to `globalThis`; CSS fallback contract      |
 | [SuperChat](src/components/SuperChat/MAINTAINERS.md)                         | Conversation/inbox/panel surfaces, sanitization contract, plugin dependencies; design rationale in its Mission section                  |
 | [YChart](src/components/YChart/MAINTAINERS.md)                               | Vanilla editor in a submodule, dynamically imported; not in the public API                                                              |

@@ -346,7 +346,7 @@ const meta = {
       description: {
         component: `### What it's for
 
-**The Ozwell-branded widget shell around \`AIChat\`: thinking-mode menu, message jump list, warning strip, model picker in the composer, queued follow-up editing and a "Powered by Ozwell" footer — with every piece of state supplied by the host's Ozwell adapter.** \`OzwellChat\` takes \`messages: AIMessage[]\`, \`isGenerating\`, \`onSendMessage(text)\`, \`inputPlaceholder\` (default "Ask a question..."), \`renderTextContent\`, \`footer\` and: \`thinking={{ enabled, mode, onModeChange }}\` (\`OzwellThinkingMode\` \`never\` | \`collapsed\` | \`auto\` | \`expanded\` — applied client-side by filtering or collapsing \`thinking\` blocks before they reach \`AIChat\`); \`models={{ options, value, onChange, providerFilter?, onProviderFilterChange? }}\` (renders \`ComposerModelSelector\` in the composer's trailing slot when there is more than one option); \`queuedMessage\` / \`onQueuedMessageChange\` / \`onCancelQueuedMessage\` (shows the pending follow-up as a \`status: 'pending'\` user bubble with edit / save / cancel icon buttons via \`renderMessageFooter\`); \`warning\` / \`onDismissWarning\` (an inline \`Toast variant="warning"\`). A **Messages** dropdown appears once there are three or more user messages and scrolls the thread to the chosen one. It renders \`AIChat\` with \`showHeader={false}\`, \`variant="embedded"\`, and — unlike plain \`AIChat\` — keeps the composer **enabled while generating** so the next question can be typed and queued. Types exported: \`OzwellChatProps\`, \`OzwellThinkingMode\`, \`OzwellModelOption\`, \`OzwellModelValue\`.
+**The Ozwell-branded widget shell around \`AIChat\`: thinking-mode menu, message jump list, warning strip, model picker in the composer, queued follow-up editing and a "Powered by Ozwell" footer — with every piece of state supplied by the host's Ozwell adapter.** \`OzwellChat\` takes \`messages: AIMessage[]\`, \`isGenerating\`, \`onSendMessage(text)\`, \`inputPlaceholder\` (default "Ask a question..."), \`renderTextContent\`, \`footer\` and: \`thinking={{ enabled, mode, onModeChange }}\` (\`OzwellThinkingMode\` \`never\` | \`collapsed\` | \`auto\` | \`expanded\` — applied client-side by filtering or collapsing \`thinking\` blocks before they reach \`AIChat\`); \`models={{ options, value, onChange, providerFilter?, onProviderFilterChange? }}\` (renders \`ComposerModelSelector\` in the composer's selector row when there is more than one option); \`queuedMessage\` / \`onQueuedMessageChange\` / \`onCancelQueuedMessage\` (shows the pending follow-up as a \`status: 'pending'\` user bubble with edit / save / cancel icon buttons via \`renderMessageFooter\`); \`warning\` / \`onDismissWarning\` (an inline \`Toast variant="warning"\`). A **Messages** dropdown appears once there are three or more user messages and scrolls the thread to the chosen one. It renders \`AIChat\` with \`showHeader={false}\`, \`variant="embedded"\`, and — unlike plain \`AIChat\` — keeps the composer **enabled while generating** so the next question can be typed and queued. Types exported: \`OzwellChatProps\`, \`OzwellThinkingMode\`, \`OzwellModelOption\`, \`OzwellModelValue\`.
 
 ### Use it when
 
@@ -387,7 +387,7 @@ const [queued, setQueued] = useState<string | null>(null);
 - **Queueing is host logic.** The component never sends \`queuedMessage\` itself; you must dispatch it when generation finishes. Because the composer stays enabled during generation, \`onSendMessage\` can fire mid-stream — decide whether to queue or interrupt.
 - **Accessibility as implemented:** inherits \`AIChat\`'s lack of a live region; the warning \`Toast\` and the thinking/Messages dropdowns come from the shared \`Toast\` / \`Dropdown\` primitives. Queued-message controls are icon \`Button\`s with English \`aria-label\`s and \`Tooltip\`s; the inline editor is a \`<textarea aria-label="Edit queued message">\` (Enter saves, Escape cancels) and receives focus when editing starts. The Messages jump list scrolls with \`scrollIntoView\` but does not move focus to the message. The user's avatar is hidden with CSS in this shell.
 - **i18n.** "Show thinking: Auto", the four thinking option labels and descriptions, "Messages", "Powered by Ozwell", "Ask a question..." and the queued-message labels are hard-coded English (only \`footer\` and \`inputPlaceholder\` are props).
-- **Layout.** Designed for a narrow embedded frame: the model selector is capped at \`max-w-[min(142px,38vw)]\` and the composer gets \`pe-[min(160px,44vw)]\` padding to make room; the shell expects a bounded-height container (\`h-full min-h-0\`). Physical/RTL: the composer's trailing slot is positioned with \`right-1\`.
+- **Layout.** Designed for a narrow embedded frame: the model selector is capped at \`max-w-[min(160px,44vw)]\` and sits in \`ChatComposer\`'s selector row below the input; the shell expects a bounded-height container (\`h-full min-h-0\`). The composer uses logical properties (RTL-safe).
 - **Theming.** Uses semantic tokens (\`bg-background\`, \`bg-card\`, \`border-border\`, \`text-muted-foreground\`) plus \`primary-50/800\`, \`warning-*\` and the \`animate-ozwell-message-flare\` keyframe from the library stylesheet. Depends on \`class-variance-authority\`; entry \`@mieweb/ui\`.`,
       },
     },
@@ -402,7 +402,7 @@ const [queued, setQueued] = useState<string | null>(null);
         {
           type: 'contains',
           target: 'chat-composermodelselector',
-          why: 'The `models` prop mounts ComposerModelSelector in the composer’s trailing slot.',
+          why: 'The `models` prop mounts ComposerModelSelector in ChatComposer’s selector row below the input.',
         },
         {
           type: 'uses',
@@ -518,20 +518,26 @@ export const Playground: Story = {
     const canvas = within(canvasElement);
     const composer = canvas.getByRole('textbox', { name: 'Message' });
 
-    await expect(composer.closest('[data-slot="ai-chat"]')).toHaveClass(
-      '[&_[data-slot="composer-input"]]:pe-[min(160px,44vw)]'
-    );
+    // The model selector renders in ChatComposer's selector row below the
+    // input (this demo supplies multiple models).
+    await expect(
+      canvasElement.querySelector('[data-slot="chat-composer-selectors"]')
+    ).toBeInTheDocument();
 
     await userEvent.type(composer, 'hi');
     await userEvent.keyboard('{Enter}');
 
-    await expect(canvas.getByText('Reviewing your message…')).toBeVisible();
+    // ChatComposer's submit path is async — wait for the demo's optimistic
+    // thinking block rather than asserting synchronously.
+    await expect(
+      canvas.findByText('Reviewing your message…')
+    ).resolves.toBeVisible();
     await userEvent.type(
       canvas.getByRole('textbox', { name: 'Message' }),
       'Follow-up'
     );
     await userEvent.keyboard('{Enter}');
-    await expect(canvas.getAllByText('Follow-up')).toHaveLength(1);
+    await expect(canvas.findAllByText('Follow-up')).resolves.toHaveLength(1);
     await expect(
       canvas.findByRole('heading', { name: 'Hello' })
     ).resolves.toBeVisible();
