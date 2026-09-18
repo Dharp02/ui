@@ -368,6 +368,10 @@ const MessageThread = React.forwardRef<HTMLDivElement, MessageThreadProps>(
             // reporting happen once, in the composer's addFiles).
             composerRef.current?.addFiles(files);
           }}
+          // Without these, the zone's default maxFiles={10} would silently
+          // truncate drops before addFiles could enforce/report the limit.
+          maxFiles={maxAttachments}
+          onError={onError}
           disabled={!showAttachmentPicker}
           className="flex-1 overflow-hidden"
         >

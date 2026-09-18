@@ -201,6 +201,31 @@ describe('MessageThread (ChatComposer integration)', () => {
     expect(screen.getByText('photo.png')).toBeInTheDocument();
   });
 
+  it('honors maxAttachments above 10 for list drops (no silent truncation)', () => {
+    // Regression: the list-level DragDropZone's default maxFiles={10} used to
+    // silently discard files before the composer's addFiles could see them.
+    const { container } = renderWithTheme(
+      <MessageThread
+        messages={messages}
+        currentUser={me}
+        eventHandlers={{ onSendMessage: vi.fn() }}
+        maxAttachments={12}
+      />
+    );
+
+    const list = container.querySelector('[data-slot="message-list"]');
+    const dropZone = list!.parentElement!;
+    const files = Array.from(
+      { length: 12 },
+      (_, i) => new File(['x'], `file-${i}.png`, { type: 'image/png' })
+    );
+    fireEvent.drop(dropZone, { dataTransfer: { files } });
+
+    // All 12 land as attachment chips — none are dropped by the wrapper.
+    expect(screen.getByText('file-0.png')).toBeInTheDocument();
+    expect(screen.getByText('file-11.png')).toBeInTheDocument();
+  });
+
   it('renders a camera capture button that stages photos as attachments', () => {
     renderWithTheme(
       <MessageThread
