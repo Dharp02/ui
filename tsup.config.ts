@@ -1,4 +1,26 @@
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import type { Plugin } from 'esbuild';
 import { defineConfig } from 'tsup';
+
+const shimDir = join(dirname(fileURLToPath(import.meta.url)), 'build-shims');
+
+// Redirect the CJS `use-sync-external-store` package (pulled in by recharts,
+// react-redux and react-i18next) to native-React ESM shims so its lazy
+// `require('react')` doesn't survive bundling and break pure-ESM consumers.
+const useSyncExternalStoreEsmShim: Plugin = {
+  name: 'use-sync-external-store-esm-shim',
+  setup(build) {
+    build.onResolve({ filter: /^use-sync-external-store(\/.*)?$/ }, (args) => ({
+      path: join(
+        shimDir,
+        /with-selector/.test(args.path)
+          ? 'use-sync-external-store-with-selector.mjs'
+          : 'use-sync-external-store.mjs'
+      ),
+    }));
+  },
+};
 
 export default defineConfig({
   entry: {
@@ -133,6 +155,7 @@ export default defineConfig({
   treeshake: true,
   splitting: true,
   minify: false,
+  esbuildPlugins: [useSyncExternalStoreEsmShim],
   esbuildOptions(options) {
     options.jsx = 'automatic';
   },
