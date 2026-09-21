@@ -2,7 +2,7 @@ import { describe, it, expect, vi } from 'vitest';
 import { screen, fireEvent } from '@testing-library/react';
 import { renderWithTheme } from '../../test/test-utils';
 import { SidebarNavGroup } from './Sidebar';
-import { SidebarProvider } from './SidebarProvider';
+import { SidebarProvider, useSidebar } from './SidebarProvider';
 
 function renderGroup(props: Record<string, unknown> = {}) {
   return renderWithTheme(
@@ -72,6 +72,26 @@ describe('SidebarNavGroup', () => {
     );
   });
 
+  /*
+   * The trigger stays rendered and operable while the rail is collapsed, so
+   * dropping its disclosure state leaves the control undiscoverable to a screen
+   * reader while it still works. `aria-controls` is the exception: it may only
+   * reference an element that exists, and the panel is gone here.
+   */
+  it('keeps disclosure state on the trigger while the rail is collapsed', () => {
+    renderWithTheme(
+      <SidebarProvider persistCollapsed={false} defaultCollapsed>
+        <SidebarNavGroup label="Reports" defaultExpanded>
+          <button type="button">Daily</button>
+        </SidebarNavGroup>
+      </SidebarProvider>
+    );
+
+    const trigger = screen.getByRole('button', { name: /reports/i });
+    expect(trigger).toHaveAttribute('aria-expanded', 'false');
+    expect(trigger).not.toHaveAttribute('aria-controls');
+  });
+
   it('returns focus to the trigger when collapsing from inside the panel', () => {
     renderGroup({ defaultExpanded: true });
     const trigger = screen.getByRole('button', { name: /reports/i });
@@ -128,6 +148,81 @@ describe('SidebarNavGroup', () => {
     } finally {
       spy.mockRestore();
     }
+  });
+
+  /*
+   * Everything above collapses the group through its own trigger, which the
+   * synchronous `captureFocusInside` covers. The `focusin` recorder is the only
+   * thing covering collapses this component does not initiate, so it needs its
+   * own cases or a regression there strands focus silently.
+   */
+  describe('externally driven collapses', () => {
+    function renderAccordion() {
+      return renderWithTheme(
+        <SidebarProvider
+          persistCollapsed={false}
+          defaultExpandedGroup="reports"
+        >
+          <SidebarNavGroup label="Reports" groupId="reports">
+            <button type="button">Daily</button>
+          </SidebarNavGroup>
+          <SidebarNavGroup label="Orders" groupId="orders">
+            <button type="button">Open</button>
+          </SidebarNavGroup>
+        </SidebarProvider>
+      );
+    }
+
+    it('restores focus when an accordion sibling steals the expansion', () => {
+      renderAccordion();
+      const reportsTrigger = screen.getByRole('button', { name: /reports/i });
+      const ordersTrigger = screen.getByRole('button', { name: /orders/i });
+      const item = screen.getByRole('button', { name: 'Daily' });
+
+      item.focus();
+      expect(document.activeElement).toBe(item);
+
+      // Collapses Reports as a side effect, without touching its trigger.
+      fireEvent.click(ordersTrigger);
+
+      expect(
+        screen.queryByRole('button', { name: 'Daily' })
+      ).not.toBeInTheDocument();
+      expect(document.activeElement).toBe(reportsTrigger);
+    });
+
+    it('restores focus when the desktop rail collapses', () => {
+      function RailToggle() {
+        const { toggleCollapsed } = useSidebar();
+        return (
+          <button type="button" onClick={toggleCollapsed}>
+            Collapse rail
+          </button>
+        );
+      }
+
+      renderWithTheme(
+        <SidebarProvider persistCollapsed={false}>
+          <SidebarNavGroup label="Reports" defaultExpanded>
+            <button type="button">Daily</button>
+          </SidebarNavGroup>
+          <RailToggle />
+        </SidebarProvider>
+      );
+
+      const trigger = screen.getByRole('button', { name: /reports/i });
+      const item = screen.getByRole('button', { name: 'Daily' });
+
+      item.focus();
+      expect(document.activeElement).toBe(item);
+
+      fireEvent.click(screen.getByRole('button', { name: /collapse rail/i }));
+
+      expect(
+        screen.queryByRole('button', { name: 'Daily' })
+      ).not.toBeInTheDocument();
+      expect(document.activeElement).toBe(trigger);
+    });
   });
 
   describe('forceMount', () => {

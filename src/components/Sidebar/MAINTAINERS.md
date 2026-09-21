@@ -63,6 +63,24 @@ const itemsVisible = !showCollapsed && effectiveExpanded;
 Both focus effects key off it. Checking `effectiveExpanded` alone was a bug:
 rail collapse removed the panel without restoring focus.
 
+## `aria-controls` tracks the DOM, `aria-expanded` tracks visibility
+
+These two deliberately read different predicates:
+
+- `aria-expanded={itemsVisible}` — what the user can actually see.
+- `aria-controls={panelInDom ? contentId : undefined}` — `aria-controls` may only
+  reference an element that **exists**. `panelInDom` is `forceMount || itemsVisible`,
+  because `forceMount` renders outside the rail gate (always present) while the
+  animated branch renders inside it (present exactly when visible).
+
+Using `itemsVisible` for both leaves a dangling `aria-controls` pointing at an id
+that is not in the document while the rail is collapsed. Using `effectiveExpanded`
+for `panelInDom` has the same effect. Both were caught by tests; keep them.
+
+Neither attribute is dropped while the rail is collapsed. The trigger is still
+rendered and still toggles the group, so removing its disclosure state would
+leave an operable control that a screen reader cannot describe.
+
 ## `forceMount` sits outside the rail gate
 
 It renders **outside** `!showCollapsed`, unlike the animated branch. Gating it
@@ -80,6 +98,12 @@ as `CollapsibleContent`'s prop of the same name — keep the two consistent.
 `forceMount` still needs focus restoration. It avoids *remounting*, not the need
 to move focus: the browser blurs a focused element inside a `display: none`
 subtree just as surely as one that was removed.
+
+`forceMount` does **not** make collapsed items findable by in-page search.
+Browsers do not match text inside `display: none`. The prop's JSDoc claimed
+otherwise at one point — `hidden="until-found"` is the feature that would deliver
+it, but it is not portable enough to build the API on. Don't reinstate the claim
+without changing the visibility contract.
 
 ## Testing notes
 

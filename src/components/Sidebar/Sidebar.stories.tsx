@@ -440,7 +440,7 @@ The application's primary navigation rail. \`SidebarProvider\` holds collapsed /
 
 \`SidebarNavGroup\` **unmounts** its items while collapsed. That is what keeps collapsed links out of the tab order and the accessibility tree, and it is why the group can animate to its real height rather than a hard-coded \`max-height\` ceiling.
 
-The cost is that anything inside a collapsed group loses DOM state: uncontrolled inputs, media playback position, an editor instance, scroll position. It also stops being findable by in-page search.
+The cost is that anything inside a collapsed group loses DOM state: uncontrolled inputs, media playback position, an editor instance, scroll position.
 
 Pass \`forceMount\` when that matters:
 
@@ -452,9 +452,20 @@ Pass \`forceMount\` when that matters:
 
 \`forceMount\` keeps the items in the DOM and hides them with \`hidden\` instead — through the group's own collapse *and* the desktop rail collapsing. \`hidden\` is \`display: none\`, so the items still stay out of the tab order and the accessibility tree.
 
-The trade is that **\`forceMount\` does not animate**. An animated height cannot run through \`display: none\`, and dropping \`hidden\` for the animation's duration would let keyboard users tab into content they cannot see. Pick state preservation or the animation, not both.
+Two things it does **not** do:
 
-Either way the trigger carries \`aria-expanded\` and \`aria-controls\` pointing at the items.
+- It does not make collapsed items findable by in-page search. Browsers do not match text inside \`display: none\`. (\`hidden="until-found"\` would, but it is not portable enough to build the API on yet.)
+- It does not animate. An animated height cannot run through \`display: none\`, and dropping \`hidden\` for the animation's duration would let keyboard users tab into content they cannot see. Pick state preservation or the animation, not both.
+
+Either way the trigger carries \`aria-expanded\`, and \`aria-controls\` whenever the panel is in the DOM.
+
+### Group vs. Collapsible
+
+\`SidebarNavGroup\` is a *navigation* disclosure: it is styled for the rail, participates in the sidebar's accordion (\`groupId\`), collapses to an icon when the rail does, and expects \`SidebarNavItem\` children.
+
+Reach for [\`Collapsible\`](?path=/docs/layout-collapsible--docs) instead when you want a disclosure that is not navigation — an unstyled, headless single section you compose yourself, anywhere in the page. It offers the same \`forceMount\` trade-off and the same measured-height animation, without the rail behaviour or the accordion coupling.
+
+Rule of thumb: inside \`SidebarNav\`, use \`SidebarNavGroup\`. Anywhere else, use \`Collapsible\`.
 
 ### Motion
 

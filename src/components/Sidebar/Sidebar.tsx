@@ -380,9 +380,12 @@ export interface SidebarNavGroupProps {
    * Keep items mounted when the group is collapsed, hidden via `hidden`.
    *
    * For groups whose children own DOM state that a remount would destroy —
-   * uncontrolled inputs, media playback position, an editor instance — or that
-   * need to stay findable by in-page search. State survives the group's own
-   * collapse *and* the desktop rail collapsing.
+   * uncontrolled inputs, media playback position, an editor instance. State
+   * survives the group's own collapse *and* the desktop rail collapsing.
+   *
+   * Does **not** make collapsed items findable by in-page search: `hidden` is
+   * `display: none`, and browsers do not match text inside it. `hidden="until-found"`
+   * would deliver that, but it is not portable enough to build the API on yet.
    *
    * Mirrors `CollapsibleContent`'s prop of the same name, and carries the same
    * caveat: this path does **not** animate. `hidden` is `display: none`, which
@@ -506,6 +509,21 @@ export function SidebarNavGroup({
 
   const items = <div className="mt-1 ps-2">{children}</div>;
 
+  /*
+   * `aria-controls` tracks whether the panel is in the DOM, not whether it is
+   * visible, because it may only reference an element that exists — pointing at
+   * an id that is not in the document is a dangling reference. `forceMount`
+   * renders outside the rail gate so its panel is always present; the animated
+   * branch is inside it, so that one is present exactly when it is visible.
+   *
+   * `aria-expanded` tracks `itemsVisible` instead, since that is what the user
+   * can actually see. It stays present while the rail is collapsed: the trigger
+   * is still rendered and still toggles the group, so dropping its disclosure
+   * state would leave the control undiscoverable to a screen reader while
+   * remaining operable.
+   */
+  const panelInDom = forceMount || itemsVisible;
+
   return (
     <div
       ref={groupRef}
@@ -517,8 +535,8 @@ export function SidebarNavGroup({
         ref={triggerRef}
         data-slot="sidebar-nav-group-button"
         onClick={handleToggle}
-        aria-expanded={showCollapsed ? undefined : effectiveExpanded}
-        aria-controls={showCollapsed ? undefined : contentId}
+        aria-expanded={itemsVisible}
+        aria-controls={panelInDom ? contentId : undefined}
         className={cn(
           'flex w-full items-center rounded-lg px-3 py-2 text-sm font-semibold',
           'text-neutral-700 dark:text-neutral-300',
