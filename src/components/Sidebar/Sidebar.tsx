@@ -381,7 +381,8 @@ export interface SidebarNavGroupProps {
    *
    * For groups whose children own DOM state that a remount would destroy —
    * uncontrolled inputs, media playback position, an editor instance — or that
-   * need to stay findable by in-page search.
+   * need to stay findable by in-page search. State survives the group's own
+   * collapse *and* the desktop rail collapsing.
    *
    * Mirrors `CollapsibleContent`'s prop of the same name, and carries the same
    * caveat: this path does **not** animate. `hidden` is `display: none`, which
@@ -419,18 +420,38 @@ export function SidebarNavGroup({
   const effectiveExpanded = groupId ? isExpanded : localExpanded;
 
   /*
-   * Collapsing unmounts the panel, which destroys whatever inside it had focus.
-   * Left alone, focus falls back to `<body>` and the next Tab restarts from the
-   * top of the document — a silent loss of keyboard position.
+   * Whether the items are actually reachable right now.
+   *
+   * Three different things can take them away and every one of them strands
+   * focus, so they are collapsed into a single predicate rather than checked
+   * individually at each site:
+   *
+   * - the group is collapsed (panel unmounts, or goes `hidden` under
+   *   `forceMount`);
+   * - the desktop rail is collapsed, which hides the panel whatever the group's
+   *   own state says.
+   *
+   * `forceMount` does not exempt anything here. It avoids *remounting*, not the
+   * need to move focus: `hidden` is `display: none`, and a focused element
+   * inside a `display: none` subtree is blurred by the browser just as surely
+   * as one that was removed.
+   */
+  const itemsVisible = !showCollapsed && effectiveExpanded;
+
+  /*
+   * Hiding the items destroys whatever inside them had focus. Left alone, focus
+   * falls back to `<body>` and the next Tab restarts from the top of the
+   * document — a silent loss of keyboard position.
    *
    * Reachable without the user doing anything unusual: in `groupId` accordion
    * mode, expanding one group collapses its siblings, so focus parked in a
-   * sibling evaporates on a click the user made somewhere else entirely.
+   * sibling evaporates on a click the user made somewhere else entirely. The
+   * rail collapsing does the same thing to every group at once.
    *
-   * Whether focus was inside has to be recorded *before* the collapse. By the
-   * time an effect can observe it, React has already removed the focused node
-   * and `activeElement` is `<body>`, so a check made there always answers "no"
-   * and the restore never fires.
+   * Whether focus was inside has to be recorded *before* the panel goes. By the
+   * time an effect can observe it, the browser has already moved focus and
+   * `activeElement` is `<body>`, so a check made there always answers "no" and
+   * the restore never fires.
    *
    * Two recorders, because neither covers both cases:
    *
@@ -439,9 +460,9 @@ export function SidebarNavGroup({
    *   `document.activeElement`, so it still works where focus events do not
    *   fire at all — an unfocused window, which is also what most automated
    *   browsers run in.
-   * - the `focusin` listener covers collapses this component did not initiate,
-   *   where there is no handler to hook: an accordion sibling opening, or a
-   *   controlled `groupId` changing underneath it.
+   * - the `focusin` listener covers changes this component did not initiate,
+   *   where there is no handler to hook: an accordion sibling opening, a
+   *   controlled `groupId` changing underneath it, or the rail collapsing.
    */
   const focusWasInsideRef = useRef(false);
 
@@ -453,7 +474,7 @@ export function SidebarNavGroup({
   }, []);
 
   useEffect(() => {
-    if (!effectiveExpanded) return;
+    if (!itemsVisible) return;
 
     function trackFocus(event: FocusEvent) {
       const target = event.target as Node | null;
@@ -464,15 +485,15 @@ export function SidebarNavGroup({
 
     document.addEventListener('focusin', trackFocus);
     return () => document.removeEventListener('focusin', trackFocus);
-  }, [effectiveExpanded]);
+  }, [itemsVisible]);
 
   useEffect(() => {
-    if (effectiveExpanded || forceMount) return;
+    if (itemsVisible) return;
     if (focusWasInsideRef.current) {
       focusWasInsideRef.current = false;
       triggerRef.current?.focus();
     }
-  }, [effectiveExpanded, forceMount]);
+  }, [itemsVisible]);
 
   const handleToggle = useCallback(() => {
     captureFocusInside();
@@ -547,17 +568,24 @@ export function SidebarNavGroup({
       </button>
 
       {/* Group Items */}
-      {!showCollapsed &&
-        (forceMount ? (
-          <div
-            id={contentId}
-            data-slot="sidebar-nav-group-items"
-            data-state={effectiveExpanded ? 'open' : 'closed'}
-            hidden={!effectiveExpanded}
-          >
-            {items}
-          </div>
-        ) : (
+      {forceMount ? (
+        /*
+         * Deliberately outside the rail-collapsed gate. Gating it there would
+         * unmount the items whenever the sidebar collapsed, destroying exactly
+         * the state this prop exists to preserve — the prop would hold its
+         * promise for the group's own toggle and quietly break it for the
+         * rail's, which is worse than not offering it.
+         */
+        <div
+          id={contentId}
+          data-slot="sidebar-nav-group-items"
+          data-state={itemsVisible ? 'open' : 'closed'}
+          hidden={!itemsVisible}
+        >
+          {items}
+        </div>
+      ) : (
+        !showCollapsed && (
           <AnimatedPresence initial={false}>
             {effectiveExpanded && (
               <Animated
@@ -586,7 +614,8 @@ export function SidebarNavGroup({
               </Animated>
             )}
           </AnimatedPresence>
-        ))}
+        )
+      )}
     </div>
   );
 }

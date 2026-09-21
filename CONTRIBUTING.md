@@ -356,6 +356,7 @@ Current notes:
 | [FloatingWindow](src/components/FloatingWindow/MAINTAINERS.md)               | Manual drag/resize math; modal vs. floating modes; fully controlled                                                                     |
 | [Messaging](src/components/Messaging/MAINTAINERS.md)                         | Shared @mention module consumed by both `MessageComposer` and `ChatComposer` (run all affected suites — see notes); `DragDropZone` reused as a pure drop target |
 | [Motion](src/motion/MAINTAINERS.md)                                          | Optional `motion` peer isolated to the `@mieweb/ui/motion` entry; cross-entry context pinned to `globalThis`; CSS fallback contract      |
+| [Sidebar](src/components/Sidebar/MAINTAINERS.md)                             | `SidebarNavGroup` unmounts its items by design (a11y + measured-height collapse); focus must be captured before the panel goes, via two recorders; `forceMount` sits outside the rail gate and does not animate |
 | [SuperChat](src/components/SuperChat/MAINTAINERS.md)                         | Conversation/inbox/panel surfaces, sanitization contract, plugin dependencies; design rationale in its Mission section                  |
 | [YChart](src/components/YChart/MAINTAINERS.md)                               | Vanilla editor in a submodule, dynamically imported; not in the public API                                                              |
 

@@ -17,7 +17,9 @@ function renderGroup(props: Record<string, unknown> = {}) {
 describe('SidebarNavGroup', () => {
   it('starts collapsed with items unmounted', () => {
     renderGroup();
-    expect(screen.queryByRole('button', { name: 'Daily' })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: 'Daily' })
+    ).not.toBeInTheDocument();
   });
 
   it('mounts items when defaultExpanded', () => {
@@ -33,7 +35,9 @@ describe('SidebarNavGroup', () => {
     expect(screen.getByRole('button', { name: 'Daily' })).toBeInTheDocument();
 
     fireEvent.click(trigger);
-    expect(screen.queryByRole('button', { name: 'Daily' })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: 'Daily' })
+    ).not.toBeInTheDocument();
   });
 
   /*
@@ -105,12 +109,12 @@ describe('SidebarNavGroup', () => {
     const addEventListener = document.addEventListener.bind(document);
     const spy = vi
       .spyOn(document, 'addEventListener')
-      .mockImplementation((
-        ...args: Parameters<typeof document.addEventListener>
-      ) => {
-        if (args[0] === 'focusin') return;
-        addEventListener(...args);
-      });
+      .mockImplementation(
+        (...args: Parameters<typeof document.addEventListener>) => {
+          if (args[0] === 'focusin') return;
+          addEventListener(...args);
+        }
+      );
 
     try {
       renderGroup({ defaultExpanded: true });
@@ -149,6 +153,76 @@ describe('SidebarNavGroup', () => {
 
       expect(items).not.toHaveAttribute('hidden');
       expect(items).toHaveAttribute('data-state', 'open');
+    });
+
+    /*
+     * Asserting on `hidden` alone is not enough: that assertion still passes if
+     * the subtree is remounted on every toggle, which is the exact thing
+     * `forceMount` exists to prevent. Typing into an uncontrolled input and
+     * checking the value survives a full open → closed → open cycle tests the
+     * promise rather than the mechanism.
+     */
+    it('preserves uncontrolled DOM state across a collapse cycle', () => {
+      renderWithTheme(
+        <SidebarProvider persistCollapsed={false}>
+          <SidebarNavGroup label="Reports" forceMount defaultExpanded>
+            <input aria-label="Filter" defaultValue="" />
+          </SidebarNavGroup>
+        </SidebarProvider>
+      );
+
+      const trigger = screen.getByRole('button', { name: /reports/i });
+      const input = screen.getByLabelText('Filter') as HTMLInputElement;
+      fireEvent.change(input, { target: { value: 'quarterly' } });
+
+      fireEvent.click(trigger); // collapse
+      fireEvent.click(trigger); // expand
+
+      const after = screen.getByLabelText('Filter') as HTMLInputElement;
+      expect(after).toBe(input); // same node, never remounted
+      expect(after.value).toBe('quarterly');
+    });
+
+    /*
+     * `forceMount` used to be nested under the rail-collapsed gate, so the
+     * items unmounted whenever the sidebar collapsed — destroying the state the
+     * prop promises to keep.
+     */
+    it('survives the desktop rail collapsing', () => {
+      const { container } = renderWithTheme(
+        <SidebarProvider persistCollapsed={false} defaultCollapsed>
+          <SidebarNavGroup label="Reports" forceMount defaultExpanded>
+            <input aria-label="Filter" defaultValue="kept" />
+          </SidebarNavGroup>
+        </SidebarProvider>
+      );
+
+      const items = container.querySelector(
+        '[data-slot="sidebar-nav-group-items"]'
+      );
+
+      expect(items).not.toBeNull();
+      expect(screen.getByLabelText('Filter')).toHaveValue('kept');
+      // Present for state, but hidden while the rail is collapsed.
+      expect(items).toHaveAttribute('hidden');
+      expect(items).toHaveAttribute('data-state', 'closed');
+    });
+
+    /*
+     * `forceMount` avoids remounting, not the need to move focus: `hidden` is
+     * `display: none`, and the browser blurs a focused element inside a
+     * `display: none` subtree just as surely as one that was removed. The
+     * restore effect used to skip this path entirely.
+     */
+    it('restores focus to the trigger when hidden with focus inside', () => {
+      renderGroup({ forceMount: true, defaultExpanded: true });
+      const trigger = screen.getByRole('button', { name: /reports/i });
+      const item = screen.getByRole('button', { name: 'Daily' });
+
+      item.focus();
+      fireEvent.click(trigger);
+
+      expect(document.activeElement).toBe(trigger);
     });
   });
 });
