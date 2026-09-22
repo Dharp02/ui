@@ -23,6 +23,9 @@ const submodule = join(root, 'packages', 'datavis');
 const markers = [
   join(submodule, 'dist', 'index.d.ts'),
   join(submodule, 'dist', 'datavis-react.js'),
+  // base.css imports @mieweb/datavis/styles.css, so the CSS artifact must exist
+  // for the root build even when the JS/types are already present.
+  join(submodule, 'dist', 'styles.css'),
 ];
 const stampFile = join(submodule, 'dist', '.build-stamp');
 
