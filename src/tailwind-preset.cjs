@@ -427,6 +427,8 @@ module.exports = {
     // Button `effect` variants (sheen/orbit) lift the button on hover; the
     // mie-fx-* classes themselves are plain CSS in styles/effects.css.
     'hover:-translate-y-0.5',
+    // VideoCard hover-preview progress bar rounds its leading-fill edge.
+    'rounded-e-full',
     'transition-colors',
     'hover:text-white',
     'hover:text-foreground',

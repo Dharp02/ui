@@ -169,6 +169,7 @@ export function OrbitRing({
                   transform: `translate(-50%, -50%) translate(${x}cqmin, ${y}cqmin)`,
                 },
                 className:
+                  // rtl-ignore -- satellites are placed by trig math with a physical translate(); the ring is rotationally symmetric
                   'group/sat pointer-events-auto absolute left-1/2 top-1/2 grid place-items-center focus-visible:outline-none',
               };
               const chip = (

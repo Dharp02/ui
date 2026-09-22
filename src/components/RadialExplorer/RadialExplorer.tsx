@@ -164,6 +164,7 @@ export function RadialExplorer({
             aria-hidden
             data-slot="radial-explorer-core"
             className={cn(
+              // rtl-ignore -- physical centering paired with -translate-x-1/2 is direction-independent; start-1/2 would break it in RTL
               'absolute top-1/2 left-1/2 grid h-[100px] w-[100px] -translate-x-1/2 -translate-y-1/2 place-items-center rounded-[24%] border border-white/15 text-white shadow-[0_14px_30px_rgba(0,0,0,0.3),inset_0_1px_0_rgba(255,255,255,0.08)]',
               '[background:radial-gradient(90%_90%_at_24%_8%,color-mix(in_srgb,var(--mieweb-primary-400)_35%,transparent),transparent_60%),linear-gradient(145deg,var(--mieweb-primary-700)_0%,var(--mieweb-primary-900)_68%,var(--mieweb-primary-950)_100%)]',
               '[&>*]:h-[54px] [&>*]:w-[54px] [&>img]:object-contain'
@@ -181,8 +182,10 @@ export function RadialExplorer({
                 transform: `translateY(-50%) rotate(${angle(activeIndex)})`,
               }}
               className={cn(
+                // rtl-ignore -- the ray is rotated to a computed angle from the physical center; origin/tip geometry must stay physical
                 'pointer-events-none absolute top-1/2 left-1/2 z-0 h-0.5 origin-left rounded-full transition-transform duration-500 [transition-timing-function:cubic-bezier(0.4,0.85,0.3,1)]',
                 '[filter:drop-shadow(0_0_6px_color-mix(in_srgb,var(--mieweb-accent,var(--mieweb-primary-300))_55%,transparent))] [background:linear-gradient(90deg,transparent_4%,var(--mieweb-accent,var(--mieweb-primary-300))_94%)]',
+                // rtl-ignore -- tip dot sits at the physical end of the rotated ray
                 'after:absolute after:top-1/2 after:-right-[3px] after:h-[7px] after:w-[7px] after:-translate-y-1/2 after:rounded-full after:bg-[var(--mieweb-accent,var(--mieweb-primary-300))] after:shadow-[0_0_9px_2px_color-mix(in_srgb,var(--mieweb-accent,var(--mieweb-primary-300))_70%,transparent)] after:content-[""]'
               )}
             />
@@ -203,6 +206,7 @@ export function RadialExplorer({
                 onMouseEnter={() => select(s.id)}
                 onFocus={() => select(s.id)}
                 onClick={() => select(s.id)}
+                // rtl-ignore -- spokes are placed by rotate/translate trig from the physical center; the wheel is rotationally symmetric
                 className="group/spoke absolute top-1/2 left-1/2 grid w-24 justify-items-center gap-2 focus-visible:outline-none"
               >
                 <SpokeTile icon={s.icon} active={on} />

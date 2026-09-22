@@ -70,6 +70,7 @@ export function PlayButton({
         )}
       >
         <Play
+          // rtl-ignore -- optical centering of the play triangle, which points right in RTL media players too
           className={cn('text-primary-600 ml-0.5', ICON_SIZE[size])}
           fill="currentColor"
         />
@@ -196,7 +197,7 @@ export function VideoCard({
       />
 
       {playing && (
-        <span className="absolute top-2 left-2 inline-flex items-center gap-1 rounded bg-black/55 px-1.5 py-0.5 text-[11px] font-medium text-white backdrop-blur-sm">
+        <span className="absolute start-2 top-2 inline-flex items-center gap-1 rounded bg-black/55 px-1.5 py-0.5 text-[11px] font-medium text-white backdrop-blur-sm">
           <VolumeX className="h-3 w-3" aria-hidden="true" />
           {silentLabel}
         </span>
@@ -214,7 +215,7 @@ export function VideoCard({
       {pill && !playing && (
         <span
           data-slot="video-card-duration"
-          className="absolute right-2 bottom-2 rounded-full bg-black/60 px-2.5 py-1 text-xs font-medium text-white backdrop-blur-sm"
+          className="absolute end-2 bottom-2 rounded-full bg-black/60 px-2.5 py-1 text-xs font-medium text-white backdrop-blur-sm"
         >
           {pill}
         </span>
@@ -223,7 +224,7 @@ export function VideoCard({
       {hover.preview !== 'idle' && (
         <div className="absolute inset-x-0 bottom-0 h-1 bg-white/20">
           <div
-            className="h-full rounded-r-full bg-[linear-gradient(90deg,var(--mieweb-primary-500),var(--mieweb-primary-300))] transition-[width] duration-200 ease-linear"
+            className="h-full rounded-e-full bg-[linear-gradient(90deg,var(--mieweb-primary-500),var(--mieweb-primary-300))] transition-[width] duration-200 ease-linear"
             style={{ width: `${Math.max(hover.progress * 100, 1.5)}%` }}
           />
         </div>
