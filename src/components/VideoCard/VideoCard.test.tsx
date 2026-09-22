@@ -27,6 +27,15 @@ describe('VideoCard', () => {
     expect(onClick).toHaveBeenCalledTimes(1);
   });
 
+  it('only uses a real heading for the link variant (buttons allow phrasing content only)', () => {
+    const { rerender } = renderWithTheme(<VideoCard title="Clip" href="#" />);
+    expect(screen.getByRole('heading', { name: 'Clip' })).toBeInTheDocument();
+
+    rerender(<VideoCard title="Clip" onClick={() => {}} />);
+    expect(screen.queryByRole('heading')).not.toBeInTheDocument();
+    expect(screen.getByText('Clip')).toBeInTheDocument();
+  });
+
   it('formats the duration pill with the prefix, or bare when prefix is null', () => {
     const { rerender } = renderWithTheme(
       <VideoCard title="A" href="#" duration="34 min" />

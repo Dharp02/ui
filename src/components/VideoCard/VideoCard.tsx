@@ -234,12 +234,16 @@ export function VideoCard({
     </div>
   );
 
+  // A real heading is only valid in the link variant — `<button>` accepts
+  // phrasing content only, so the button variant gets a styled block span.
+  const TitleTag = href ? Heading : 'span';
+
   const body = variant === 'card' && (
     <div data-slot="video-card-body" className="p-4 text-start">
       {eyebrow && <div className="mb-2 flex items-center gap-2">{eyebrow}</div>}
-      <Heading className="text-foreground group-hover:text-primary-700 dark:group-hover:text-primary-300 text-lg font-semibold transition-colors">
+      <TitleTag className="text-foreground group-hover:text-primary-700 dark:group-hover:text-primary-300 block text-lg font-semibold transition-colors">
         {title}
-      </Heading>
+      </TitleTag>
       {description && (
         <p className="text-muted-foreground mt-1 line-clamp-2 text-sm">
           {description}
