@@ -33,30 +33,84 @@ const componentMeta: ComponentMeta = {
 };
 
 const meta: Meta<typeof VideoCard> = {
-  title: 'Components/Images & Media/VideoCard',
+  id: 'media-videocard',
+  title: 'Modules/Media/VideoCard',
   component: VideoCard,
+  tags: ['autodocs', 'scope:general-purpose', 'maturity:experimental'],
   parameters: {
     layout: 'centered',
     meta: componentMeta,
     docs: {
       description: {
-        component:
-          'A video thumbnail card with the branded `PlayButton` (white disc, brand triangle, ' +
-          'spinning conic ring on hover), a "Watch · 34 min" duration pill and — with a `youtubeId` — ' +
-          'a muted, looping hover preview after a 600ms dwell, with a progress bar and "Silent" pill, ' +
-          "exactly as YouTube's grid behaves. Preview is skipped on touch and under " +
-          '`prefers-reduced-motion`. `variant="plate"` renders only the media for heroes and detail panels. ' +
-          'The preview lives in `useYouTubeHoverPreview`, exported from `@mieweb/ui/hooks`.',
+        component: `### What it's for
+
+A video thumbnail card: poster image, the branded \`PlayButton\` (white disc, brand triangle, spinning conic ring on hover), a "Watch · 34 min" duration pill, and — with a \`youtubeId\` — a muted, looping hover preview after a 600ms dwell with a progress bar and "Silent" pill, exactly as YouTube's own grid behaves. \`variant="plate"\` renders only the media for heroes and detail panels. Exports \`VideoCard\`, \`PlayButton\`; the preview lives in \`useYouTubeHoverPreview\` (exported from \`@mieweb/ui/hooks\`) for custom cards.
+
+### Use it when
+
+- A video library, resource grid or "watch the tour" tile links out to full playback — the card is the invitation, not the player.
+- A hero or \`RadialExplorer\` detail panel needs just the media block — \`variant="plate"\`.
+
+### Don't use it when
+
+- The user should watch **here**: full inline playback with controls — \`MediaPlayer\`.
+- The media is audio — \`AudioPlayer\`.
+- There's no video — a \`Card\` with an image slot.
+
+### Example
+
+\`\`\`tsx
+<VideoCard
+  title="Ozwell AI in the exam room"
+  href="/videos/ozwell-exam-room/"
+  poster="/thumbs/ozwell.jpg"
+  duration="34 min"
+  youtubeId="dQw4w9WgXcQ" // enables the muted hover preview
+  eyebrow={<Badge>New</Badge>}
+/>
+\`\`\`
+
+### Limitations
+
+- Accessibility: the whole card is one link named \`"Watch: {title}"\`; decorative layers (play ring, pills, preview) are \`aria-hidden\`. The preview never traps focus — it starts on hover/focus and stops on leave/blur.
+- The hover preview is skipped on touch (\`hover: none\`) and under \`prefers-reduced-motion\`, and returns the card to its poster if the YouTube iframe API is blocked (CSP, ad blocker) or times out.
+- The preview loads YouTube's iframe API from \`youtube-nocookie.com\` at hover time — a third-party script your CSP must allow for the feature (the card itself works without it).
+- i18n: \`durationPrefix\` (default "Watch") and \`silentLabel\` (default "Silent") are props; pass \`durationPrefix={null}\` for just the duration.
+- RTL: pills and progress bar use logical start/end classes and mirror correctly.`,
       },
     },
+    catalog: {
+      entry: '@mieweb/ui',
+      relationships: [
+        {
+          type: 'composes with',
+          target: 'showcase-radialexplorer',
+          why: '`VideoCard variant="plate"` is the intended media block for RadialExplorer\'s detail panel.',
+        },
+      ],
+    },
   },
-  tags: ['autodocs'],
   argTypes: {
-    variant: { control: 'select', options: ['card', 'plate'] },
-    durationPrefix: { control: 'text' },
-    preview: { control: 'boolean' },
-    eyebrow: { control: false },
-    footer: { control: false },
+    variant: {
+      control: 'select',
+      options: ['card', 'plate'],
+      description:
+        '`card` is the full tile; `plate` renders only the media block.',
+    },
+    durationPrefix: {
+      control: 'text',
+      description:
+        'Word before the duration in the pill; null for just the duration.',
+    },
+    preview: {
+      control: 'boolean',
+      description: 'Enable the muted hover preview (requires `youtubeId`).',
+    },
+    eyebrow: {
+      control: false,
+      description: 'Slot above the title, e.g. a Badge.',
+    },
+    footer: { control: false, description: 'Slot under the title.' },
   },
   decorators: [
     (Story) => (

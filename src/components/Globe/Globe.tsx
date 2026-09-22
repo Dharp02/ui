@@ -125,6 +125,16 @@ function haversine(a: GlobePoint, b: GlobePoint): number {
   return 2 * Math.asin(Math.sqrt(h));
 }
 
+/** Escape a string for interpolation into tooltip HTML. */
+function escapeHtml(s: string): string {
+  return s
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
 /** Spokes from each city to its nearest hub, plus an optional hub ring. */
 export function buildArcs(points: GlobePoint[], connectHubs = true): Arc[] {
   const hubs = points.filter((p) => p.hub);
@@ -315,7 +325,9 @@ export function Globe({
           pointLabel={(d: object) => {
             const p = d as GlobePoint;
             if (pointLabel) return pointLabel(p);
-            return `<b>${p.name}</b>${p.sub ? ` &middot; ${p.sub}` : ''}`;
+            // react-globe.gl renders this as tooltip HTML, so caller-provided
+            // strings must be escaped or `<img onerror=…>` in a name executes.
+            return `<b>${escapeHtml(p.name)}</b>${p.sub ? ` &middot; ${escapeHtml(p.sub)}` : ''}`;
           }}
           onPointHover={(d: object | null) =>
             onPointHover?.((d as GlobePoint) ?? null)

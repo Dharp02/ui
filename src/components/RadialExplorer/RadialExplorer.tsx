@@ -3,6 +3,8 @@
 import * as React from 'react';
 import { ArrowRight } from 'lucide-react';
 import { cn } from '../../utils/cn';
+import { Badge } from '../Badge';
+import { buttonVariants } from '../Button';
 import { usePrefersReducedMotion } from '../../hooks/usePrefersReducedMotion';
 
 // =============================================================================
@@ -147,7 +149,7 @@ export function RadialExplorer({
         {eyebrow && (
           <p
             id={`${id}-eyebrow`}
-            className="text-primary-700 dark:text-primary-300 text-[11px] font-bold tracking-[0.18em] uppercase"
+            className="text-primary-800 dark:text-primary-300 text-[11px] font-bold tracking-[0.18em] uppercase"
           >
             {eyebrow}
           </p>
@@ -256,13 +258,12 @@ export function RadialExplorer({
 
         {/* dots + hint */}
         <div className="flex flex-col items-center gap-2">
-          <div role="tablist" aria-label={groupLabel} className="flex gap-2">
+          <div role="group" aria-label={groupLabel} className="flex gap-2">
             {spokes.map((s, i) => (
               <button
                 key={s.id}
                 type="button"
-                role="tab"
-                aria-selected={i === activeIndex}
+                aria-pressed={i === activeIndex}
                 aria-label={s.label}
                 onClick={() => select(s.id)}
                 className={cn(
@@ -342,7 +343,7 @@ function SpokeTile({
         size === 'md'
           ? 'h-[60px] w-[60px] [&>svg]:h-[22px] [&>svg]:w-[22px]'
           : 'h-12 w-12 rounded-xl [&>svg]:h-5 [&>svg]:w-5',
-        'border-border bg-primary-500/10 text-primary-700 dark:text-primary-300 shadow-md backdrop-blur-sm',
+        'border-border bg-primary-500/10 text-primary-800 dark:text-primary-300 shadow-md backdrop-blur-sm',
         'group-hover/spoke:-translate-y-0.5 group-hover/spoke:scale-[1.04] group-hover/spoke:border-transparent group-hover/spoke:text-white group-hover/spoke:shadow-xl',
         'group-hover/spoke:[background:linear-gradient(150deg,var(--mieweb-primary-700),var(--mieweb-primary-900))_padding-box,linear-gradient(135deg,var(--mieweb-accent,var(--mieweb-primary-300)),var(--mieweb-primary-200)_55%,var(--mieweb-accent,var(--mieweb-primary-300)))_border-box]',
         'group-focus-visible/spoke:outline-primary-500 group-focus-visible/spoke:outline group-focus-visible/spoke:outline-2 group-focus-visible/spoke:outline-offset-[3px]',
@@ -378,9 +379,12 @@ function Detail({
     <div className="grid gap-3.5 motion-safe:animate-[mie-fade-in_0.25s_ease-out]">
       {media && <div data-slot="radial-explorer-media">{media}</div>}
       {tag && (
-        <span className="bg-primary-500/10 text-primary-800 dark:text-primary-200 inline-flex w-fit rounded-full px-3 py-1 text-[10px] font-bold tracking-[0.14em] uppercase">
+        <Badge
+          size="sm"
+          className="w-fit text-[10px] font-bold tracking-[0.14em] uppercase"
+        >
           {tag}
-        </span>
+        </Badge>
       )}
       <h3 className="text-foreground text-2xl leading-tight font-semibold">
         {title}
@@ -394,10 +398,7 @@ function Detail({
       {(cta || href) && (
         <div className="mt-1 flex flex-wrap items-center gap-3">
           {cta && (
-            <a
-              href={cta.href}
-              className="mie-fx-sheen bg-primary-800 hover:bg-primary-900 inline-flex h-11 items-center gap-1.5 rounded-lg px-5 text-sm font-semibold text-white"
-            >
+            <a href={cta.href} className={buttonVariants({ effect: 'sheen' })}>
               {cta.label}
               <ArrowRight size={16} aria-hidden />
             </a>

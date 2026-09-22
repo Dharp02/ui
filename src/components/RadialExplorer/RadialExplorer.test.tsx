@@ -46,7 +46,7 @@ describe('RadialExplorer', () => {
     );
   });
 
-  it('marks the active spoke pressed in both ring and chip grid and selects the tab dot', () => {
+  it('marks the active spoke pressed in ring, chip grid, and dot nav', () => {
     renderWithTheme(
       <RadialExplorer
         spokes={spokes}
@@ -55,17 +55,13 @@ describe('RadialExplorer', () => {
         defaultActiveId="a"
       />
     );
+    // Ring node, mobile chip, and dot all reflect the active spoke.
     expect(
       screen.getAllByRole('button', { name: 'Alpha', pressed: true })
-    ).toHaveLength(2);
-    expect(screen.getByRole('tab', { name: 'Alpha' })).toHaveAttribute(
-      'aria-selected',
-      'true'
-    );
-    expect(screen.getByRole('tab', { name: 'Beta' })).toHaveAttribute(
-      'aria-selected',
-      'false'
-    );
+    ).toHaveLength(3);
+    expect(
+      screen.getAllByRole('button', { name: 'Beta', pressed: false })
+    ).toHaveLength(3);
     expect(
       screen.getByRole('link', { name: 'Explore module' })
     ).toHaveAttribute('href', '/a');
@@ -83,7 +79,7 @@ describe('RadialExplorer', () => {
       />
     );
     expect(screen.getByRole('heading', { name: 'Gamma' })).toBeInTheDocument();
-    fireEvent.click(screen.getByRole('tab', { name: 'Alpha' }));
+    fireEvent.click(screen.getAllByRole('button', { name: 'Alpha' })[0]);
     expect(onActiveChange).toHaveBeenCalledWith('a');
     // still controlled — heading unchanged
     expect(screen.getByRole('heading', { name: 'Gamma' })).toBeInTheDocument();
@@ -96,21 +92,18 @@ describe('RadialExplorer', () => {
         <RadialExplorer spokes={spokes} center={<span />} attractMs={500} />
       );
       act(() => vi.advanceTimersByTime(500));
-      expect(screen.getByRole('tab', { name: 'Alpha' })).toHaveAttribute(
-        'aria-selected',
-        'true'
-      );
+      expect(
+        screen.getAllByRole('button', { name: 'Alpha', pressed: true })
+      ).toHaveLength(3);
       act(() => vi.advanceTimersByTime(500));
-      expect(screen.getByRole('tab', { name: 'Beta' })).toHaveAttribute(
-        'aria-selected',
-        'true'
-      );
-      fireEvent.click(screen.getByRole('tab', { name: 'Gamma' }));
+      expect(
+        screen.getAllByRole('button', { name: 'Beta', pressed: true })
+      ).toHaveLength(3);
+      fireEvent.click(screen.getAllByRole('button', { name: 'Gamma' })[0]);
       act(() => vi.advanceTimersByTime(2000));
-      expect(screen.getByRole('tab', { name: 'Gamma' })).toHaveAttribute(
-        'aria-selected',
-        'true'
-      );
+      expect(
+        screen.getAllByRole('button', { name: 'Gamma', pressed: true })
+      ).toHaveLength(3);
     } finally {
       vi.useRealTimers();
     }

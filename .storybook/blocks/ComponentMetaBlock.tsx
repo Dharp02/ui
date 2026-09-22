@@ -46,7 +46,7 @@ export function ComponentMetaBlock() {
                   note={c.note}
                   sources={sources}
                 >
-                  <Chip href={c.live ?? c.url ?? repoUrl(c.repo)}>
+                  <Chip>
                     {c.live && <Globe size={12} aria-hidden />}
                     {c.repo.split('/').pop()}
                   </Chip>
@@ -66,7 +66,7 @@ export function ComponentMetaBlock() {
                 note={s.summary}
                 sources={[{ label: 'SKILL.md', url: s.url, sub: s.repo }]}
               >
-                <Chip href={s.url}>{s.name}</Chip>
+                <Chip>{s.name}</Chip>
               </SourceTip>
             ))}
           </Row>
@@ -80,7 +80,7 @@ export function ComponentMetaBlock() {
               note={origin.note}
               sources={[{ label: origin.repo, url: origin.url ?? repoUrl(origin.repo), sub: 'GitHub' }]}
             >
-              <Chip href={origin.url ?? repoUrl(origin.repo)}>{origin.repo}</Chip>
+              <Chip>{origin.repo}</Chip>
             </SourceTip>
           </Row>
         )}
@@ -139,14 +139,17 @@ function Row({
   );
 }
 
-function Chip({ href, children }: { href: string; children: React.ReactNode }) {
+function Chip({ href, children }: { href?: string; children: React.ReactNode }) {
+  const chipClass =
+    'inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-2.5 py-1 text-xs font-medium text-foreground no-underline transition-colors hover:border-primary-400 hover:text-primary-700 dark:hover:text-primary-300';
+  // Chips inside a SourceTip must be non-interactive: the tip's trigger is
+  // itself focusable, and nesting an <a> inside it creates conflicting
+  // focus/click semantics. The source card carries the links instead.
+  if (!href) {
+    return <span className={chipClass}>{children}</span>;
+  }
   return (
-    <a
-      href={href}
-      target="_blank"
-      rel="noopener noreferrer"
-      className="inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-2.5 py-1 text-xs font-medium text-foreground no-underline transition-colors hover:border-primary-400 hover:text-primary-700 dark:hover:text-primary-300"
-    >
+    <a href={href} target="_blank" rel="noopener noreferrer" className={chipClass}>
       {children}
     </a>
   );

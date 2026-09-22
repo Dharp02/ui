@@ -220,19 +220,20 @@ export function SliderCalculator({
 
   const result = React.useMemo(() => compute(values), [compute, values]);
 
-  // Notify from an effect with the memoized result so `compute` runs once per
-  // change (and the reported result can't diverge from the rendered one).
+  // Notify from an effect keyed on `values` only. `result` and `onChange` are
+  // read through a ref: an inline `compute` or `onChange` prop gets a new
+  // identity on every parent render, and depending on either would re-fire the
+  // notification (and potentially loop) without any actual slider change.
   const skipInitialNotify = React.useRef(true);
+  const notifyRef = React.useRef({ onChange, result });
+  notifyRef.current = { onChange, result };
   React.useEffect(() => {
     if (skipInitialNotify.current) {
       skipInitialNotify.current = false;
       return;
     }
-    onChange?.(values, result);
-    // `onChange` is deliberately omitted: an inline handler must not refire
-    // this without an actual value change.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [values, result]);
+    notifyRef.current.onChange?.(values, notifyRef.current.result);
+  }, [values]);
 
   const fmtResult = makeFormatter(resultFormat, locale, currency);
   const fmtBreakdown = makeFormatter(breakdownFormat, locale, currency);
@@ -258,7 +259,7 @@ export function SliderCalculator({
       {/* Controls */}
       <div className="p-6 sm:p-8">
         {eyebrow && (
-          <p className="text-primary-700 dark:text-primary-300 mb-2 text-[11px] font-bold tracking-[0.14em] uppercase">
+          <p className="text-primary-800 dark:text-primary-300 mb-2 text-[11px] font-bold tracking-[0.14em] uppercase">
             {eyebrow}
           </p>
         )}

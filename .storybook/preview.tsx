@@ -509,6 +509,8 @@ const preview: Preview = {
             ['Overview', '*'],
             'Layout',
             ['Overview', '*'],
+            'Showcase',
+            ['Overview', '*'],
           ],
           'Modules',
           [

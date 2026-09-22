@@ -135,8 +135,8 @@ const TONE_COLORS: Record<YearTimelineTone, [string, string]> = {
 };
 
 const GROUP_TEXT: Record<YearTimelineCadence, string> = {
-  scheduled: 'text-primary-700 dark:text-primary-300',
-  continuous: 'text-success',
+  scheduled: 'text-primary-800 dark:text-primary-300',
+  continuous: 'text-success-800 dark:text-success',
   event: 'text-muted-foreground',
 };
 
@@ -285,7 +285,7 @@ export function YearTimeline({
             <span
               data-slot="year-timeline-today"
               style={{ left: `calc(var(--yt-now) * 100%)` }}
-              className="bg-primary-700 absolute top-1.5 z-[5] inline-flex -translate-x-1/2 items-center gap-1.5 rounded-full px-2 py-0.5 text-[9px] font-bold tracking-[0.09em] whitespace-nowrap text-white uppercase"
+              className="bg-primary-800 absolute top-1.5 z-[5] inline-flex -translate-x-1/2 items-center gap-1.5 rounded-full px-2 py-0.5 text-[9px] font-bold tracking-[0.09em] whitespace-nowrap text-white uppercase"
             >
               <i aria-hidden className="h-1.5 w-1.5 rounded-full bg-white" />
               {text.today}
@@ -367,7 +367,7 @@ export function YearTimeline({
                       {it.icon}
                       <span>{period}</span>
                       {isCurrent && (
-                        <span className="bg-primary-700 ms-auto rounded-full px-1.5 py-0.5 text-[9px] tracking-[0.08em] text-white">
+                        <span className="bg-primary-800 ms-auto rounded-full px-1.5 py-0.5 text-[9px] tracking-[0.08em] text-white">
                           {current?.live ? text.now : text.upNext}
                         </span>
                       )}

@@ -157,32 +157,91 @@ const platform: MegaMenuConfig = {
 };
 
 const meta: Meta<typeof MegaMenu> = {
+  id: 'navigation-megamenu',
   title: 'Components/Navigation/MegaMenu',
   component: MegaMenu,
+  tags: ['autodocs', 'scope:general-purpose', 'maturity:experimental'],
   parameters: {
     layout: 'fullscreen',
     meta: componentMeta,
     docs: {
       description: {
-        component:
-          'Hover/click mega-menu: trigger + chevron, a panel with heading, 2-column item grid ' +
-          '(or grouped columns), "Browse all" + CTA footer, and a right-column feature panel. ' +
-          'The feature panel is **contextual** — while an item with its own `featured` is hovered ' +
-          'or focused, the column swaps to it (fading in), then falls back to the menu default. ' +
-          'Override the selection entirely with `resolveFeatured`. Marks the current route with ' +
-          '`aria-current`, closes on Escape, and disables hover-open below `hoverMinWidth`. ' +
-          '`MegaMenuBar` keeps one menu open at a time; `SiteHeader` accepts `menus` directly.',
+        component: `### What it's for
+
+A hover/click mega-menu for public-site navigation: a trigger with chevron, a panel with heading, a 2-column item grid (or grouped columns via \`groups\`), a "Browse all" + CTA footer, and a right-column feature panel. The feature panel is **contextual** — while an item with its own \`featured\` is hovered or focused the column swaps to it (fading in), then falls back to the menu default; override the selection entirely with \`resolveFeatured\`. Exports \`MegaMenu\` (one controlled menu) and \`MegaMenuBar\` (a row of menus that keeps one open at a time).
+
+### Use it when
+
+- A marketing/product site's top nav sections carry many grouped links plus a promoted feature (article, video, CTA).
+- \`SiteHeader\` should drive it — pass \`menus\` + \`currentPath\` there and it renders a \`MegaMenuBar\` on desktop and flattens the same config into its mobile drawer.
+
+### Don't use it when
+
+- A handful of flat links suffices — \`SiteHeader links\` alone, without panels.
+- You're navigating **inside an app**: command-driven jumps — \`CommandPalette\`; content sections — \`Tabs\`; step flows — \`StepIndicator\`.
+- The content is actions on the current page rather than site destinations — a menu/popover, not navigation.
+
+### Example
+
+\`\`\`tsx
+const [open, setOpen] = React.useState(false);
+
+<MegaMenu
+  menu={platformMenu} // heading, items[] or groups[], featured, footer CTA
+  open={open}
+  onOpenChange={setOpen}
+  currentPath={location.pathname} // marks the active route with aria-current
+  onNavigate={closeMobileDrawer}
+/>;
+// …or several at once: <MegaMenuBar menus={[platform, solutions]} currentPath={…} />
+\`\`\`
+
+### Limitations
+
+- Accessibility: the trigger carries \`aria-haspopup\` / \`aria-expanded\` / \`aria-controls\`; the panel is a labelled \`role="region"\`, not a \`menu\` — links are ordinary tab stops (no arrow-key roving). Escape closes and returns focus to the trigger. The current route gets \`aria-current="page"\` (paths compared ignoring query, hash and trailing slashes).
+- Hover-open uses intent delays (70ms open / 150ms close) and is disabled below \`hoverMinWidth\` (default 900px) — there the chevron button toggles on click/tap.
+- The panel is absolutely positioned under the trigger and clamped to the viewport (16px padding), re-clamped when the contextual feature column changes the panel width and on resize.
+- Items with \`external: true\` open in a new tab with \`noopener\` — on desktop and in \`SiteHeader\`'s mobile drawer.
+- i18n: footer fallbacks \`"Browse all"\` / \`"Get started"\` and the toggle's \`"Toggle {label} menu"\` are hard-coded English (\`allLabel\` / \`ctaLabel\` override the first two).
+- Controlled only — the host owns \`open\`; \`MegaMenuBar\` supplies that state for a whole nav row.`,
       },
     },
+    catalog: {
+      entry: '@mieweb/ui',
+      relationships: [
+        {
+          type: 'composes with',
+          target: 'layout-siteheader',
+          why: 'SiteHeader accepts `menus` directly, rendering a MegaMenuBar on desktop and flattening the same config into its mobile drawer.',
+        },
+      ],
+    },
   },
-  tags: ['autodocs'],
   argTypes: {
-    menu: { control: false },
-    open: { control: false },
+    menu: {
+      control: false,
+      description:
+        'Menu config: heading, items or groups, featured panel, footer CTA.',
+    },
+    open: {
+      control: false,
+      description: 'Controlled open state — pair with `onOpenChange`.',
+    },
     onOpenChange: { control: false },
-    resolveFeatured: { control: false },
-    variant: { control: 'select', options: ['light', 'dark'] },
-    currentPath: { control: 'text' },
+    resolveFeatured: {
+      control: false,
+      description: 'Override which feature panel shows for the hovered item.',
+    },
+    variant: {
+      control: 'select',
+      options: ['light', 'dark'],
+      description: 'Trigger styling on light or dark header bars.',
+    },
+    currentPath: {
+      control: 'text',
+      description:
+        'Current pathname — marks the matching item with aria-current.',
+    },
   },
   decorators: [
     (Story) => (

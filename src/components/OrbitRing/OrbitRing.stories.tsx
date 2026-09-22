@@ -61,22 +61,53 @@ const outer: OrbitSatellite[] = [
 ];
 
 const meta: Meta<typeof OrbitRing> = {
-  title: 'Components/Images & Media/OrbitRing',
+  id: 'showcase-orbitring',
+  title: 'Components/Showcase/OrbitRing',
   component: OrbitRing,
+  tags: ['autodocs', 'scope:general-purpose', 'maturity:experimental'],
   parameters: {
     layout: 'centered',
     meta: componentMeta,
     docs: {
       description: {
-        component:
-          'Concentric rings of satellite chips orbiting a centre mark at different speeds and ' +
-          'directions. Chips counter-rotate so logos stay upright; hovering or focusing any chip ' +
-          'pauses the whole system and reveals its name. Sizes are container-relative (`cqmin`), so ' +
-          'it scales with `size`. Respects `prefers-reduced-motion` (rings hold still).',
+        component: `### What it's for
+
+Concentric rings of satellite chips orbiting a centre mark at different speeds and directions. Chips counter-rotate so their logos stay upright; hovering or focusing any chip pauses the whole system and reveals its name. Sizes are container-relative (\`cqmin\`), so everything scales together with \`size\`.
+
+### Use it when
+
+- A hero or "integrations" section shows an **ecosystem** — partners, connectors, modules — orbiting your product mark.
+- You want a self-running decorative visual whose items still carry accessible names (each chip has an \`aria-label\`; plain chips render \`role="img"\`).
+
+### Don't use it when
+
+- Users must read, compare or browse the items as content — use a logo wall or a \`Card\` grid instead; orbital position is decorative.
+- The items carry data (counts, ordering, status) — reach for the Data display family.
+
+### Example
+
+\`\`\`tsx
+<OrbitRing
+  center={<Logo />}
+  rings={[
+    { radius: 0.26, satellites: inner },
+    { radius: 0.4, satellites: outer, offsetDeg: 15 },
+  ]}
+  size="min(72vw, 560px)"
+/>
+\`\`\`
+
+### Limitations
+
+- A satellite renders as an \`<a>\` with \`href\`, a \`<button>\` with \`onClick\`, or a \`role="img"\` span otherwise — only the first two are keyboard-focusable, and focus pauses the rings and shows the name tooltip, mirroring hover.
+- All spin is \`motion-safe\` — under \`prefers-reduced-motion\` the rings hold still.
+- Sizing uses container query units (\`cqmin\`), so the component must be allowed to establish its own CSS container.`,
       },
     },
+    catalog: {
+      entry: '@mieweb/ui',
+    },
   },
-  tags: ['autodocs'],
   argTypes: {
     rings: { control: false },
     center: { control: false },

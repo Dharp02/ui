@@ -158,32 +158,92 @@ function computeRoi(v: Record<string, number>): CalculatorResult {
 }
 
 const meta: Meta<typeof SliderCalculator> = {
-  title: 'Components/Forms & Inputs/SliderCalculator',
+  id: 'composite-forms-slidercalculator',
+  title: 'Inputs/Composite forms/SliderCalculator',
   component: SliderCalculator,
+  tags: ['autodocs', 'scope:general-purpose', 'maturity:experimental'],
   parameters: {
     layout: 'padded',
     meta: componentMeta,
     docs: {
       description: {
-        component:
-          'A two-column interactive calculator: labelled sliders on the left (composed from `Slider`), ' +
-          'a live result panel on the right with an animated headline number, one-line summary, ' +
-          'proportional breakdown bars, a "Show the math" disclosure and an actions slot. The ' +
-          'component owns only the interaction — pass a pure `compute(values) → result` and it ' +
-          'renders whatever the result carries. `AnimatedNumber` is exported for reuse.',
+        component: `### What it's for
+
+A two-column interactive calculator: labelled sliders on the left (composed from \`Slider\`), a live result panel on the right with an animated headline number, one-line summary, proportional breakdown bars, a "Show the math" disclosure and an \`actions\` slot. The component owns only the interaction — pass a pure \`compute(values) → result\` and it renders whatever the result carries. \`AnimatedNumber\` is exported for reuse.
+
+### Use it when
+
+- A marketing or sales page lets the visitor model **their** numbers — ROI, savings, staffing — and watch the estimate update live.
+- The calculation is a pure function of a few numeric inputs with sensible ranges.
+
+### Don't use it when
+
+- The values are being **submitted** — it's a showpiece, not a form; build with \`Slider\`/\`Input\` inside your form instead.
+- Inputs aren't numeric ranges — compose your own layout from the primitives.
+- You need the animated number alone — import \`AnimatedNumber\` directly.
+
+### Example
+
+\`\`\`tsx
+<SliderCalculator
+  heading="What is one governed record worth to you?"
+  inputs={[
+    { id: 'employees', label: 'Employees', min: 100, max: 20000, step: 100, defaultValue: 2500 },
+    { id: 'sites', label: 'Sites', min: 1, max: 50, defaultValue: 4 },
+  ]}
+  compute={(v) => computeRoi(v)} // pure: values → { total, summary, breakdown, math }
+  resultLabel="Estimated annual recovery"
+  actions={<Button effect="sheen">Request a demo</Button>}
+  onChange={(values, result) => track('roi', values, result.total)}
+/>
+\`\`\`
+
+### Limitations
+
+- Accessibility: each slider is a labelled \`Slider\` with its current value rendered beside the label; the "Show the math" disclosure is a real button with \`aria-expanded\`. The animated headline number settles to plain text (no live region — the visitor is driving the change).
+- \`compute\` must be pure: it runs on every slider change via \`useMemo\`. \`onChange\` fires from an effect **after** render, keyed on the values only — an inline \`compute\`/\`onChange\` prop can't re-trigger it without an actual slider change.
+- The component owns the slider state; only \`defaultValue\` seeds it (no controlled values).
+- i18n: number formatting uses \`Intl.NumberFormat\` with the \`locale\` and \`currency\` props — but both **default to \`en-US\` / \`USD\`**, and the disclosure labels default to English (\`mathLabels\` overrides).
+- Layout: single column below \`lg\`; the result panel keeps its own dark surface in both themes.`,
       },
     },
+    catalog: {
+      entry: '@mieweb/ui',
+      relationships: [
+        {
+          type: 'uses',
+          target: 'choice-inputs-slider',
+          why: 'Each calculator input renders the Slider primitive with its label and live value.',
+        },
+      ],
+    },
   },
-  tags: ['autodocs'],
   argTypes: {
-    inputs: { control: false },
-    compute: { control: false },
-    actions: { control: false },
-    onChange: { control: false },
-    headingLevel: { control: 'select', options: ['h2', 'h3'] },
+    inputs: {
+      control: false,
+      description:
+        'Slider definitions: id, label, min/max/step, defaultValue, format.',
+    },
+    compute: {
+      control: false,
+      description:
+        'Pure function mapping slider values to the rendered result.',
+    },
+    actions: { control: false, description: 'CTA slot under the result.' },
+    onChange: {
+      control: false,
+      description:
+        'Fires after render with (values, result) on every slider change.',
+    },
+    headingLevel: {
+      control: 'select',
+      options: ['h2', 'h3'],
+      description: 'Heading element for the title.',
+    },
     resultFormat: {
       control: 'select',
       options: ['compactCurrency', 'currency', 'number', 'percent'],
+      description: 'Formatter for the headline number.',
     },
   },
 };

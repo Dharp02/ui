@@ -3,6 +3,7 @@
 import * as React from 'react';
 import { Play, VolumeX } from 'lucide-react';
 import { cn } from '../../utils/cn';
+import { Badge } from '../Badge';
 import { useYouTubeHoverPreview } from '../../hooks/useYouTubeHoverPreview';
 
 // =============================================================================
@@ -213,12 +214,13 @@ export function VideoCard({
       </div>
 
       {pill && !playing && (
-        <span
+        <Badge
           data-slot="video-card-duration"
-          className="absolute end-2 bottom-2 rounded-full bg-black/60 px-2.5 py-1 text-xs font-medium text-white backdrop-blur-sm"
+          size="sm"
+          className="absolute end-2 bottom-2 bg-black/60 py-1 text-white backdrop-blur-sm dark:bg-black/60 dark:text-white"
         >
           {pill}
-        </span>
+        </Badge>
       )}
 
       {hover.preview !== 'idle' && (

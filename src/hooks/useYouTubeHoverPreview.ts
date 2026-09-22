@@ -36,20 +36,41 @@ type YTWindow = Window & {
 
 let ytApiPromise: Promise<void> | null = null;
 
+const YT_API_TIMEOUT_MS = 10_000;
+
 function loadYouTubeIframeApi(): Promise<void> {
   if (typeof window === 'undefined') return Promise.resolve();
   const w = window as YTWindow;
   if (w.YT?.Player) return Promise.resolve();
   if (ytApiPromise) return ytApiPromise;
-  ytApiPromise = new Promise<void>((resolve) => {
+  ytApiPromise = new Promise<void>((resolve, reject) => {
     const prev = w.onYouTubeIframeAPIReady;
+    let timer: number | undefined;
+    const settle = (err?: Error) => {
+      if (timer !== undefined) window.clearTimeout(timer);
+      timer = undefined;
+      if (err) {
+        // Clear the shared promise so a later hover can retry a transient
+        // failure (CSP, ad blocker, flaky network).
+        ytApiPromise = null;
+        reject(err);
+      } else {
+        resolve();
+      }
+    };
     w.onYouTubeIframeAPIReady = () => {
       prev?.();
-      resolve();
+      settle();
     };
     const tag = document.createElement('script');
     tag.src = 'https://www.youtube.com/iframe_api';
     tag.async = true;
+    tag.onerror = () =>
+      settle(new Error('Failed to load the YouTube iframe API'));
+    timer = window.setTimeout(
+      () => settle(new Error('Timed out loading the YouTube iframe API')),
+      YT_API_TIMEOUT_MS
+    );
     document.head.appendChild(tag);
   });
   return ytApiPromise;
@@ -226,14 +247,20 @@ export function useYouTubeHoverPreview(
       enterTimerRef.current = null;
       if (!hoveringRef.current) return;
       setPreview('loading');
-      void loadYouTubeIframeApi().then(() => {
-        // If the visitor left while the API loaded, mouseleave/blur/unmount
-        // already ran stopPreview — calling it again here could set state
-        // after unmount when the script finally arrives.
-        if (hoveringRef.current) beginPlayer();
-      });
+      void loadYouTubeIframeApi()
+        .then(() => {
+          // If the visitor left while the API loaded, mouseleave/blur/unmount
+          // already ran stopPreview — calling it again here could set state
+          // after unmount when the script finally arrives.
+          if (hoveringRef.current) beginPlayer();
+        })
+        .catch(() => {
+          // API blocked or timed out — return the card to its idle poster
+          // instead of leaving it stuck in `loading`.
+          stopPreview();
+        });
     }, dwellMs);
-  }, [enabled, youtubeId, dwellMs, beginPlayer]);
+  }, [enabled, youtubeId, dwellMs, beginPlayer, stopPreview]);
 
   React.useEffect(() => stopPreview, [stopPreview]);
 

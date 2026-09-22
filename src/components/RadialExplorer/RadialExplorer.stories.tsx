@@ -106,30 +106,92 @@ const spokes: RadialSpoke[] = [
 ];
 
 const meta: Meta<typeof RadialExplorer> = {
-  title: 'Components/Navigation/RadialExplorer',
+  id: 'showcase-radialexplorer',
+  title: 'Components/Showcase/RadialExplorer',
   component: RadialExplorer,
+  tags: ['autodocs', 'scope:general-purpose', 'maturity:experimental'],
   parameters: {
     layout: 'padded',
     meta: componentMeta,
     docs: {
       description: {
-        component:
-          'A radial product explorer: a centre mark with icon tiles orbiting it, a glowing tracer ray ' +
-          "from the core to the active tile, tab dots, and a detail panel showing the active spoke's " +
-          'media, copy and CTAs (with a welcome state before any pick). Auto-advances gently until the ' +
-          'visitor hovers, focuses or taps; skipped under `prefers-reduced-motion`. Below `lg` the ring ' +
-          'becomes a chip grid above the panel. Pair `media` with `VideoCard variant="plate"`.',
+        component: `### What it's for
+
+A radial product explorer for hero sections: a centre mark with icon tiles orbiting it, a glowing tracer ray from the core to the active tile, selector dots, and a detail panel showing the active spoke's media, copy and CTAs (with a \`welcome\` state before any pick). Auto-advances gently (\`attractMs\`, default 2200ms) until the visitor hovers, focuses or taps. Below \`lg\` the ring becomes a chip grid above the panel.
+
+### Use it when
+
+- A front door's hero should let visitors **preview each module/product area** in place — one tile per spoke, media and CTA per pick.
+- You want an attract loop that quietly cycles the content until someone engages.
+
+### Don't use it when
+
+- Users navigate to the sections rather than preview them — \`MegaMenu\` or plain links; orbital position carries no meaning.
+- The content is comparative or dense — \`Tabs\` or a \`Card\` grid reads better than a ring.
+- Purely decorative orbiting logos with no detail panel — \`OrbitRing\`.
+
+### Example
+
+\`\`\`tsx
+<RadialExplorer
+  eyebrow="Explore the platform"
+  center={<img src="/mark.svg" alt="" />}
+  spokes={[{
+    id: 'ehr', label: 'Certified EHR', icon: <FileText />, description: '…',
+    media: <VideoCard variant="plate" title="EHR tour" youtubeId="…" duration="2:44" />,
+    cta: { label: 'Request a demo', href: '/demo/' }, href: '/platform/ehr/',
+  }]}
+  onActiveChange={(id) => track('spoke', id)} // uncontrolled by default; pass activeId to control
+/>
+\`\`\`
+
+### Limitations
+
+- Accessibility: spoke tiles, mobile chips and the selector dots are ordinary buttons with \`aria-pressed\` + \`aria-label\` inside labelled \`role="group"\`s (\`groupLabel\`, default "Modules"); the detail panel announces picks via \`aria-live="polite"\` once the visitor engages.
+- The attract loop is skipped under \`prefers-reduced-motion\` and stops permanently on first interaction; pass \`attractMs={0}\` to disable it.
+- Spoke placement is trigonometric (physical transforms, rotationally symmetric) — exempt from RTL mirroring by design.
+- i18n: the default \`hint\` ("Hover a module to preview") and \`groupLabel\` ("Modules") are English — both are props.
+- Theming: the tracer ray and active dot use \`--mieweb-accent\`, falling back to primary tokens for brands without an accent.`,
       },
     },
+    catalog: {
+      entry: '@mieweb/ui',
+      relationships: [
+        {
+          type: 'composes with',
+          target: 'media-videocard',
+          why: 'The detail panel\'s `media` slot pairs with `VideoCard variant="plate"` for a video preview per spoke.',
+        },
+      ],
+    },
   },
-  tags: ['autodocs'],
   argTypes: {
-    spokes: { control: false },
-    center: { control: false },
-    welcome: { control: false },
-    attractMs: { control: { type: 'number', min: 0, step: 100 } },
-    eyebrow: { control: 'text' },
-    hint: { control: 'text' },
+    spokes: {
+      control: false,
+      description:
+        'One tile per spoke: id, label, icon, description, media, cta, href.',
+    },
+    center: {
+      control: false,
+      description: 'Centre node — a brand mark or product tile.',
+    },
+    welcome: {
+      control: false,
+      description: 'Detail-panel content before any spoke is chosen.',
+    },
+    attractMs: {
+      control: { type: 'number', min: 0, step: 100 },
+      description:
+        'Auto-advance interval until the visitor engages; 0 disables.',
+    },
+    eyebrow: {
+      control: 'text',
+      description: 'Small caps label over the explorer.',
+    },
+    hint: {
+      control: 'text',
+      description: 'Hint under the ring while unengaged.',
+    },
   },
 };
 

@@ -90,28 +90,83 @@ const compliance: YearTimelineItem[] = [
 ];
 
 const meta: Meta<typeof YearTimeline> = {
-  title: 'Components/Text & Data Display/YearTimeline',
+  id: 'data-display-yeartimeline',
+  title: 'Components/Data display/YearTimeline',
   component: YearTimeline,
+  tags: ['autodocs', 'scope:general-purpose', 'maturity:experimental'],
   parameters: {
     layout: 'padded',
     meta: componentMeta,
     docs: {
       description: {
-        component:
-          'A year on one Gantt-style timeline. Twelve month columns; rows grouped by cadence — ' +
-          'scheduled windows render as gradient pill bars spanning their `months`, while continuous ' +
-          'and event-driven items run full-width in their own lanes. A live playhead + "Today" pill ' +
-          'mark the current month and the item happening now (or up next) is highlighted. Collapses ' +
-          'to stacked rows below `md`. Colours come from `tone` (brand tokens) or any two `colors`.',
+        component: `### What it's for
+
+A year on one Gantt-style timeline. Twelve month columns; rows grouped by cadence — \`scheduled\` windows render as gradient pill bars spanning their \`months\`, while \`continuous\` and \`event\`-driven items run full-width in their own lanes. A live playhead + "Today" pill mark the current month, and the item happening now (or up next) is highlighted with a badge. Colours come from \`tone\` (brand tokens) or any two \`colors\`.
+
+### Use it when
+
+- An annual programme — compliance obligations, surveillance schedules, campaign calendars — must be read **as a year**: what happens when, what runs continuously, what's next.
+- A marketing or overview page needs the year-at-a-glance visual rather than an interactive planner.
+
+### Don't use it when
+
+- You're tracking **one process's** milestones or activity feed — \`Timeline\` (\`TimelineProgress\` / \`TimelineEventList\`).
+- Users edit or schedule the items — this is read-only display.
+- The data is values over time — the DataVis components chart it; this shows presence, not magnitude.
+
+### Example
+
+\`\`\`tsx
+<YearTimeline
+  labelHeading="Obligation"
+  items={[
+    { id: 'osha', label: 'OSHA 300A posting', months: [2, 3, 4], tone: 'warning',
+      detail: 'Post Feb 1 – Apr 30', icon: <ClipboardList /> },
+    { id: 'flu', label: 'Flu campaign', months: [9, 10, 11], tone: 'info' },
+    { id: 'surveillance', label: 'Medical surveillance', cadence: 'continuous' },
+  ]}
+/>
+\`\`\`
+
+### Limitations
+
+- Accessibility: rows are plain text in a CSS grid — no table semantics; the playhead and badges are visual with text equivalents (\`period\` eyebrow, badge copy). Row titles become links when \`href\` is set.
+- The default playhead resolves the viewer's current month **after mount** (SSR renders without it); pin it with \`today\` (month number or Date) or hide it with \`today={null}\`.
+- Collapses to stacked label-over-bar rows below \`md\`; the twelve columns are equal-width regardless of month length.
+- i18n: default month letters/names, \`labelHeading\` ("Obligation") and the \`labels\` ("Today" / "Now" / "Up next") are English — all overridable via props.
+- Theming: \`tone\` maps to brand token families (primary, accent, success, warning, info, neutral); \`colors\` accepts any two CSS colours for a custom gradient.`,
       },
     },
+    catalog: {
+      entry: '@mieweb/ui',
+      relationships: [
+        {
+          type: 'alternative to',
+          target: 'data-display-timeline',
+          why: 'YearTimeline lays a whole year of scheduled/continuous items on one Gantt grid; Timeline tracks a single process\u2019s milestones and events.',
+        },
+      ],
+    },
   },
-  tags: ['autodocs'],
   argTypes: {
-    items: { control: false },
-    today: { control: { type: 'number', min: 1, max: 12 } },
-    labelHeading: { control: 'text' },
-    highlightCurrent: { control: 'boolean' },
+    items: {
+      control: false,
+      description:
+        'Rows: label, months (1–12), cadence, tone/colors, detail, icon, href.',
+    },
+    today: {
+      control: { type: 'number', min: 1, max: 12 },
+      description:
+        'Playhead month (or Date); null hides the marker. Default: the viewer\u2019s current month.',
+    },
+    labelHeading: {
+      control: 'text',
+      description: 'Column heading over the row labels.',
+    },
+    highlightCurrent: {
+      control: 'boolean',
+      description: 'Badge the item happening now (or up next).',
+    },
   },
 };
 

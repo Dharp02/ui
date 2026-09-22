@@ -565,6 +565,8 @@ export function MobileMenuPanel({
                   <a
                     key={it.href}
                     href={it.href}
+                    target={it.external ? '_blank' : undefined}
+                    rel={it.external ? 'noopener noreferrer' : undefined}
                     onClick={onClose}
                     className="flex items-center gap-2 rounded-lg px-4 py-2.5 text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800"
                   >

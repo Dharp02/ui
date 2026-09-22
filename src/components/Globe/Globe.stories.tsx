@@ -140,24 +140,55 @@ const points: GlobePoint[] = [
 ];
 
 const meta: Meta<typeof Globe> = {
-  title: 'Components/Images & Media/Globe',
+  id: 'showcase-globe',
+  title: 'Components/Showcase/Globe',
   component: Globe,
+  tags: ['autodocs', 'scope:general-purpose', 'maturity:experimental'],
   parameters: {
     layout: 'fullscreen',
     meta: componentMeta,
     docs: {
       description: {
-        component:
-          'A branded WebGL globe on `react-globe.gl`: dotted-hex continents, hub and city dots with hover ' +
-          'tooltips, animated hub-and-spoke arcs (auto-built from `points`, or pass `arcs`), slow ' +
-          'auto-rotation that pauses while dragging and is off under `prefers-reduced-motion`, and a pill ' +
-          'callout for the selected point with an optional live local clock (`timeZone`). Transparent ' +
-          'background. **Separate entry:** `import { Globe } from "@mieweb/ui/globe"` with the optional ' +
-          'peers `react-globe.gl` and `three` installed; render behind `ssr: false`.',
+        component: `### What it's for
+
+A branded WebGL globe on \`react-globe.gl\`: dotted-hex continents, hub and city dots with hover tooltips, animated hub-and-spoke arcs (auto-built from \`points\`, or pass \`arcs\`), slow auto-rotation that pauses while dragging, and a pill callout for the selected point with an optional live local clock (\`timeZone\`). Transparent background; colours come from the brand tokens via \`theme\`.
+
+### Use it when
+
+- A front-door or hero section shows a **global footprint** — offices, customers, deployments — and the geography itself is the message.
+- You want a "we're everywhere" visual with connection arcs from a hub to its satellites and a hoverable dot per location.
+
+### Don't use it when
+
+- The values must be read or compared — this is a showcase piece, not a chart; reach for the DataVis components.
+- You cannot ship the optional peers — \`react-globe.gl\` and \`three\` are heavyweight WebGL dependencies.
+- The page renders on the server — the globe is client-only; load it behind \`ssr: false\` or a client boundary.
+
+### Example
+
+\`\`\`tsx
+import { Globe } from '@mieweb/ui/globe';
+
+<Globe
+  points={offices} // hubs + cities; arcs are auto-built hub-and-spoke
+  timeZone // live local clock in the selected-point callout
+  onSelect={(p) => setSelectedOffice(p?.id ?? null)}
+/>;
+\`\`\`
+
+### Limitations
+
+- Points are drawn on the WebGL canvas, not as DOM elements, so they are **not keyboard-focusable** — selection is pointer-driven via \`onSelect\`; the only focusable control is the callout's Dismiss button.
+- The selected-point callout is a \`role="status"\` / \`aria-live="polite"\` region, so picks are announced to screen readers.
+- Auto-rotation is disabled under \`prefers-reduced-motion\` and pauses while dragging.
+- The background is transparent — provide your own backdrop (the stories use a dark radial gradient).`,
       },
     },
+    catalog: {
+      entry: '@mieweb/ui/globe',
+      peers: ['react-globe.gl', 'three'],
+    },
   },
-  tags: ['autodocs'],
   argTypes: {
     points: { control: false },
     arcs: { control: false },

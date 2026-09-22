@@ -3,6 +3,7 @@
 import * as React from 'react';
 import { ArrowRight, ChevronDown, ChevronRight } from 'lucide-react';
 import { cn } from '../../utils/cn';
+import { buttonVariants } from '../Button';
 
 // =============================================================================
 // Types
@@ -184,10 +185,18 @@ export function MegaMenu({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hoverMinWidth]);
 
+  const curPath = currentPath ? normalizePath(currentPath) : null;
+  const isCurrent = (href: string) =>
+    curPath !== null && normalizePath(href) === curPath;
+  const featured = resolveFeatured(hovered, menu);
+
   React.useEffect(() => {
     if (open) position();
     else setHovered(null);
-  }, [open, position]);
+    // `featured` is a dep because the feature column swaps the 600px layout
+    // for the 880px one after open — the wider panel must be re-clamped or a
+    // menu opened near the viewport edge overflows it.
+  }, [open, position, featured]);
 
   React.useEffect(() => {
     window.addEventListener('resize', position);
@@ -204,11 +213,6 @@ export function MegaMenu({
       triggerRef.current?.focus();
     }
   };
-
-  const curPath = currentPath ? normalizePath(currentPath) : null;
-  const isCurrent = (href: string) =>
-    curPath !== null && normalizePath(href) === curPath;
-  const featured = resolveFeatured(hovered, menu);
 
   const triggerClass = cn(
     'inline-flex items-center rounded-lg px-3 py-2 text-sm font-medium transition-colors',
@@ -391,7 +395,7 @@ export function MegaMenu({
                 <a
                   href={menu.ctaHref}
                   onClick={navigate}
-                  className="mie-fx-sheen bg-primary-800 hover:bg-primary-900 inline-flex h-9 items-center rounded-lg px-4 text-sm font-semibold text-white"
+                  className={buttonVariants({ size: 'sm', effect: 'sheen' })}
                 >
                   {menu.ctaLabel ?? 'Get started'}
                 </a>
@@ -491,9 +495,11 @@ function FeaturedPanel({
 }) {
   const tone = featured.tone ?? 'primary';
   const onDark = tone !== 'neutral';
-  // `key` re-mounts the aside so swapping between items replays the fade-in.
+  // `key` re-mounts the panel so swapping between items replays the fade-in.
+  // A `div`, not `aside`: a complementary landmark nested inside the menu
+  // region violates axe landmark-complementary-is-top-level.
   return (
-    <aside
+    <div
       data-slot="mega-menu-featured"
       key={featured.title}
       className={cn(
@@ -540,17 +546,16 @@ function FeaturedPanel({
           href={featured.ctaHref}
           onClick={onNavigate}
           className={cn(
-            'mie-fx-sheen inline-flex h-10 items-center justify-center gap-1.5 rounded-full border px-5 text-sm font-semibold transition-colors',
-            onDark
-              ? 'border-white/40 text-white hover:border-white hover:bg-white/10'
-              : 'border-border text-foreground hover:border-primary-500 hover:text-primary-800'
+            buttonVariants({ variant: 'outline', effect: 'sheen' }),
+            onDark &&
+              'border-white/40 text-white hover:border-white hover:bg-white/10 hover:text-white dark:border-white/40 dark:text-white dark:hover:border-white dark:hover:bg-white/10'
           )}
         >
           {featured.ctaLabel}
           <ArrowRight size={16} aria-hidden="true" />
         </a>
       </div>
-    </aside>
+    </div>
   );
 }
 
