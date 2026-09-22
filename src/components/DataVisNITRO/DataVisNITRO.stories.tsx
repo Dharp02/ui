@@ -562,7 +562,15 @@ const PerspectivesGrid = ({
 
   if (!prefs) return null;
 
-  return <DataVisNitroGrid {...props} prefs={prefs} />;
+  // Pins follow the same device-trust decision as the Prefs backend: public
+  // kiosks keep them in memory only.
+  return (
+    <DataVisNitroGrid
+      {...props}
+      prefs={prefs}
+      persistPinnedPerspectives={trustedDevice}
+    />
+  );
 };
 
 export const WithPerspectives: Story = {
