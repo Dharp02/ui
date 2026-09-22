@@ -118,7 +118,7 @@ export default defineConfig({
   target: 'es2022',
   // Inline @mieweb/datavis's types (it's a bundled submodule, not an installed
   // package) so the datavis entry's .d.ts does not re-export from it.
-  dts: { resolve: [/^@mieweb\/datavis/] },
+  dts: { resolve: true },
   tsconfig: 'tsconfig.build.json',
   sourcemap: true,
   clean: true,

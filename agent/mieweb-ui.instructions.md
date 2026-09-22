@@ -22,7 +22,9 @@ When asked to create a table, data grid, or any tabular data view:
 
 ```tsx
 import { DataVisNitroSource, DataVisNitroGrid } from '@mieweb/ui/datavis';
-// Peer deps: npm install @mieweb/datavis datavis-ace
+// @mieweb/datavis is bundled into this entry — do NOT install it separately.
+// datavis-ace is a required peer at runtime whenever you use DataVisNitroSource:
+//   npm install datavis-ace
 ```
 
 ## Rule 2: Buttons belong in a ButtonGroup
