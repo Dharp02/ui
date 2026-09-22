@@ -24,6 +24,10 @@ const PrefsConstructor = Prefs as unknown as new (
 ) => PrefsInstance;
 
 const PREFS_STORAGE_KEY = 'mieweb-ui-storybook:datavis-prefs';
+// Pinned-perspective names are stored by DataVis under a key derived from the
+// Prefs instance name (see PinnedPerspectivePills getStorageKey).
+const PINNED_STORAGE_KEY =
+  'mieweb-datavis:pinned-perspectives:mieweb-ui-storybook:employees';
 
 // Clears saved perspectives in automated runs (test runner, visual
 // regression) so stories render deterministically, while keeping
@@ -33,6 +37,7 @@ const clearSavedPerspectives = () => {
   try {
     if (typeof navigator !== 'undefined' && navigator.webdriver) {
       window.localStorage.removeItem(PREFS_STORAGE_KEY);
+      window.localStorage.removeItem(PINNED_STORAGE_KEY);
     }
   } catch {
     // Storage unavailable — the story just renders its defaults.
