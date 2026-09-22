@@ -26,6 +26,7 @@ export default defineConfig({
   entry: {
     index: 'src/index.ts',
     'ag-grid': 'src/ag-grid.ts',
+    globe: 'src/globe.ts',
     datavis: 'src/datavis.ts',
     esheet: 'src/esheet.ts',
     kerebron: 'src/kerebron.ts',
@@ -72,7 +73,10 @@ export default defineConfig({
     'components/Markdown/index': 'src/components/Markdown/index.ts',
     'components/MediaEditor/index': 'src/components/MediaEditor/index.ts',
     'components/MediaPlayer/index': 'src/components/MediaPlayer/index.ts',
+    'components/MegaMenu/index': 'src/components/MegaMenu/index.ts',
     'components/Modal/index': 'src/components/Modal/index.ts',
+    'components/OrbitRing/index': 'src/components/OrbitRing/index.ts',
+    'components/RadialExplorer/index': 'src/components/RadialExplorer/index.ts',
     'components/Pagination/index': 'src/components/Pagination/index.ts',
     'components/PhoneInput/index': 'src/components/PhoneInput/index.ts',
     'components/Progress/index': 'src/components/Progress/index.ts',
@@ -86,6 +90,7 @@ export default defineConfig({
     'components/SchedulePicker/index': 'src/components/SchedulePicker/index.ts',
     'components/ScrollArea/index': 'src/components/ScrollArea/index.ts',
     'components/SectionSpyNav/index': 'src/components/SectionSpyNav/index.ts',
+    'components/SliderCalculator/index': 'src/components/SliderCalculator/index.ts',
     'components/Select/index': 'src/components/Select/index.ts',
     'components/Separator/index': 'src/components/Separator/index.ts',
     'components/Sheet/index': 'src/components/Sheet/index.ts',
@@ -106,7 +111,9 @@ export default defineConfig({
     'components/Toggle/index': 'src/components/Toggle/index.ts',
     'components/Tooltip/index': 'src/components/Tooltip/index.ts',
     'components/TranscriptView/index': 'src/components/TranscriptView/index.ts',
+    'components/VideoCard/index': 'src/components/VideoCard/index.ts',
     'components/VisuallyHidden/index': 'src/components/VisuallyHidden/index.ts',
+    'components/YearTimeline/index': 'src/components/YearTimeline/index.ts',
     // Brand system entries for tree-shaking
     'brands/index': 'src/brands/index.ts',
     'brands/types': 'src/brands/types.ts',
@@ -127,6 +134,8 @@ export default defineConfig({
     'react-dom',
     'ag-grid-community',
     'ag-grid-react',
+    'react-globe.gl',
+    'three',
     '@mieweb/ui',
     // @mieweb/datavis is a git submodule (link:), not a published package, so it
     // is bundled into the datavis entry — like its CSS — instead of externalized.
