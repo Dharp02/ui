@@ -4,6 +4,8 @@ import * as React from 'react';
 import { cn } from '../../utils/cn';
 import { Badge } from '../Badge/Badge';
 import { Button } from '../Button';
+import { Checkbox } from '../Checkbox';
+import { Input } from '../Input';
 import { Tooltip } from '../Tooltip';
 import { Card, CardHeader, CardContent } from '../Card/Card';
 import {
@@ -234,6 +236,8 @@ export interface AssessmentProps extends Omit<
   onShowPlanChange?: (show: boolean) => void;
   /** Called when a row action is clicked */
   onAction?: (item: AssessmentItem, action: AssessmentAction) => void;
+  /** Remove a problem from this visit's assessment, not its longitudinal record. */
+  onRemoveAssessment?: (item: AssessmentItem) => void;
   /**
    * Called when a new order is created from the inline order form.
    * Enables the "Add order" affordances — `item` is null when the order is
@@ -293,6 +297,11 @@ export interface AssessmentProps extends Omit<
   onReorderItems?: (concernIds: string[]) => void;
   /** Hide all controls (display only) */
   readOnly?: boolean;
+  /**
+   * Initial mode of the unified add row's "What to add" selector.
+   * Default 'auto' (the pick's coding system decides concern vs order).
+   */
+  defaultAddMode?: 'auto' | 'problem' | 'order';
   /**
    * Restrict concern searches to billable (leaf) ICD-10 codes — category
    * roots (E11) and SNOMED synonyms are dropped. Forwarded to
@@ -511,47 +520,43 @@ function OrderRow({
           aria-label={`Edit order ${order.display}`}
           className="flex flex-1 flex-wrap items-center gap-1.5"
         >
-          <input
-            type="text"
-            // eslint-disable-next-line jsx-a11y/no-autofocus
-            autoFocus
-            value={editing.display}
-            onChange={(e) =>
-              setEditing((prev) =>
-                prev ? { ...prev, display: e.target.value } : prev
-              )
-            }
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') saveEdit();
-              else if (e.key === 'Escape') setEditing(null);
-            }}
-            aria-label="Order description"
-            className={cn(
-              'border-border bg-background text-foreground',
-              'h-7 min-w-40 flex-1 rounded-md border px-2 text-sm',
-              'focus:ring-ring focus:ring-2 focus:outline-none'
-            )}
-          />
-          <input
-            type="text"
-            value={editing.detail}
-            onChange={(e) =>
-              setEditing((prev) =>
-                prev ? { ...prev, detail: e.target.value } : prev
-              )
-            }
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') saveEdit();
-              else if (e.key === 'Escape') setEditing(null);
-            }}
-            placeholder="detail (sig, timing…)"
-            aria-label="Order detail"
-            className={cn(
-              'border-border bg-background text-foreground placeholder:text-muted-foreground',
-              'h-7 w-40 rounded-md border px-2 text-xs',
-              'focus:ring-ring focus:ring-2 focus:outline-none'
-            )}
-          />
+          <div className="min-w-40 flex-1">
+            <Input
+              // eslint-disable-next-line jsx-a11y/no-autofocus
+              autoFocus
+              size="sm"
+              value={editing.display}
+              onChange={(e) =>
+                setEditing((prev) =>
+                  prev ? { ...prev, display: e.target.value } : prev
+                )
+              }
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') saveEdit();
+                else if (e.key === 'Escape') setEditing(null);
+              }}
+              aria-label="Order description"
+              className="h-7"
+            />
+          </div>
+          <div className="w-40">
+            <Input
+              size="sm"
+              value={editing.detail}
+              onChange={(e) =>
+                setEditing((prev) =>
+                  prev ? { ...prev, detail: e.target.value } : prev
+                )
+              }
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') saveEdit();
+                else if (e.key === 'Escape') setEditing(null);
+              }}
+              placeholder="detail (sig, timing…)"
+              aria-label="Order detail"
+              className="h-7 text-xs"
+            />
+          </div>
           <Button
             variant="outline"
             size="sm"
@@ -663,11 +668,13 @@ function OrderRow({
 
 /** Inline per-problem order entry: type filter + code lookup (or free text). */
 function AddOrderForm({
+  id,
   problemText,
   onSubmit,
   onCancel,
   renderSearch,
 }: {
+  id: string;
   problemText: string;
   onSubmit: (order: {
     type: OrderType;
@@ -709,12 +716,14 @@ function AddOrderForm({
 
   return (
     <div
+      id={id}
       role="form"
       aria-label={`Add order for ${problemText}`}
-      className="border-border bg-muted/40 mt-1.5 ml-2.5 flex flex-wrap items-center gap-1.5 rounded-md border border-dashed p-2"
+      className="border-border bg-muted/40 ms-2.5 mt-1.5 flex flex-wrap items-center gap-1.5 rounded-md border border-dashed p-2"
     >
       <select
         aria-label="Order type filter"
+        data-slot="select-trigger"
         value={type}
         onChange={(e) => setType(e.target.value as 'auto' | OrderType)}
         onKeyDown={(e) => {
@@ -753,23 +762,20 @@ function AddOrderForm({
         </div>
       ) : (
         <>
-          <input
-            ref={inputRef}
-            type="text"
-            value={display}
-            onChange={(e) => setDisplay(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') submit();
-              else if (e.key === 'Escape') onCancel();
-            }}
-            placeholder="e.g. lisinopril 10 mg tablet — 1 po daily"
-            aria-label="Order description"
-            className={cn(
-              'border-border bg-background text-foreground placeholder:text-muted-foreground',
-              'h-8 min-w-48 flex-1 rounded-md border px-2.5 text-sm',
-              'focus:ring-ring focus:ring-2 focus:outline-none'
-            )}
-          />
+          <div className="min-w-48 flex-1">
+            <Input
+              ref={inputRef}
+              size="sm"
+              value={display}
+              onChange={(e) => setDisplay(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') submit();
+                else if (e.key === 'Escape') onCancel();
+              }}
+              placeholder="e.g. lisinopril 10 mg tablet — 1 po daily"
+              aria-label="Order description"
+            />
+          </div>
           <Button
             variant="outline"
             size="sm"
@@ -829,6 +835,7 @@ export const Assessment = React.forwardRef<HTMLDivElement, AssessmentProps>(
       showPlan = true,
       onShowPlanChange,
       onAction,
+      onRemoveAssessment,
       onAddOrder,
       onAddAssessment,
       onLinkOrder,
@@ -839,6 +846,7 @@ export const Assessment = React.forwardRef<HTMLDivElement, AssessmentProps>(
       onReorderOrders,
       renderOrderSearch,
       readOnly = false,
+      defaultAddMode = 'auto',
       billableOnly = false,
       className,
       'data-testid': dataTestId,
@@ -846,9 +854,10 @@ export const Assessment = React.forwardRef<HTMLDivElement, AssessmentProps>(
     },
     ref
   ) => {
+    const instanceId = React.useId();
     const [addingFor, setAddingFor] = React.useState<string | null>(null);
     const [addMode, setAddMode] = React.useState<'auto' | 'problem' | 'order'>(
-      'auto'
+      defaultAddMode
     );
     /** Free text typed in auto mode — we must ask what it is before adding */
     const [pendingFreeText, setPendingFreeText] = React.useState<string | null>(
@@ -1120,15 +1129,12 @@ export const Assessment = React.forwardRef<HTMLDivElement, AssessmentProps>(
               {title}
             </h3>
             {onShowPlanChange && (
-              <label className="text-muted-foreground flex items-center gap-1.5 text-xs font-medium">
-                <input
-                  type="checkbox"
-                  checked={showPlan}
-                  onChange={(e) => onShowPlanChange(e.target.checked)}
-                  className="accent-primary-600 h-3.5 w-3.5"
-                />
-                Show plan
-              </label>
+              <Checkbox
+                size="sm"
+                checked={showPlan}
+                onChange={(e) => onShowPlanChange(e.target.checked)}
+                label="Show plan"
+              />
             )}
           </CardHeader>
         )}
@@ -1149,9 +1155,11 @@ export const Assessment = React.forwardRef<HTMLDivElement, AssessmentProps>(
               );
               const bp = blockProps(item.concernId);
               const formOpen = addingFor === item.concernId;
+              const addOrderFormId = `${instanceId}-add-order-${item.concernId}`;
               return (
                 <li
                   key={item.concernId}
+                  data-slot="assessment-problem"
                   data-concern-id={item.concernId}
                   {...bp}
                   // While the add-order form is open the block body must yield
@@ -1201,47 +1209,79 @@ export const Assessment = React.forwardRef<HTMLDivElement, AssessmentProps>(
                     )}
                     <CodingChips coding={assertion.coding} />
 
-                    {!readOnly && (
-                      <RowActionToolbar
-                        label={`Actions for ${assertion.text}`}
-                        align="top"
-                      >
-                        {(Object.keys(ACTION_META) as AssessmentAction[]).map(
-                          (action) => {
-                            const meta = ACTION_META[action];
-                            if (
-                              action === 'add-order' &&
-                              !onAddOrder &&
-                              !onAction
-                            )
-                              return null;
-                            return (
-                              <RowIconButton
-                                key={action}
-                                label={meta.label}
-                                icon={meta.icon}
-                                size="sm"
-                                onClick={() => {
-                                  if (action === 'add-order' && onAddOrder) {
-                                    setAddingFor((prev) =>
-                                      prev === item.concernId
-                                        ? null
-                                        : item.concernId
-                                    );
-                                  } else {
-                                    onAction?.(item, action);
+                    {!readOnly &&
+                      (onAction || onAddOrder || onRemoveAssessment) && (
+                        <RowActionToolbar
+                          label={`Actions for ${assertion.text}`}
+                          align="top"
+                          className={cn(
+                            'pointer-fine:group-has-[[data-order-id]:hover]:pointer-events-none',
+                            'pointer-fine:group-has-[[data-order-id]:hover]:opacity-0',
+                            'pointer-fine:group-has-[[data-order-id]:focus-within]:pointer-events-none',
+                            'pointer-fine:group-has-[[data-order-id]:focus-within]:opacity-0'
+                          )}
+                        >
+                          {(Object.keys(ACTION_META) as AssessmentAction[]).map(
+                            (action) => {
+                              const meta = ACTION_META[action];
+                              if (action !== 'add-order' && !onAction)
+                                return null;
+                              if (
+                                action === 'add-order' &&
+                                !onAddOrder &&
+                                !onAction
+                              )
+                                return null;
+                              return (
+                                <RowIconButton
+                                  key={action}
+                                  label={meta.label}
+                                  icon={meta.icon}
+                                  size="sm"
+                                  expanded={
+                                    action === 'add-order' && onAddOrder
+                                      ? addingFor === item.concernId
+                                      : undefined
                                   }
-                                }}
-                              />
-                            );
-                          }
-                        )}
-                      </RowActionToolbar>
-                    )}
+                                  controls={
+                                    action === 'add-order' && onAddOrder
+                                      ? addOrderFormId
+                                      : undefined
+                                  }
+                                  onClick={() => {
+                                    if (action === 'add-order' && onAddOrder) {
+                                      setAddingFor((prev) =>
+                                        prev === item.concernId
+                                          ? null
+                                          : item.concernId
+                                      );
+                                    } else {
+                                      onAction?.(item, action);
+                                    }
+                                  }}
+                                />
+                              );
+                            }
+                          )}
+                          {onRemoveAssessment && (
+                            <RowIconButton
+                              label={`Remove ${assertion.text} from assessment`}
+                              icon={TrashIcon}
+                              size="sm"
+                              onClick={() => {
+                                onRemoveAssessment(item);
+                                setAnnouncement(
+                                  `${assertion.text} removed from assessment`
+                                );
+                              }}
+                            />
+                          )}
+                        </RowActionToolbar>
+                      )}
                   </div>
 
                   {item.note && (
-                    <p className="text-muted-foreground mt-1 pl-6 text-sm">
+                    <p className="text-muted-foreground mt-1 ps-6 text-sm">
                       {item.note}
                     </p>
                   )}
@@ -1249,7 +1289,7 @@ export const Assessment = React.forwardRef<HTMLDivElement, AssessmentProps>(
                   {showPlan && linkedOrders.length > 0 && (
                     <ul
                       aria-label={`Plan for ${assertion.text}`}
-                      className="border-border mt-1.5 ml-2.5 border-l pl-4"
+                      className="border-border ms-2.5 mt-1.5 border-s ps-4"
                     >
                       {linkedOrders.map((order) => (
                         <OrderRow
@@ -1264,8 +1304,15 @@ export const Assessment = React.forwardRef<HTMLDivElement, AssessmentProps>(
 
                   {!readOnly && onAddOrder && addingFor === item.concernId && (
                     <AddOrderForm
+                      id={addOrderFormId}
                       problemText={assertion.text}
-                      onSubmit={(order) => onAddOrder(item, order)}
+                      onSubmit={(order) => {
+                        onAddOrder(item, order);
+                        setAnnouncement(
+                          `${order.display} added to ${assertion.text}`
+                        );
+                        setAddingFor(null);
+                      }}
                       onCancel={() => setAddingFor(null)}
                       renderSearch={effectiveRenderOrderSearch}
                     />
@@ -1288,6 +1335,7 @@ export const Assessment = React.forwardRef<HTMLDivElement, AssessmentProps>(
               >
                 <select
                   aria-label="What to add"
+                  data-slot="select-trigger"
                   value={addMode}
                   onChange={(e) => {
                     setAddMode(e.target.value as typeof addMode);
@@ -1379,7 +1427,7 @@ export const Assessment = React.forwardRef<HTMLDivElement, AssessmentProps>(
                   <div
                     role="group"
                     aria-label={`Add "${pendingFreeText}" as`}
-                    className="flex w-full flex-wrap items-center gap-1.5 pl-1"
+                    className="flex w-full flex-wrap items-center gap-1.5 ps-1"
                   >
                     <span className="text-muted-foreground text-sm">
                       Add{' '}

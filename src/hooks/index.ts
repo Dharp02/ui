@@ -1,4 +1,5 @@
 export { useTheme, type Theme, type ResolvedTheme } from './useTheme';
+export { useIsDarkMode, isDarkMode } from './useIsDarkMode';
 export {
   useDirection,
   isRtlLocale,
@@ -43,6 +44,12 @@ export {
   type DragOverState,
 } from './useDragReorder';
 export { useLiveAnnouncement } from './useLiveAnnouncement';
+export {
+  useYouTubeHoverPreview,
+  type HoverPreviewState,
+  type UseYouTubeHoverPreviewOptions,
+  type UseYouTubeHoverPreviewReturn,
+} from './useYouTubeHoverPreview';
 export {
   useMediaTransport,
   type MediaTransportState,

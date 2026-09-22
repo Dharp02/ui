@@ -1,14 +1,63 @@
-import { useContext, useState } from 'react';
+import { useContext, useEffect, useMemo, useState } from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { GridAssistant, type GridAssistantColumn } from '@mieweb/datavis';
+import { Download, Pencil, Trash2 } from 'lucide-react';
+import {
+  GridAssistant,
+  type GridAssistantColumn,
+  type PrefsInstance,
+} from '@mieweb/datavis';
+import { Prefs } from 'datavis-ace';
 import {
   DataVisNitroContext,
   DataVisNitroGrid,
+  DataVisNitroLanguageSelector,
   DataVisNitroSource,
+  type DataVisNitroGridProps,
 } from './DataVisNITRO';
 
+// datavis-ace is untyped JS (`Prefs` is built with a runtime `makeSubclass`
+// helper), so give it an explicit constructor signature for use below.
+const PrefsConstructor = Prefs as unknown as new (
+  name: string,
+  moduleBindings: unknown,
+  opts: Record<string, unknown>
+) => PrefsInstance;
+
+const PREFS_STORAGE_KEY = 'mieweb-ui-storybook:datavis-prefs';
+// Pinned-perspective names are stored by DataVis under a key derived from the
+// Prefs instance name (see PinnedPerspectivePills getStorageKey).
+const PINNED_STORAGE_KEY =
+  'mieweb-datavis:pinned-perspectives:mieweb-ui-storybook:employees';
+
+// Clears saved perspectives in automated runs (test runner, visual
+// regression) so stories render deterministically, while keeping
+// localStorage persistence for normal browsing. localStorage access
+// can throw in restricted contexts, so fall back to defaults quietly.
+const clearSavedPerspectives = () => {
+  try {
+    if (typeof navigator !== 'undefined' && navigator.webdriver) {
+      window.localStorage.removeItem(PREFS_STORAGE_KEY);
+      window.localStorage.removeItem(PINNED_STORAGE_KEY);
+    }
+  } catch {
+    // Storage unavailable — the story just renders its defaults.
+  }
+  return {};
+};
+
+const EMPLOYEE_COLUMNS = [
+  'id',
+  'name',
+  'email',
+  'department',
+  'status',
+  'start_date',
+  'manager',
+];
+
 const meta: Meta<typeof DataVisNitroGrid> = {
-  title: 'Components/Text & Data Display/DataVis NITRO',
+  id: 'grids-datavis-nitro',
+  title: 'Components/Grids/DataVis NITRO',
   component: DataVisNitroGrid,
   parameters: {
     layout: 'fullscreen',
@@ -20,12 +69,93 @@ const meta: Meta<typeof DataVisNitroGrid> = {
     },
     docs: {
       description: {
-        component:
-          "React wrapper around the `datavis/wcdatavis-lib` package. `<DataVisNitroSource>` creates a datavis source/view pair using that library and `<DataVisNitroGrid>` renders that view through DataVis NITRO's React `DataGrid` and `TableRenderer`.",
+        component: `> **Tables and data grids start with DataVis NITRO.** Use \`Table\` only for a few static rows the user will not sort, filter, page or export. Never hand-roll grid features on a plain table; \`AGGrid\` is deprecated.
+
+Source: [mieweb/datavis](https://github.com/mieweb/datavis) (\`@mieweb/datavis\`), built on the [mieweb/wcdatavis](https://github.com/mieweb/wcdatavis) DataVis ACE engine (\`datavis-ace\`).
+
+### What it's for
+
+Browsing, sorting, filtering, grouping and exporting record sets without writing grid logic. \`<DataVisNitroSource>\` creates a datavis source/view pair (HTTP, local array or file) and \`<DataVisNitroGrid>\` renders that view through DataVis NITRO's React \`DataGrid\`. Column menus, pinned columns, aggregates and saved perspectives come from the engine, so a product gets the same grid behaviour everywhere.
+
+### Use it when
+
+- Users need to browse or work with records: any list that may grow, be sorted, filtered or exported.
+- You would otherwise hand-roll sorting, filtering or column menus on top of a plain \`<table>\`.
+- Row actions are needed: render a \`RowActionToolbar\` with \`group="grid"\` from \`formatCell\`.
+
+### Don't use it when
+
+- The data is a handful of static rows shown for reading (a summary block, a definition list) — use \`Table\`.
+- You need a chart rather than rows — use \`DataVisNitroGraph\` on the same source, or \`Sparkline\` for an inline strip.
+- You're on a size-critical surface that must never load the grid engine — NITRO is a heavy opt-in chunk behind the \`@mieweb/ui/datavis\` entry (\`@mieweb/datavis\` and \`recharts\` are bundled in; \`datavis-ace\` is a dependency), so import it only where a grid is actually rendered.
+
+### Example
+
+\`\`\`tsx
+import { DataVisNitroGrid, DataVisNitroSource } from '@mieweb/ui/datavis';
+
+<DataVisNitroSource type="http" url="/api/employees">
+  <DataVisNitroGrid
+    columns={['name', 'department', 'status']}
+    onRowClick={(row) => openEmployee(row.id)}
+  />
+</DataVisNitroSource>
+\`\`\`
+
+The source owns the data lifecycle; the grid is presentational. Keep application state (selected id, route) in the host and react to \`onRowClick\` / \`onSelectionChange\`.
+
+### Limitations
+
+- **Accessibility:** the engine's DOM emits invalid ARIA attributes, nested interactive elements and some non-conforming contrast; automated a11y checks are disabled for this page. Provide a keyboard-reachable alternative for critical actions until upstream fixes land.
+- **Theming:** the grid follows the active brand and dark mode through the DataVis colour scheme; per-cell styling goes through \`formatCell\`.
+- **\`formatCell\` must return the value itself for columns it does not handle** — returning \`undefined\` blanks the cell.
+- Saved perspectives persist in \`localStorage\` only on trusted workstations; public kiosks keep them in memory until refresh.
+- Renders inline (no portal); the host controls height and scrolling.`,
       },
     },
+    catalog: {
+      entry: '@mieweb/ui/datavis',
+      peers: [],
+      relationships: [
+        {
+          type: 'alternative to',
+          target: 'grids-table',
+          why: 'Table is for a few static rows; NITRO whenever users browse, sort, filter or export records.',
+        },
+        {
+          type: 'alternative to',
+          target: 'encounter-orders-webchartreportviewer',
+          why: 'NITRO is the interactive grid for sorting, grouping and pivoting a dataset; WebChartReportViewer picks a backend-run report and shows its rows in a static Table.',
+        },
+        {
+          type: 'composes with',
+          target: 'grids-datavis-nitro-graph',
+          why: 'Both render the same DataVisNitroSource; switch between rows and a chart without refetching.',
+        },
+        {
+          type: 'composes with',
+          target: 'actions-rowactiontoolbar',
+          why: 'Render per-row actions inside a grid cell with group="grid" so they reveal on row hover.',
+        },
+        {
+          type: 'composes with',
+          target: 'data-display-filtersummarybar',
+          why: 'FilterSummaryBar above the grid shows filtered-of-total counts for host-side filters and search, with one Clear all.',
+        },
+        {
+          type: 'supersedes',
+          target: 'deprecated-aggrid',
+          why: 'AGGrid is deprecated; NITRO ships brand theming and perspectives without the ag-grid peers.',
+        },
+        {
+          type: 'supersedes',
+          target: 'deprecated-aggrid-enhanced',
+          why: 'The enhanced cell renderers are covered by formatCell and the engine column types.',
+        },
+      ],
+    },
   },
-  tags: ['autodocs'],
+  tags: ['autodocs', 'scope:general-purpose', 'maturity:stable'],
   decorators: [
     (Story) => (
       <div style={{ padding: '1rem' }}>
@@ -39,24 +169,41 @@ export default meta;
 
 type Story = StoryObj<typeof DataVisNitroGrid>;
 
-export const Default: Story = {
-  render: () => (
-    <DataVisNitroSource type="http" url="/sample-data.json">
-      <DataVisNitroGrid
-        title="Employees"
-        columns={[
-          'id',
-          'name',
-          'email',
-          'department',
-          'status',
-          'start_date',
-          'manager',
-        ]}
-        height="420px"
-      />
-    </DataVisNitroSource>
-  ),
+type DefaultArgs = DataVisNitroGridProps & {
+  perspectives?: boolean;
+};
+
+export const Default: StoryObj<DefaultArgs> = {
+  args: {
+    perspectives: true,
+  },
+  argTypes: {
+    perspectives: {
+      control: 'boolean',
+      description:
+        'Enable the perspective variant: binds a `Prefs` module so the "Main Perspective" toolbar renders. Persistence follows the public kiosk / trusted workstation toolbar setting. See the With Perspectives story for details.',
+    },
+  },
+  loaders: [clearSavedPerspectives],
+  render: ({ perspectives }, { globals }) => {
+    const grid = {
+      title: 'Employees',
+      columns: EMPLOYEE_COLUMNS,
+      height: '420px',
+    };
+    return (
+      <DataVisNitroSource type="http" url="/sample-data.json">
+        {perspectives ? (
+          <PerspectivesGrid
+            {...grid}
+            trustedDevice={globals.device === 'trusted'}
+          />
+        ) : (
+          <DataVisNitroGrid {...grid} />
+        )}
+      </DataVisNitroSource>
+    );
+  },
 };
 
 export const WithControls: Story = {
@@ -73,8 +220,100 @@ export const WithControls: Story = {
           'start_date',
           'manager',
         ]}
+        mode="full"
         showControls
+        debug
         height="480px"
+        features={{
+          columnResize: true,
+          columnReorder: true,
+          stickyHeaders: true,
+          zebraStripe: true,
+          keyboardNav: true,
+          headerContextMenu: true,
+        }}
+      />
+    </DataVisNitroSource>
+  ),
+};
+
+export const LocalizedGrid: Story = {
+  parameters: {
+    docs: {
+      description: {
+        story:
+          'The public `DataVisNitroLanguageSelector` exposes the same locale picker as the standalone demo. Its selected locale updates translated DataVis labels, while the grid `locale` prop localizes date, number, and currency formatting.',
+      },
+    },
+  },
+  render: () => {
+    const LocalizedGridDemo = () => {
+      const [locale, setLocale] = useState('es-MX');
+
+      return (
+        <div className="space-y-3">
+          <div className="flex justify-end">
+            <DataVisNitroLanguageSelector
+              value={locale}
+              onLanguageChange={setLocale}
+              className="w-56"
+            />
+          </div>
+          <DataVisNitroSource type="http" url="/sample-data.json">
+            <DataVisNitroGrid
+              title="Directorio de empleados"
+              columns={EMPLOYEE_COLUMNS}
+              locale={locale}
+              mode="full"
+              showControls
+              height="480px"
+            />
+          </DataVisNitroSource>
+        </div>
+      );
+    };
+
+    return <LocalizedGridDemo />;
+  },
+};
+
+export const Operations: Story = {
+  parameters: {
+    docs: {
+      description: {
+        story:
+          'Passing an `operations` array surfaces the operations palette in the controls region. Each entry has a `label`, optional `icon` and `category`, and a `callback` that receives the current selection context (`ctx.rows`). Use it to wire row actions such as edit, delete, or export.',
+      },
+    },
+  },
+  render: () => (
+    <DataVisNitroSource type="http" url="/sample-data.json">
+      <DataVisNitroGrid
+        title="Employees"
+        columns={EMPLOYEE_COLUMNS}
+        height="420px"
+        mode="full"
+        showControls
+        operations={[
+          {
+            label: 'Edit',
+            category: 'Actions',
+            icon: <Pencil className="h-4 w-4" />,
+            callback: (ctx) => window.alert(`Edit ${ctx.rows.length} row(s)`),
+          },
+          {
+            label: 'Delete',
+            category: 'Actions',
+            icon: <Trash2 className="h-4 w-4" />,
+            callback: (ctx) => window.alert(`Delete ${ctx.rows.length} row(s)`),
+          },
+          {
+            label: 'Export',
+            category: 'Export',
+            icon: <Download className="h-4 w-4" />,
+            callback: () => window.alert('Exporting…'),
+          },
+        ]}
       />
     </DataVisNitroSource>
   ),
@@ -120,16 +359,6 @@ export const MinimalMode: Story = {
     </DataVisNitroSource>
   ),
 };
-
-const EMPLOYEE_COLUMNS = [
-  'id',
-  'name',
-  'email',
-  'department',
-  'status',
-  'start_date',
-  'manager',
-];
 
 export const DetailRows: Story = {
   parameters: {
@@ -299,6 +528,75 @@ export const OzwellAssistant: Story = {
         />
         <ConnectedGridAssistant />
       </div>
+    </DataVisNitroSource>
+  ),
+};
+
+/**
+ * Reads the shared view from DataVisNitroContext, binds a Prefs module to it,
+ * and passes the module to the grid so the perspective toolbar ("Main
+ * Perspective" dropdown, save/reset/history buttons) renders.
+ */
+const PerspectivesGrid = ({
+  trustedDevice,
+  ...props
+}: DataVisNitroGridProps & { trustedDevice: boolean }) => {
+  const view = useContext(DataVisNitroContext);
+
+  const prefs = useMemo(() => {
+    if (!view) return null;
+
+    return new PrefsConstructor('mieweb-ui-storybook:employees', null, {
+      autoSave: true,
+      backend: trustedDevice
+        ? {
+            type: 'localStorage',
+            localStorage: {
+              key: PREFS_STORAGE_KEY,
+            },
+          }
+        : { type: 'temporary' },
+    });
+  }, [view, trustedDevice]);
+
+  useEffect(() => {
+    if (!view || !prefs) return;
+    view.setPrefs(prefs);
+    prefs.prime?.();
+  }, [view, prefs]);
+
+  if (!prefs) return null;
+
+  // Pins follow the same device-trust decision as the Prefs backend: public
+  // kiosks keep them in memory only.
+  return (
+    <DataVisNitroGrid
+      {...props}
+      prefs={prefs}
+      persistPinnedPerspectives={trustedDevice}
+    />
+  );
+};
+
+export const WithPerspectives: Story = {
+  loaders: [clearSavedPerspectives],
+  parameters: {
+    docs: {
+      description: {
+        story:
+          'Passing a `prefs` module (a `PrefsInstance` from `datavis-ace`) enables the perspective toolbar: the "Main Perspective" dropdown, save / save-as / reset buttons, and undo/redo history. Perspectives capture the grid configuration (sort, filter, group, pivot, aggregate, column layout). The device toolbar controls persistence: trusted workstations save to `localStorage`, while public kiosks keep perspectives in memory only and discard them on refresh. Create the `Prefs` instance, bind it to the shared view with `view.setPrefs(prefs)`, and pass it to `<DataVisNitroGrid prefs={…}>`. In minimal mode the same toolbar appears inside the hamburger menu.',
+      },
+    },
+  },
+  render: (_args, { globals }) => (
+    <DataVisNitroSource type="http" url="/sample-data.json">
+      <PerspectivesGrid
+        title="Employees"
+        columns={EMPLOYEE_COLUMNS}
+        showControls
+        height="480px"
+        trustedDevice={globals.device === 'trusted'}
+      />
     </DataVisNitroSource>
   ),
 };

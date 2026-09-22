@@ -1,5 +1,6 @@
 // Components
 export * from './components/AddContactModal';
+export * from './components/Accordion';
 export * from './components/AdditionalFields';
 export * from './components/Address';
 // AG Grid is exported via a separate entry point: @mieweb/ui/ag-grid
@@ -28,6 +29,7 @@ export * from './components/Button';
 export * from './components/ButtonGroup';
 export * from './components/Card';
 export * from './components/CaseManagementHeader';
+export * from './components/ChatComposer';
 export * from './components/Checkbox';
 // CodeLookup itself ships a module worker and is NOT exported here (apps import
 // it from their own bundler). Only its worker-free provider/context is safe to
@@ -35,6 +37,7 @@ export * from './components/Checkbox';
 export * from './components/CodeLookup/context';
 export * from './components/ConditionEditor';
 export * from './components/CheckrIntegration';
+export * from './components/ClampedText';
 export * from './components/CollabStatus';
 export * from './components/Collapsible';
 export * from './components/CommandPalette';
@@ -43,11 +46,14 @@ export * from './components/CountBadge';
 export * from './components/CountryCodeDropdown';
 export * from './components/CountryDropdown';
 export * from './components/CookieConsent';
+export * from './components/CopyButton';
 export * from './components/CSVColumnMapper';
+export * from './components/CustomizableDashboard';
 export * from './components/DashboardWidget';
 export * from './components/DateInput';
 export * from './components/DateRangePicker';
 export * from './components/DocumentScanner';
+export * from './components/DockablePanel';
 export * from './components/Dropdown';
 export * from './components/DropzoneOverlay';
 export * from './components/ClaimProviderForm';
@@ -69,7 +75,10 @@ export * from './components/EmployerView';
 export * from './components/EmployerServiceModal';
 export * from './components/ErrorPage';
 export * from './components/FileManager';
+export * from './components/FilterSummaryBar';
 export * from './components/FloatingWindow';
+export * from './components/FreshnessBadge';
+export * from './components/GlossaryTooltip';
 export * from './components/HealthSurveillance';
 export * from './components/HelpSupportPanel';
 export * from './components/HRISProviderSelector';
@@ -78,6 +87,7 @@ export * from './components/InventoryManager';
 export * from './components/Label';
 export * from './components/InviteUserModal';
 export * from './components/InvoiceList';
+export * from './components/KeyboardShortcutsOverlay';
 export * from './components/InvoicePaymentPage';
 // InvoiceView exports InvoiceLineItem which conflicts with InvoicePaymentPage
 export { InvoiceView, type InvoiceViewProps } from './components/InvoiceView';
@@ -87,8 +97,11 @@ export * from './components/Markdown';
 export * from './components/MedicationList';
 export * from './components/MediaEditor';
 export * from './components/MediaPlayer';
+export * from './components/MegaMenu';
 export * from './components/Messaging';
 export * from './components/Modal';
+export * from './components/OrbitRing';
+export * from './components/RadialExplorer';
 export * from './components/NotificationCenter';
 export * from './components/OnboardingWizard';
 export * from './components/OrderCard';
@@ -132,6 +145,7 @@ export * from './components/ProviderUsersTable';
 export * from './components/QuickAction';
 export * from './components/QuickLinksCard';
 export * from './components/Radio';
+export * from './components/ReadingProgressBar';
 export * from './components/RecordButton';
 export * from './components/RecurringServiceCard';
 export * from './components/RejectionModal';
@@ -154,6 +168,10 @@ export * from './components/ServicePricingManager';
 export * from './components/ServiceShippingSettings';
 export * from './components/Separator';
 export * from './components/Sheet';
+export * from './components/SectionSpyNav';
+export * from './components/SliderCalculator';
+export * from './components/SourceTip';
+export * from './components/Sparkline';
 // SetupServiceModal exports ServiceCategory which conflicts with ServiceAccordion
 export {
   SetupServiceModal,
@@ -181,6 +199,8 @@ export * from './components/Toast';
 export * from './components/Toggle';
 export * from './components/Tooltip';
 export * from './components/TranscriptView';
+export * from './components/VideoCard';
+export * from './components/YearTimeline';
 // `TranscriptSegment` is exported by both AI (Whisper output, seconds) and
 // TranscriptView (media display schema, milliseconds). Keep the pre-existing AI
 // type at the root barrel; import the media-schema type from the subpath
@@ -214,6 +234,13 @@ export {
 
 // Hooks
 export * from './hooks';
+
+// Motion
+// Only the dependency-free half: presets, the runtime contract and the
+// `Animated` primitives. `<MotionProvider>` — the one piece that imports
+// `motion` — is published separately as @mieweb/ui/motion so the library stays
+// an optional peer dependency. See: src/motion/entry.ts
+export * from './motion';
 
 // Utilities
 export * from './utils';

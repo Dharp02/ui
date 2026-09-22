@@ -4,8 +4,8 @@
  * A complete chat interface for AI interactions with support for
  * MCP tool calls, suggested actions, and streaming responses.
  *
- * This component reuses the core Messaging components (MessageComposer,
- * EmptyState) to maintain DRY principles.
+ * This component reuses the shared ChatComposer for its input and the
+ * Messaging module's EmptyState to maintain DRY principles.
  */
 
 import * as React from 'react';
@@ -22,9 +22,16 @@ import type {
 } from './types';
 import { AIMessageDisplay } from './AIMessage';
 import {
-  MessageComposer,
-  type MessageComposerProps,
-} from '../Messaging/MessageComposer';
+  ChatComposer,
+  type ChatComposerProps,
+} from '../ChatComposer/ChatComposer';
+import { notifyComposerMigrationOnce } from '../ChatComposer/migration-notice';
+import type { NewMessage } from '../Messaging/types';
+import {
+  DEFAULT_ACCEPTED_FILE_TYPES,
+  DEFAULT_MAX_FILE_SIZE,
+} from '../Messaging/AttachmentPicker';
+import { useTypingEmulation } from '../Messaging/hooks';
 import {
   EmptyState as MessagingEmptyState,
   type EmptyStateProps as MessagingEmptyStateProps,
@@ -247,6 +254,39 @@ const chatVariants = cva('flex flex-col', {
   },
 });
 
+/**
+ * Legacy `MessageComposerProps`-era keys still accepted through
+ * `composerProps` so hosts written against the old composer keep compiling
+ * and working without changes. Each key is mapped onto its ChatComposer
+ * equivalent (or emulated) — see the individual deprecation notes. New code
+ * should pass `ChatComposerProps` keys directly.
+ */
+export interface AIChatLegacyComposerProps {
+  /** @deprecated Use `allowAttachments` instead. */
+  showAttachmentPicker?: boolean;
+  /** @deprecated ChatComposer has no camera button; this prop is ignored. */
+  showCameraButton?: boolean;
+  /** @deprecated ChatComposer has a single presentation; this prop is ignored. */
+  variant?: 'default' | 'minimal';
+  /** @deprecated Use `micSlot` instead (rendered in the composer's action row). */
+  inputTrailing?: React.ReactNode;
+  /** @deprecated Emulated by AIChat: fires when the draft becomes non-empty (MessageComposer parity). */
+  onTypingStart?: () => void;
+  /** @deprecated Emulated by AIChat: fires after 2s idle or on send (MessageComposer parity). */
+  onTypingStop?: () => void;
+}
+
+/** Props accepted by `AIChatProps.composerProps`. */
+export type AIChatComposerProps = Partial<ChatComposerProps> &
+  AIChatLegacyComposerProps;
+
+// MessageComposer rendered its trailing slot behind `{inputTrailing && …}`,
+// so any falsy value (e.g. `false` from `cond && <Mic />`, null, '')
+// suppressed it. ChatComposer only skips `undefined` — anything else mounts
+// the slot wrapper — so normalize falsy legacy slot values to undefined.
+const normalizeLegacySlot = (node: React.ReactNode): React.ReactNode =>
+  node || undefined;
+
 export interface AIChatProps
   extends VariantProps<typeof chatVariants>, AIChatCallbacks {
   /** Chat session data */
@@ -269,8 +309,12 @@ export interface AIChatProps
   inputPlaceholder?: string;
   /** Height constraint */
   height?: string | number;
-  /** Props to pass to the MessageComposer */
-  composerProps?: Partial<MessageComposerProps>;
+  /**
+   * Props to pass to the internal ChatComposer. Legacy MessageComposer-era
+   * keys (`showAttachmentPicker`, `inputTrailing`, `onTypingStart`, …) are
+   * still accepted and mapped — see {@link AIChatLegacyComposerProps}.
+   */
+  composerProps?: AIChatComposerProps;
   /** Enable talk-to-text microphone button inside the input */
   talkToText?: boolean;
   /** Callback when recording starts */
@@ -292,7 +336,7 @@ export interface AIChatProps
 
 /**
  * A complete AI chat interface with message history, input, and tool call support.
- * Reuses MessageComposer from the Messaging components for consistent UX.
+ * Reuses the shared ChatComposer for a consistent input UX.
  */
 export function AIChat({
   session,
@@ -324,6 +368,10 @@ export function AIChat({
 }: AIChatProps) {
   const messagesContainerRef = React.useRef<HTMLDivElement>(null);
 
+  React.useEffect(() => {
+    notifyComposerMigrationOnce('AIChat');
+  }, []);
+
   const messages = React.useMemo(
     () => session?.messages || messagesProp || [],
     [session?.messages, messagesProp]
@@ -336,10 +384,106 @@ export function AIChat({
     if (container) container.scrollTop = container.scrollHeight;
   }, [messages]);
 
-  const handleSend = async (message: { content: string }) => {
-    if (message.content.trim() && onSendMessage) {
-      onSendMessage(message.content.trim());
+  // Split legacy MessageComposer-era keys (mapped below) and the keys AIChat
+  // must own (value/onValueChange for draft restore) from the passthrough.
+  const {
+    showAttachmentPicker,
+    inputTrailing,
+    onTypingStart,
+    onTypingStop,
+    value: hostValue,
+    onValueChange: hostOnValueChange,
+    onSend: hostOnSend,
+    micSlot: hostMicSlot,
+    ...composerRest
+  } = composerProps ?? {};
+  // `showCameraButton` and `variant` have no ChatComposer equivalent (see
+  // the deprecation notes); strip them so they never reach the composer.
+  delete composerRest.showCameraButton;
+  delete composerRest.variant;
+
+  const hasInputTrailing = !!composerProps && 'inputTrailing' in composerProps;
+
+  // `showAttachmentPicker` needs a presence check: MessageComposer defaulted
+  // it to true, so the old `{...composerProps}` spread turned a
+  // present-but-undefined key into "enabled" (it erased AIChat's own
+  // explicit `false`), while an absent key left attachments off.
+  const legacyAttachments =
+    !!composerProps && 'showAttachmentPicker' in composerProps
+      ? (showAttachmentPicker ?? true)
+      : false;
+
+  // Controlled composer draft so a failed send can restore the typed text
+  // (ChatComposer clears optimistically and delegates restore to the host;
+  // MessageComposer restored it internally). When the host controls the
+  // value via composerProps, restore flows through its onValueChange.
+  const [draft, setDraft] = React.useState('');
+  // Bumped on every user edit, so a stale failed send never overwrites
+  // newer typed input.
+  const draftEpochRef = React.useRef(0);
+  const composerValue = hostValue ?? draft;
+  // MessageComposer only invoked onValueChange when controlled
+  // (value !== undefined); preserve that contract for legacy hosts that
+  // pass onValueChange alone. This is a deliberate AIChat-owned exception
+  // to the ChatComposer API: `composerProps.onValueChange` without `value`
+  // receives no callbacks here (raw ChatComposer would fire it on every
+  // edit). Pass `value` too if you need change notifications.
+  const isHostControlled = hostValue !== undefined;
+  const handleComposerValueChange = React.useCallback(
+    (value: string) => {
+      draftEpochRef.current += 1;
+      setDraft(value);
+      if (isHostControlled) hostOnValueChange?.(value);
+    },
+    [isHostControlled, hostOnValueChange]
+  );
+
+  // Emulate MessageComposer's typing callbacks for legacy composerProps
+  // consumers (shared with MessageThread — see useTypingEmulation).
+  const { stopTyping } = useTypingEmulation({
+    value: composerValue,
+    onTypingStart,
+    onTypingStop,
+  });
+
+  // Shared send path: stop typing, await the handler, and restore the draft
+  // on failure (epoch-guarded so a stale failure never clobbers newer input).
+  // MessageComposer applied this to host-supplied `onSend` too.
+  const sendWithRestore = async (
+    message: NewMessage,
+    send: (message: NewMessage) => void | Promise<void>
+  ) => {
+    stopTyping();
+    const epoch = draftEpochRef.current;
+    try {
+      // A returned promise is awaited so an async rejection follows the
+      // same draft-restore path as a synchronous throw.
+      await Promise.resolve(send(message));
+    } catch (error) {
+      if (draftEpochRef.current === epoch) {
+        setDraft(message.content);
+        if (isHostControlled) hostOnValueChange?.(message.content);
+      }
+      // Rethrow so ChatComposer reports the failure through `onError`
+      // ('Failed to send message' — the same copy MessageComposer used).
+      throw error;
     }
+  };
+
+  const handleSend = async (message: NewMessage) => {
+    if (!onSendMessage) return;
+    const content = message.content.trim();
+    const attachments = message.attachments?.length
+      ? message.attachments
+      : undefined;
+    // ChatComposer has already cleared its staged files by the time `onSend`
+    // runs, so attachment-only messages must still reach the host — dropping
+    // them here would silently destroy the user's files.
+    if (!content && !attachments) return;
+    await sendWithRestore(message, () =>
+      // Keep the exact legacy call shape for text-only sends.
+      attachments ? onSendMessage(content, attachments) : onSendMessage(content)
+    );
   };
 
   const handleSuggestionSelect = (action: AISuggestedAction) => {
@@ -453,7 +597,7 @@ export function AIChat({
         )}
       </div>
 
-      {/* Input - Using MessageComposer from Messaging */}
+      {/* Input - Using the shared ChatComposer */}
       <div
         data-slot="ai-chat-input"
         className="shrink-0 border-t border-neutral-200 dark:border-neutral-700"
@@ -469,30 +613,63 @@ export function AIChat({
               />
             </div>
           )}
-        <MessageComposer
-          onSend={handleSend}
-          placeholder={inputPlaceholder}
-          disabled={isGenerating}
-          isSending={isGenerating}
-          showAttachmentPicker={false}
-          showCameraButton={false}
-          showCharacterCount={false}
-          variant="minimal"
-          inputTrailing={
-            talkToText ? (
-              <RecordButton
-                variant="ghost"
-                size="sm"
-                showPulse={false}
-                showWaveform
-                disabled={isGenerating}
-                onRecordingStart={onRecordingStart}
-                onRecordingComplete={onRecordingComplete}
-              />
-            ) : undefined
-          }
-          {...composerProps}
-        />
+        {/* Same p-3 breathing room MessageComposer's input area used. */}
+        <div data-slot="ai-chat-composer" className="p-3">
+          <ChatComposer
+            onSend={
+              hostOnSend
+                ? (message: NewMessage) => sendWithRestore(message, hostOnSend)
+                : handleSend
+            }
+            placeholder={inputPlaceholder}
+            disabled={isGenerating}
+            isSending={isGenerating}
+            // composerProps wins over the built-in talkToText slot (same
+            // override order as the old {...composerProps} spread). micSlot
+            // is a ChatComposer passthrough prop, so non-undefined values —
+            // including null — forward raw and keep ChatComposer's own
+            // semantics (null mounts its default mic button); only the
+            // legacy inputTrailing path normalizes falsy values, preserving
+            // MessageComposer's `{inputTrailing && …}` suppression.
+            micSlot={
+              hostMicSlot !== undefined ? (
+                hostMicSlot
+              ) : hasInputTrailing ? (
+                normalizeLegacySlot(inputTrailing)
+              ) : talkToText ? (
+                <RecordButton
+                  variant="ghost"
+                  size="sm"
+                  showPulse={false}
+                  showWaveform
+                  disabled={isGenerating}
+                  onRecordingStart={onRecordingStart}
+                  onRecordingComplete={onRecordingComplete}
+                />
+              ) : undefined
+            }
+            {...composerRest}
+            // MessageComposer-parity defaults, applied after the spread so
+            // explicit `undefined` in composerProps can't erase them
+            // (MessageComposer's destructuring defaults treated undefined
+            // as absent); explicit values still win.
+            allowAttachments={
+              composerRest.allowAttachments ?? legacyAttachments
+            }
+            maxLength={composerRest.maxLength ?? 1600}
+            inputLabel={composerRest.inputLabel ?? 'Message'}
+            acceptedFileTypes={
+              composerRest.acceptedFileTypes ??
+              (legacyAttachments ? DEFAULT_ACCEPTED_FILE_TYPES : undefined)
+            }
+            maxFileSize={
+              composerRest.maxFileSize ??
+              (legacyAttachments ? DEFAULT_MAX_FILE_SIZE : undefined)
+            }
+            value={composerValue}
+            onValueChange={handleComposerValueChange}
+          />
+        </div>
       </div>
     </div>
   );

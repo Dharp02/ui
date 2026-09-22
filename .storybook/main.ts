@@ -5,6 +5,7 @@ import { execSync } from 'node:child_process';
 
 import type { StorybookConfig } from '@storybook/react-vite';
 import type { Plugin } from 'vite';
+import remarkGfm from 'remark-gfm';
 
 const storybookDir = path.dirname(fileURLToPath(import.meta.url));
 const workspaceRoot = path.resolve(storybookDir, '..');
@@ -63,6 +64,10 @@ const localUiAliases = [
   {
     find: /^@mieweb\/ui\/styles\.css$/,
     replacement: path.join(workspaceRoot, 'src/styles/base.css'),
+  },
+  {
+    find: /^@mieweb\/ui\/utils$/,
+    replacement: path.join(workspaceRoot, 'src/utils/index.ts'),
   },
   {
     find: /^@mieweb\/ui$/,
@@ -197,7 +202,13 @@ const config: StorybookConfig = {
   stories: ['../src/**/*.mdx', '../src/**/*.stories.@(js|jsx|mjs|ts|tsx)'],
   addons: [
     '@storybook/addon-a11y',
-    '@storybook/addon-docs'
+    {
+      name: '@storybook/addon-docs',
+      options: {
+        // GFM tables for the family Overview pages in src/catalog/*.mdx
+        mdxPluginOptions: { mdxCompileOptions: { remarkPlugins: [remarkGfm] } },
+      },
+    },
   ],
   framework: {
     name: '@storybook/react-vite',
@@ -228,6 +239,16 @@ const config: StorybookConfig = {
       ...pnpmVirtualCjsInteropAliases,
       ...esheetSourceAliases,
     ];
+    config.resolve.dedupe = Array.from(
+      new Set([
+        ...(config.resolve.dedupe ?? []),
+        '@mieweb/ui',
+        'datavis-ace',
+        'lucide-react',
+        'react',
+        'react-dom',
+      ]),
+    );
 
     // Add ychart virtual:git-info plugin
     config.plugins ??= [];

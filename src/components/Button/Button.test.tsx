@@ -44,6 +44,27 @@ describe('Button', () => {
     expect(screen.getByRole('button')).toHaveClass('h-12');
   });
 
+  it('applies hover effect classes and exposes data-variant', () => {
+    const { rerender } = renderWithTheme(<Button effect="sheen">Sheen</Button>);
+    const button = screen.getByRole('button');
+    expect(button).toHaveClass('mie-fx-sheen');
+    expect(button).toHaveAttribute('data-variant', 'primary');
+
+    rerender(
+      <Button variant="outline" effect="orbit">
+        Orbit
+      </Button>
+    );
+    expect(screen.getByRole('button')).toHaveClass('mie-fx-orbit');
+    expect(screen.getByRole('button')).toHaveAttribute(
+      'data-variant',
+      'outline'
+    );
+
+    rerender(<Button>Plain</Button>);
+    expect(screen.getByRole('button')).not.toHaveClass('mie-fx-sheen');
+  });
+
   it('disables button when disabled prop is true', () => {
     renderWithTheme(<Button disabled>Disabled</Button>);
     const button = screen.getByRole('button');
@@ -99,6 +120,41 @@ describe('Button', () => {
     expect(screen.getByTestId('left-icon')).toBeInTheDocument();
     expect(screen.getByTestId('right-icon')).toBeInTheDocument();
     expect(screen.getByText('Button Text')).toBeInTheDocument();
+  });
+
+  it('injects critical structural styles exactly once', () => {
+    renderWithTheme(
+      <>
+        <Button>One</Button>
+        <Button>Two</Button>
+      </>
+    );
+
+    const styles = document.querySelectorAll('#mieweb-ui-button-critical');
+    expect(styles).toHaveLength(1);
+    expect(styles[0].textContent).toContain(
+      ":where(button[data-slot='button'])"
+    );
+    expect(styles[0].textContent).toContain('white-space:nowrap');
+    // Icons passed as children must flow inline within the label span
+    expect(styles[0].textContent).toContain(
+      "[data-slot='button-label'] svg{display:inline-block"
+    );
+  });
+
+  it('renders SVG icons passed as children inside the inline-flow label', () => {
+    renderWithTheme(
+      <Button>
+        <svg data-testid="child-icon" />
+        Filter by Date
+      </Button>
+    );
+
+    const label = screen
+      .getByRole('button')
+      .querySelector("[data-slot='button-label']");
+    expect(label).toContainElement(screen.getByTestId('child-icon'));
+    expect(label).toHaveClass('[&_svg]:inline-block', '[&_svg]:align-middle');
   });
 
   describe('accessibility', () => {

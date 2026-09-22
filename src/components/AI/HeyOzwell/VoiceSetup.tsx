@@ -121,7 +121,7 @@ export function VoiceSetup({
         <Button
           variant="ghost"
           size="sm"
-          className="text-muted-foreground absolute top-4 left-4"
+          className="text-muted-foreground absolute start-4 top-4"
           onClick={() => {
             oz.cancel();
             onCancel();

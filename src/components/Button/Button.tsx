@@ -1,6 +1,7 @@
 import * as React from 'react';
 import { cva, type VariantProps } from 'class-variance-authority';
 import { cn } from '../../utils/cn';
+import { injectButtonCriticalStyles } from './button-critical';
 
 const buttonVariants = cva(
   // Base styles
@@ -66,14 +67,29 @@ const buttonVariants = cva(
         true: 'w-full',
         false: '',
       },
+      /** Opt-in hover motion (see src/styles/effects.css). */
+      effect: {
+        none: '',
+        sheen: 'mie-fx-sheen hover:-translate-y-0.5',
+        orbit: 'mie-fx-orbit hover:-translate-y-0.5',
+      },
     },
     defaultVariants: {
       variant: 'primary',
       size: 'md',
       fullWidth: false,
+      effect: 'none',
     },
   }
 );
+
+/**
+ * Label wrapper classes. Icons passed as `children` (rather than
+ * leftIcon/rightIcon) land inside this span; preflight makes SVGs
+ * display:block which would force line breaks inside the inline span,
+ * so restore inline flow for them.
+ */
+const labelClasses = 'truncate [&_svg]:inline-block [&_svg]:align-middle';
 
 export interface ButtonProps
   extends
@@ -97,6 +113,8 @@ export interface ButtonProps
  * <Button variant="primary" size="md">Click me</Button>
  * <Button variant="danger" leftIcon={<TrashIcon />}>Delete</Button>
  * <Button variant="ghost" isLoading loadingText="Saving...">Save</Button>
+ * <Button effect="sheen">Request a demo</Button>
+ * <Button variant="outline" effect="orbit">Watch the film</Button>
  * ```
  */
 const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
@@ -106,6 +124,7 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
       variant,
       size,
       fullWidth,
+      effect,
       leftIcon,
       rightIcon,
       isLoading,
@@ -121,6 +140,12 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
     const labelRef = React.useRef<HTMLSpanElement>(null);
     const innerRef = React.useRef<HTMLButtonElement>(null);
     React.useImperativeHandle(ref, () => innerRef.current as HTMLButtonElement);
+
+    // Guarantees correct icon/label layout even when the consumer's Tailwind
+    // build is missing our utility classes. See button-critical.ts.
+    React.useInsertionEffect(() => {
+      injectButtonCriticalStyles();
+    }, []);
 
     // When the label truncates, expose the full text as a native tooltip.
     // A consumer-provided `title` always takes precedence.
@@ -148,8 +173,9 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
       <button
         data-slot="button"
         data-size={resolvedSize}
+        data-variant={variant ?? 'primary'}
         className={cn(
-          buttonVariants({ variant, size: resolvedSize, fullWidth }),
+          buttonVariants({ variant, size: resolvedSize, fullWidth, effect }),
           className
         )}
         ref={innerRef}
@@ -161,20 +187,32 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
         {isLoading ? (
           <>
             <LoadingSpinner />
-            <span ref={labelRef} data-slot="button-label" className="truncate">
+            <span
+              ref={labelRef}
+              data-slot="button-label"
+              className={labelClasses}
+            >
               {loadingText || children}
             </span>
           </>
         ) : (
           <>
             {React.isValidElement(leftIcon) && (
-              <span className="shrink-0">{leftIcon}</span>
+              <span data-slot="button-icon" className="shrink-0">
+                {leftIcon}
+              </span>
             )}
-            <span ref={labelRef} data-slot="button-label" className="truncate">
+            <span
+              ref={labelRef}
+              data-slot="button-label"
+              className={labelClasses}
+            >
               {children}
             </span>
             {React.isValidElement(rightIcon) && (
-              <span className="shrink-0">{rightIcon}</span>
+              <span data-slot="button-icon" className="shrink-0">
+                {rightIcon}
+              </span>
             )}
           </>
         )}
