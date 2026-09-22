@@ -369,3 +369,16 @@ kbd {
   outline: 2px solid var(--mieweb-ring);
   outline-offset: 2px;
 }
+
+/* ── Reduced Motion ──────────────────────────────────────────────────── */
+/* Mirrors base.css: hover/transition effects (including effects.css) must
+   collapse for users who prefer reduced motion. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

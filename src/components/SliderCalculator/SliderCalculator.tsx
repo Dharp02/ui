@@ -220,6 +220,20 @@ export function SliderCalculator({
 
   const result = React.useMemo(() => compute(values), [compute, values]);
 
+  // Notify from an effect with the memoized result so `compute` runs once per
+  // change (and the reported result can't diverge from the rendered one).
+  const skipInitialNotify = React.useRef(true);
+  React.useEffect(() => {
+    if (skipInitialNotify.current) {
+      skipInitialNotify.current = false;
+      return;
+    }
+    onChange?.(values, result);
+    // `onChange` is deliberately omitted: an inline handler must not refire
+    // this without an actual value change.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [values, result]);
+
   const fmtResult = makeFormatter(resultFormat, locale, currency);
   const fmtBreakdown = makeFormatter(breakdownFormat, locale, currency);
   const labels = {
@@ -229,9 +243,7 @@ export function SliderCalculator({
   };
 
   const set = (key: string, v: number) => {
-    const next = { ...values, [key]: v };
-    setValues(next);
-    onChange?.(next, compute(next));
+    setValues((prev) => ({ ...prev, [key]: v }));
   };
 
   return (

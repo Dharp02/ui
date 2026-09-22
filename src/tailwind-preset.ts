@@ -893,6 +893,9 @@ export const miewebUISafelist = [
   // makes SVGs block-level, which would stack them above the label text)
   '[&_svg]:inline-block',
   '[&_svg]:align-middle',
+  // Button `effect` variants (sheen/orbit) lift the button on hover; the
+  // mie-fx-* classes themselves are plain CSS in styles/effects.css.
+  'hover:-translate-y-0.5',
   'hover:text-white',
   'h-0.5',
   'transition-[left,width]',

@@ -424,6 +424,9 @@ module.exports = {
     // block-level, which would force line breaks inside the label span).
     '[&_svg]:inline-block',
     '[&_svg]:align-middle',
+    // Button `effect` variants (sheen/orbit) lift the button on hover; the
+    // mie-fx-* classes themselves are plain CSS in styles/effects.css.
+    'hover:-translate-y-0.5',
     'transition-colors',
     'hover:text-white',
     'hover:text-foreground',

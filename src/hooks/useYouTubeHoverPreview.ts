@@ -227,11 +227,13 @@ export function useYouTubeHoverPreview(
       if (!hoveringRef.current) return;
       setPreview('loading');
       void loadYouTubeIframeApi().then(() => {
+        // If the visitor left while the API loaded, mouseleave/blur/unmount
+        // already ran stopPreview — calling it again here could set state
+        // after unmount when the script finally arrives.
         if (hoveringRef.current) beginPlayer();
-        else stopPreview();
       });
     }, dwellMs);
-  }, [enabled, youtubeId, dwellMs, beginPlayer, stopPreview]);
+  }, [enabled, youtubeId, dwellMs, beginPlayer]);
 
   React.useEffect(() => stopPreview, [stopPreview]);
 

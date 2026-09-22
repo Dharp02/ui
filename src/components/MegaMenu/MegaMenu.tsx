@@ -99,7 +99,11 @@ const CLOSE_DELAY_MS = 150;
 
 function normalizePath(href: string): string {
   const path = href.split('#')[0].split('?')[0];
-  return path.replace(/\/+$/, '') || '/';
+  // Trim trailing slashes with a scan: an anchored `\/+$` is CodeQL's canonical
+  // polynomial-backtracking pattern on caller-supplied hrefs full of slashes.
+  let end = path.length;
+  while (end > 0 && path[end - 1] === '/') end--;
+  return path.slice(0, end) || '/';
 }
 
 // =============================================================================
