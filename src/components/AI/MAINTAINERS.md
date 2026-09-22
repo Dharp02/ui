@@ -1,7 +1,7 @@
 # AI — Maintainer Notes
 
-> **Provider notes** — how to *change* the AI module. Consumers should read the
-> Storybook autodocs (Product › Feature Modules › AI) and the repo
+> **Provider notes** — how to _change_ the AI module. Consumers should read the
+> Storybook autodocs (Modules › Chat / Voice) and the repo
 > [README](../../../README.md). General conventions live in
 > [CONTRIBUTING.md](../../../CONTRIBUTING.md).
 
@@ -9,23 +9,26 @@
 
 A family of AI-chat building blocks exported from [index.ts](index.ts):
 
-| Surface | File | Role |
-|---------|------|------|
-| `AIChat` | [AIChat.tsx](AIChat.tsx) | Full chat interface (thread + composer + suggestions) |
-| `AIChatModal`, `AIChatTrigger`, `FloatingAIChat` | [AIChatModal.tsx](AIChatModal.tsx) | Modal / floating wrappers that forward every `AIChat` prop |
-| `AIMessageDisplay` | [AIMessage.tsx](AIMessage.tsx) | Renders a single message + its content blocks |
-| `MCPToolCallDisplay` | [MCPToolCall.tsx](MCPToolCall.tsx) | MCP tool-call card (pending/running/success/error) |
-| `Reconciliation` | [Reconciliation.tsx](Reconciliation.tsx) | Domain widget (has its own unit test) |
-| icons / types | [icons.tsx](icons.tsx), [types.ts](types.ts) | Shared glyphs and the public type surface |
+| Surface                                          | File                                         | Role                                                       |
+| ------------------------------------------------ | -------------------------------------------- | ---------------------------------------------------------- |
+| `AIChat`                                         | [AIChat.tsx](AIChat.tsx)                     | Full chat interface (thread + composer + suggestions)      |
+| `AIChatModal`, `AIChatTrigger`, `FloatingAIChat` | [AIChatModal.tsx](AIChatModal.tsx)           | Modal / floating wrappers that forward every `AIChat` prop |
+| `AIMessageDisplay`                               | [AIMessage.tsx](AIMessage.tsx)               | Renders a single message + its content blocks              |
+| `MCPToolCallDisplay`                             | [MCPToolCall.tsx](MCPToolCall.tsx)           | MCP tool-call card (pending/running/success/error)         |
+| `Reconciliation`                                 | [Reconciliation.tsx](Reconciliation.tsx)     | Domain widget (has its own unit test)                      |
+| icons / types                                    | [icons.tsx](icons.tsx), [types.ts](types.ts) | Shared glyphs and the public type surface                  |
 
 ## Extension point: `renderTextContent` (read before touching text rendering)
 
 Message `text` blocks render as **plain text by default**. Rich rendering
-(Markdown, images, Mermaid) is intentionally *not* built in — it's delegated to a
+(Markdown, images, Mermaid) is intentionally _not_ built in — it's delegated to a
 host-supplied render-prop defined in [types.ts](types.ts):
 
 ```ts
-type AIRenderTextContent = (text: string, ctx: AITextRenderContext) => React.ReactNode;
+type AIRenderTextContent = (
+  text: string,
+  ctx: AITextRenderContext
+) => React.ReactNode;
 // ctx = { messageId, streaming, role }
 ```
 
@@ -47,9 +50,14 @@ should plug into — don't fork the message renderer.
   pages. Don't recombine them.
 - **`storyData.ts` is shared fixtures, not stories.** It must never match the
   Storybook stories glob (no `.stories.` in the name) or it will fail to load.
-- The composer is **reused from the Messaging module** — visual/behavioral
-  changes to the input may belong in `Messaging`, not here. Inline images use the
-  Messaging attachment lightbox.
+- The composer is **the shared `ChatComposer`** (`src/components/ChatComposer/`)
+  — visual/behavioral changes to the input may belong there, not here. Legacy
+  `MessageComposer`-era `composerProps` keys are mapped in `AIChat.tsx` (see
+  `AIChatLegacyComposerProps`). Typing emulation (`useTypingEmulation`) and the
+  attachment defaults (`DEFAULT_ACCEPTED_FILE_TYPES` / `DEFAULT_MAX_FILE_SIZE`)
+  are shared from the Messaging module — `MessageThread` consumes the same
+  ones. Inline images use the Messaging attachment
+  lightbox.
 - Content block types live in `AIMessageContent` (`text` / `tool_use` /
   `tool_result` / `thinking` / `code`). Adding a block type means updating both
   the type union and `AIMessageDisplay`'s switch.
@@ -58,5 +66,7 @@ should plug into — don't fork the message renderer.
 
 ## Testing
 
-- Unit: [Reconciliation.test.tsx](Reconciliation.test.tsx).
+- Unit: [Reconciliation.test.tsx](Reconciliation.test.tsx) and
+  [AIChat.test.tsx](AIChat.test.tsx) (the ChatComposer integration and legacy
+  `composerProps` parity suite — run it for any composer-related change).
 - Docs/visual: verify the three autodocs pages still render after story changes.

@@ -138,7 +138,7 @@ export function NavLinks({
         >
           {link.label}
           {link.external && (
-            <ExternalLinkIcon className="ml-1 inline-block h-3 w-3 opacity-50" />
+            <ExternalLinkIcon className="ms-1 inline-block h-3 w-3 opacity-50" />
           )}
         </a>
       ))}
@@ -386,7 +386,7 @@ export function UserMenu({
       {isOpen && (
         <div
           data-slot="site-header-user-dropdown"
-          className="absolute right-0 z-50 mt-2 w-56 rounded-lg bg-white shadow-lg ring-1 ring-black/5 dark:bg-gray-800 dark:ring-white/10"
+          className="absolute end-0 z-50 mt-2 w-56 rounded-lg bg-white shadow-lg ring-1 ring-black/5 dark:bg-gray-800 dark:ring-white/10"
         >
           {/* User Info */}
           <div className="border-b border-gray-100 px-4 py-3 dark:border-gray-700">
@@ -422,7 +422,7 @@ export function UserMenu({
                     setIsOpen(false);
                   }}
                   className={cn(
-                    'flex w-full items-center gap-2 px-4 py-2 text-left text-sm',
+                    'flex w-full items-center gap-2 px-4 py-2 text-start text-sm',
                     index === defaultItems.length - 1 && onLogout
                       ? 'text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/20'
                       : 'text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700'
@@ -523,7 +523,7 @@ export function MobileMenuPanel({
       {/* Panel */}
       <div
         className={cn(
-          'fixed top-0 right-0 bottom-0 z-50 w-80 max-w-full bg-white shadow-xl md:hidden dark:bg-gray-900',
+          'fixed end-0 top-0 bottom-0 z-50 w-80 max-w-full bg-white shadow-xl md:hidden dark:bg-gray-900',
           className
         )}
       >
@@ -591,7 +591,7 @@ export function MobileMenuPanel({
           ))}
         </nav>
 
-        <div className="absolute right-0 bottom-0 left-0 border-t border-gray-200 p-4 dark:border-gray-700">
+        <div className="absolute start-0 end-0 bottom-0 border-t border-gray-200 p-4 dark:border-gray-700">
           {user ? (
             <div className="space-y-3">
               <div className="flex items-center gap-3 px-2">
@@ -658,23 +658,20 @@ export function MobileMenuPanel({
 // Main SiteHeader Component
 // =============================================================================
 
-const headerVariants = cva(
-  'fixed top-0 left-0 right-0 z-40 transition-colors',
-  {
-    variants: {
-      variant: {
-        primary: 'bg-primary-800',
-        white:
-          'bg-white shadow-sm dark:bg-gray-900 dark:border-b dark:border-gray-800',
-        transparent: 'bg-transparent',
-        glass: 'bg-white/80 backdrop-blur-md shadow-sm dark:bg-gray-900/80',
-      },
+const headerVariants = cva('fixed top-0 start-0 end-0 z-40 transition-colors', {
+  variants: {
+    variant: {
+      primary: 'bg-primary-800',
+      white:
+        'bg-white shadow-sm dark:bg-gray-900 dark:border-b dark:border-gray-800',
+      transparent: 'bg-transparent',
+      glass: 'bg-white/80 backdrop-blur-md shadow-sm dark:bg-gray-900/80',
     },
-    defaultVariants: {
-      variant: 'primary',
-    },
-  }
-);
+  },
+  defaultVariants: {
+    variant: 'primary',
+  },
+});
 
 export interface SiteHeaderProps extends VariantProps<typeof headerVariants> {
   logo?: {
@@ -846,7 +843,7 @@ export function CompactHeader({
       href={backHref}
       className="rounded-lg p-2 text-gray-700 hover:bg-gray-100 dark:text-white dark:hover:bg-gray-800"
     >
-      <ChevronLeftIcon className="h-5 w-5" />
+      <ChevronLeftIcon className="h-5 w-5 rtl:-scale-x-100" />
     </a>
   ) : onBack ? (
     <button
@@ -854,7 +851,7 @@ export function CompactHeader({
       onClick={onBack}
       className="rounded-lg p-2 text-gray-700 hover:bg-gray-100 dark:text-white dark:hover:bg-gray-800"
     >
-      <ChevronLeftIcon className="h-5 w-5" />
+      <ChevronLeftIcon className="h-5 w-5 rtl:-scale-x-100" />
     </button>
   ) : null;
 
@@ -868,7 +865,7 @@ export function CompactHeader({
       <header
         data-slot="site-header-compact"
         className={cn(
-          'fixed top-0 right-0 left-0 z-40 border-b border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-900',
+          'fixed start-0 end-0 top-0 z-40 border-b border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-900',
           className
         )}
       >
