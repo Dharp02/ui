@@ -25,11 +25,12 @@ back here later.
 
 ## Dependencies — two moving parts
 
-1. **`datavis-ace`** — provides `ComputedView`, `Source`. Declared as an
-   `optional` peer (most `@mieweb/ui` consumers never touch this entry), but it
-   is a **hard runtime requirement the moment `DataVisNitroSource` is used**
-   (`datavis_ace.Source is not a constructor` otherwise). Consumers of the
-   `@mieweb/ui/datavis` entry must `npm install datavis-ace`.
+1. **`datavis-ace`** — the data engine (fetch/parse/type-inference + aggregation
+   math; provides `Source`, `ComputedView`). Kept **external** in the bundle (it
+   drags in core-js/moment/UMD deps that must not be inlined) but declared as a
+   regular **dependency** of `@mieweb/ui`, so consumers get it automatically and
+   never install or import it directly. It is a hard runtime requirement of
+   `DataVisNitroSource` (`datavis_ace.Source is not a constructor` if missing).
 2. **`@mieweb/datavis`** (the bundled implementation, developed in the `packages/datavis` git submodule) — owns the high-level source/grid/graph wrappers and lower-level DataVis components. Local development links the submodule; published consumers get the surface **bundled into** `@mieweb/ui/datavis` (no separate install) and still install `datavis-ace` as its external peer.
 
 ## Gotchas
