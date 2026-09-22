@@ -1,6 +1,7 @@
 export {
   MegaMenu,
   MegaMenuBar,
+  normalizePath,
   type MegaMenuProps,
   type MegaMenuBarProps,
   type MegaMenuConfig,

@@ -117,13 +117,22 @@ export function RadialExplorer({
     [controlled, onActiveChange]
   );
 
-  // Attract loop until the visitor interacts.
+  // Attract loop until the visitor interacts. Never runs in controlled mode:
+  // `activeId` is owned by the host, so cycling it (or firing unsolicited
+  // `onActiveChange` ticks) would fight the controlled API contract.
   React.useEffect(() => {
-    if (engaged || reduced || !attractMs || spokes.length === 0) return;
+    if (
+      controlled !== undefined ||
+      engaged ||
+      reduced ||
+      !attractMs ||
+      spokes.length === 0
+    )
+      return;
     let i = spokes.findIndex((s) => s.id === activeId);
     const t = window.setInterval(() => {
       i = (i + 1) % spokes.length;
-      if (controlled === undefined) setInner(spokes[i].id);
+      setInner(spokes[i].id);
       onActiveChange?.(spokes[i].id);
     }, attractMs);
     return () => window.clearInterval(t);

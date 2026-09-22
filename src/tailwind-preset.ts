@@ -1091,6 +1091,8 @@ export const miewebUISafelist = [
   'aspect-square',
   'aspect-video',
   'backdrop-blur-md',
+  // SiteHeader mobile drawer — static group labels reuse the link style
+  'hover:bg-transparent',
   // MegaMenu — panel layout, feature column gradient, link states
   '[&_svg]:h-4',
   '[&_svg]:h-5',

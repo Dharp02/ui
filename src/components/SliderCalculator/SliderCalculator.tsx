@@ -235,8 +235,29 @@ export function SliderCalculator({
     notifyRef.current.onChange?.(values, notifyRef.current.result);
   }, [values]);
 
-  const fmtResult = makeFormatter(resultFormat, locale, currency);
+  const fmtResult = React.useMemo(
+    () => makeFormatter(resultFormat, locale, currency),
+    [resultFormat, locale, currency]
+  );
   const fmtBreakdown = makeFormatter(breakdownFormat, locale, currency);
+
+  // Announce only the settled total. The result container previously carried
+  // aria-live while `AnimatedNumber` updated every animation frame, so screen
+  // readers could queue or repeat intermediate values during a drag.
+  const [announced, setAnnounced] = React.useState('');
+  const skipInitialAnnounce = React.useRef(true);
+  React.useEffect(() => {
+    if (skipInitialAnnounce.current) {
+      skipInitialAnnounce.current = false;
+      return;
+    }
+    const t = window.setTimeout(
+      () => setAnnounced(fmtResult(result.total)),
+      600
+    );
+    return () => window.clearTimeout(t);
+  }, [result.total, fmtResult]);
+
   const labels = {
     show: 'Show the math',
     hide: 'Hide the math',
@@ -294,9 +315,11 @@ export function SliderCalculator({
       {/* Result */}
       <div
         data-slot="slider-calculator-result"
-        aria-live="polite"
         className="bg-primary-950 flex flex-col gap-6 p-6 text-white [background:radial-gradient(120%_120%_at_100%_0%,var(--mieweb-primary-800),var(--mieweb-primary-950)_70%)] sm:p-8"
       >
+        <span aria-live="polite" className="sr-only">
+          {announced ? `${resultLabel}: ${announced}` : ''}
+        </span>
         <div>
           <p className="text-[11px] font-bold tracking-[0.14em] text-white/70 uppercase">
             {resultLabel}

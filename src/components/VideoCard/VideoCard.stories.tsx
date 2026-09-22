@@ -63,7 +63,7 @@ A video thumbnail card: poster image, the branded \`PlayButton\` (white disc, br
 <VideoCard
   title="Ozwell AI in the exam room"
   href="/videos/ozwell-exam-room/"
-  poster="/thumbs/ozwell.jpg"
+  thumbnailUrl="/thumbs/ozwell.jpg"
   duration="34 min"
   youtubeId="dQw4w9WgXcQ" // enables the muted hover preview
   eyebrow={<Badge>New</Badge>}
@@ -74,7 +74,7 @@ A video thumbnail card: poster image, the branded \`PlayButton\` (white disc, br
 
 - Accessibility: the whole card is one link named \`"Watch: {title}"\`; decorative layers (play ring, pills, preview) are \`aria-hidden\`. The preview never traps focus — it starts on hover/focus and stops on leave/blur.
 - The hover preview is skipped on touch (\`hover: none\`) and under \`prefers-reduced-motion\`, and returns the card to its poster if the YouTube iframe API is blocked (CSP, ad blocker) or times out.
-- The preview loads YouTube's iframe API from \`youtube-nocookie.com\` at hover time — a third-party script your CSP must allow for the feature (the card itself works without it).
+- The preview loads YouTube's iframe API script from \`www.youtube.com\` and hosts the player on \`www.youtube-nocookie.com\` — a CSP must allow **both** origins for the feature (the card itself works without them).
 - i18n: \`durationPrefix\` (default "Watch") and \`silentLabel\` (default "Silent") are props; pass \`durationPrefix={null}\` for just the duration.
 - RTL: pills and progress bar use logical start/end classes and mirror correctly.`,
       },

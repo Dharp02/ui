@@ -171,14 +171,16 @@ import { Globe } from '@mieweb/ui/globe';
 
 <Globe
   points={offices} // hubs + cities; arcs are auto-built hub-and-spoke
-  timeZone // live local clock in the selected-point callout
+  // a point's \`timeZone\` enables the live local clock in its callout:
+  // { id: 'hq', name: 'Fort Wayne', lat: 41.08, lng: -85.14, hub: true,
+  //   timeZone: 'America/Indiana/Indianapolis' }
   onSelect={(p) => setSelectedOffice(p?.id ?? null)}
 />;
 \`\`\`
 
 ### Limitations
 
-- Points are drawn on the WebGL canvas, not as DOM elements, so they are **not keyboard-focusable** — selection is pointer-driven via \`onSelect\`; the only focusable control is the callout's Dismiss button.
+- Points are drawn on the WebGL canvas, not as DOM elements, so they are **not keyboard-focusable** — selection is pointer-driven and the only focusable control is the callout's Dismiss button. **Hosts must provide an equivalent non-pointer path**: selection is controllable via \`selectedId\`, so render an adjacent accessible list of the same locations (e.g. DOM buttons) that drives \`selectedId\`/\`onSelect\`, as a marketing page would with an office directory.
 - The selected-point callout is a \`role="status"\` / \`aria-live="polite"\` region, so picks are announced to screen readers.
 - Auto-rotation is disabled under \`prefers-reduced-motion\` and pauses while dragging.
 - The background is transparent — provide your own backdrop (the stories use a dark radial gradient).`,
