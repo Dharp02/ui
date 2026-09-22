@@ -31,7 +31,7 @@ back here later.
    regular **dependency** of `@mieweb/ui`, so consumers get it automatically and
    never install or import it directly. It is a hard runtime requirement of
    `DataVisNitroSource` (`datavis_ace.Source is not a constructor` if missing).
-2. **`@mieweb/datavis`** (the bundled implementation, developed in the `packages/datavis` git submodule) — owns the high-level source/grid/graph wrappers and lower-level DataVis components. Local development links the submodule; published consumers get the surface **bundled into** `@mieweb/ui/datavis` (no separate install) and still install `datavis-ace` as its external peer.
+2. **`@mieweb/datavis`** (the bundled implementation, developed in the `packages/datavis` git submodule) — owns the high-level source/grid/graph wrappers and lower-level DataVis components. Local development links the submodule; published consumers get the surface **bundled into** `@mieweb/ui/datavis` (no separate install) and receive `datavis-ace` transitively via `@mieweb/ui`'s `dependencies` (kept external in the bundle) — they never install either package themselves.
 
 ## Gotchas
 

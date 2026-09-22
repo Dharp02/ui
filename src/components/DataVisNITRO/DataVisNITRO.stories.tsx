@@ -82,7 +82,7 @@ Browsing, sorting, filtering, grouping and exporting record sets without writing
 
 - The data is a handful of static rows shown for reading (a summary block, a definition list) — use \`Table\`.
 - You need a chart rather than rows — use \`DataVisNitroGraph\` on the same source, or \`Sparkline\` for an inline strip.
-- The consumer cannot take the optional peers (\`@mieweb/datavis\`, \`datavis-ace\`); keep it behind the \`@mieweb/ui/datavis\` entry so apps that never show a grid do not pay for it.
+- You're on a size-critical surface that must never load the grid engine — NITRO is a heavy opt-in chunk behind the \`@mieweb/ui/datavis\` entry (\`@mieweb/datavis\` and \`recharts\` are bundled in; \`datavis-ace\` is a dependency), so import it only where a grid is actually rendered.
 
 ### Example
 
@@ -110,7 +110,7 @@ The source owns the data lifecycle; the grid is presentational. Keep application
     },
     catalog: {
       entry: '@mieweb/ui/datavis',
-      peers: ['@mieweb/datavis', 'datavis-ace'],
+      peers: [],
       relationships: [
         {
           type: 'alternative to',
