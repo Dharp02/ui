@@ -92,6 +92,10 @@ export function useDiarization(
   const sv = useSpeakerVerify({ enabled, voiceprintNamespace });
   const svRef = React.useRef(sv);
   svRef.current = sv;
+  // The CURRENT namespace, readable mid-pass: a diarize() started under namespace A must not identify
+  // against A's store or publish A's labels after the host switches to B (transcription awaits are long).
+  const nsRef = React.useRef(voiceprintNamespace);
+  nsRef.current = voiceprintNamespace;
 
   const [busy, setBusy] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
@@ -109,11 +113,17 @@ export function useDiarization(
       setError(null);
       try {
         const svh = svRef.current;
+        const passNamespace = nsRef.current;
+        const assertNamespace = () => {
+          if (nsRef.current !== passNamespace)
+            throw new Error('voiceprint namespace changed during diarization');
+        };
         // 1. transcript segments (Whisper timestamps) + the raw 16k samples to embed windows from
         const [segments, samples] = await Promise.all([
           transcribeSegments(blob),
           decodeTo16kMono(blob),
         ]);
+        assertNamespace(); // svh + its identify() belong to passNamespace — don't cross-label after a switch
         if (!segments.length) {
           setResult([]);
           return [];
@@ -188,6 +198,7 @@ export function useDiarization(
           }
         }
         if (merge) out = mergeTurns(out);
+        assertNamespace(); // final gate before publishing (inferRoles awaits the LLM)
         setResult(out);
         return out;
       } catch (e) {

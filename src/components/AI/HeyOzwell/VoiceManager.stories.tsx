@@ -36,11 +36,13 @@ const meta: Meta<typeof VoiceManager> = {
 import { VoiceManager } from '@mieweb/ui';
 
 // Settings route; the same page HeyOzwell's "Your voice" menu item should navigate to.
+// voiceprintNamespace must be the SAME value the verifying surface uses (omit both for the shared store) —
+// otherwise this page manages a different store than the one gating wakes.
 export function VoiceSettingsPage() {
   return (
     <section aria-labelledby="voice-heading" className="h-full">
       <VisuallyHidden><h1 id="voice-heading">{t('settings.voice')}</h1></VisuallyHidden>
-      <VoiceManager logoSrc={branding.ozwellIcon} />
+      <VoiceManager logoSrc={branding.ozwellIcon} voiceprintNamespace={user.id} />
     </section>
   );
 }

@@ -35,10 +35,13 @@ const meta: Meta<typeof VoiceSetup> = {
 import { VoiceSetup } from '@mieweb/ui';
 
 // Onboarding step: enroll the signed-in clinician, then continue.
+// voiceprintNamespace must MATCH the verifying surface (HeyOzwell / HandsFreeChat) and VoiceManager —
+// scoped stores start empty (no legacy unscoped records), so a mismatched enroll is invisible to them.
 <VoiceSetup
   mode="enroll"
   voiceId={user.id}
   label={user.displayName}
+  voiceprintNamespace={user.id}
   logoSrc={branding.ozwellIcon}
   onDone={() => { analytics.track('voice_enrolled'); next(); }}
   onCancel={skip}
