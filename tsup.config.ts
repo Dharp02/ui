@@ -1,11 +1,23 @@
+import { existsSync } from 'node:fs';
+
 import { defineConfig } from 'tsup';
+
+/**
+ * The eSheet entry needs `@esheet/core`'s declarations to emit its own, and
+ * those are build output of the `packages/esheet` submodule — produced by the
+ * `build:esheet` prebuild, which shells out to pnpm and a second workspace.
+ * Consumers that never import `@mieweb/ui/esheet` should not have to pay for
+ * that, so the entry is included only when the artifacts are already there.
+ * Where they are (dev machines, this package's own CI) nothing changes.
+ */
+const esheetIsBuilt = existsSync('packages/esheet/packages/core/dist/index.d.ts');
 
 export default defineConfig({
   entry: {
     index: 'src/index.ts',
     'ag-grid': 'src/ag-grid.ts',
     'datavis': 'src/datavis.ts',
-    'esheet': 'src/esheet.ts',
+    ...(esheetIsBuilt ? { esheet: 'src/esheet.ts' } : {}),
     'kerebron': 'src/kerebron.ts',
     // Opt-in animation layer. Separate entry so `motion` stays out of the main
     // bundle for apps that never import it. See: src/motion/entry.ts

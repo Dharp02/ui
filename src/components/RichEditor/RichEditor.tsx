@@ -59,6 +59,11 @@ export interface RichEditorProps {
   'aria-label'?: string;
   'aria-labelledby'?: string;
   /**
+   * Describes the surface (e.g. a composer's prompt). Announced after the name,
+   * so it carries hints rather than identity.
+   */
+  'aria-describedby'?: string;
+  /**
    * Where the tree-sitter WASM grammars load from. Defaults to
    * `createAssetLoad('/kerebron-wasm')`; supply your own when the host serves
    * `@kerebron/wasm`'s `assets/` somewhere else.
@@ -96,6 +101,7 @@ const RichEditor = forwardRef<RichEditorHandle, RichEditorProps>(
       className,
       'aria-label': ariaLabel,
       'aria-labelledby': ariaLabelledBy,
+      'aria-describedby': ariaDescribedBy,
       assetLoad,
     },
     ref
@@ -281,6 +287,9 @@ const RichEditor = forwardRef<RichEditorHandle, RichEditorProps>(
                 ...(ariaLabel ? { 'aria-label': ariaLabel } : {}),
                 ...(ariaLabelledBy
                   ? { 'aria-labelledby': ariaLabelledBy }
+                  : {}),
+                ...(ariaDescribedBy
+                  ? { 'aria-describedby': ariaDescribedBy }
                   : {}),
               }
             : null;
