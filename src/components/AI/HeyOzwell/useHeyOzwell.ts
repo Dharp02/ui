@@ -347,6 +347,9 @@ export function useHeyOzwell(
     (name: string): boolean => {
       if (!requireDoctor) return true;
       const svh = svRef.current;
+      // Fail closed while the scoped store is still (re)hydrating — e.g. during a namespace switch —
+      // where conditionCount reads 0 and would otherwise be mistaken for "nothing enrolled" (open gate).
+      if (!svh.ready) return false;
       const enrolled = svh.conditionCount(name) > 0;
       if (!enrolled) return true;
       const roll = rollRef.current;
