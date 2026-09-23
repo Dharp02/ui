@@ -121,6 +121,91 @@ const RichEditor = forwardRef<RichEditorHandle, RichEditorProps>(
       });
     }, [disabled]);
 
+    /**
+     * Makes the toolbar's dropdown menus work at all, and keeps the selection
+     * alive while any menu command runs.
+     *
+     * Two problems, one listener.
+     *
+     * 1. **The dropdown rows are inert.** Every row in a pinned dropdown
+     *    ("Plain"/"Code", "Heading 1".."Heading 6", "Bullet List"…) renders as a
+     *    wrapper holding a `display: none` button plus a visible label, and
+     *    `@kerebron/extension-menu` forwards a click on the label to that hidden
+     *    button with
+     *    `new MouseEvent('mousedown', { view: dntGlobalThis })`. `dntGlobalThis`
+     *    is the dnt shim's *Proxy* around `globalThis`, and a Proxy fails
+     *    WebIDL's brand check for `Window`, so the constructor throws
+     *    ("Failed to convert value to 'Window'") before the forwarded event is
+     *    ever dispatched. The command never runs, and because the throw happens
+     *    ahead of the menu's own cleanup, the dropdown does not even close.
+     *    Reported upstream; until it lands, this listener does the forwarding
+     *    itself with a well-formed event and closes the dropdown afterwards, the
+     *    way the menu would have.
+     *
+     * 2. **The selection dies before the command reads it.** A command acts on
+     *    the editor's current selection, but the mousedown that triggers it
+     *    moves focus out of the contenteditable first, collapsing that
+     *    selection. `preventDefault` stops the focus shift; the click still
+     *    fires.
+     *
+     * Bound on `document` in the capture phase, not on the host, because the
+     * dropdowns are portaled to `document.body` — outside the host entirely.
+     * Scoped so a page with several editors is unaffected: chrome inside our own
+     * host always qualifies, portaled chrome only while our view holds focus,
+     * which is exactly when the open menu is ours. Synthetic events are ignored
+     * so our own forwarded event does not re-enter.
+     */
+    useEffect(() => {
+      const onMenuMouseDown = (event: MouseEvent): void => {
+        if (!event.isTrusted) return;
+        const target = event.target as HTMLElement | null;
+        if (typeof target?.closest !== 'function') return;
+
+        // Clicks that place the caret must behave normally, or the editor
+        // cannot be focused or typed into at all.
+        if (target.closest('.kb-custom-menu__editor, [contenteditable="true"]'))
+          return;
+
+        const chrome = target.closest(
+          '.kb-custom-menu, .kb-custom-menu__wrapper, .kb-custom-menu__pinned-dropdown, .kb-custom-menu__overflow-menu, [role="menu"]'
+        );
+        if (!chrome) return;
+
+        const host = hostRef.current;
+        const view = editorInstance.current?.view as
+          | { hasFocus?: () => boolean }
+          | undefined;
+        const ours =
+          (host?.contains(chrome) ?? false) || view?.hasFocus?.() === true;
+        if (!ours) return;
+
+        event.preventDefault();
+
+        const row = target.closest('.kb-custom-menu__overflow-item');
+        const button = row?.querySelector('button');
+        if (!button || button === target || button.contains(target)) return;
+
+        // The menu's own handler for this row throws; it must not run.
+        event.stopImmediatePropagation();
+        button.dispatchEvent(
+          new MouseEvent('mousedown', {
+            bubbles: true,
+            cancelable: true,
+            view: window,
+          })
+        );
+        // Closing is the menu's job, and it never got there. Its own state
+        // heals on the next open, which removes whatever it still points at.
+        document
+          .querySelectorAll('.kb-custom-menu__pinned-dropdown')
+          .forEach((dropdown) => dropdown.remove());
+      };
+
+      document.addEventListener('mousedown', onMenuMouseDown, true);
+      return () =>
+        document.removeEventListener('mousedown', onMenuMouseDown, true);
+    }, []);
+
     useEffect(() => {
       // In collab mode the CRDT owns the content; reloading would fight it.
       if (collab || value === valueRef.current) return;
