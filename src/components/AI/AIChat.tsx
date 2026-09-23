@@ -25,7 +25,13 @@ import {
   ChatComposer,
   type ChatComposerProps,
 } from '../ChatComposer/ChatComposer';
+import { notifyComposerMigrationOnce } from '../ChatComposer/migration-notice';
 import type { NewMessage } from '../Messaging/types';
+import {
+  DEFAULT_ACCEPTED_FILE_TYPES,
+  DEFAULT_MAX_FILE_SIZE,
+} from '../Messaging/AttachmentPicker';
+import { useTypingEmulation } from '../Messaging/hooks';
 import {
   EmptyState as MessagingEmptyState,
   type EmptyStateProps as MessagingEmptyStateProps,
@@ -274,19 +280,6 @@ export interface AIChatLegacyComposerProps {
 export type AIChatComposerProps = Partial<ChatComposerProps> &
   AIChatLegacyComposerProps;
 
-// MessageComposer's attachment validation defaults, applied when a legacy
-// consumer enables attachments via `showAttachmentPicker` (ChatComposer
-// itself leaves file types and size unrestricted). Explicit
-// `acceptedFileTypes` / `maxFileSize` in composerProps still win.
-const LEGACY_ACCEPTED_FILE_TYPES = [
-  'image/*',
-  'video/*',
-  '.pdf',
-  '.doc',
-  '.docx',
-];
-const LEGACY_MAX_FILE_SIZE = 25 * 1024 * 1024;
-
 // MessageComposer rendered its trailing slot behind `{inputTrailing && …}`,
 // so any falsy value (e.g. `false` from `cond && <Mic />`, null, '')
 // suppressed it. ChatComposer only skips `undefined` — anything else mounts
@@ -375,6 +368,10 @@ export function AIChat({
 }: AIChatProps) {
   const messagesContainerRef = React.useRef<HTMLDivElement>(null);
 
+  React.useEffect(() => {
+    notifyComposerMigrationOnce('AIChat');
+  }, []);
+
   const messages = React.useMemo(
     () => session?.messages || messagesProp || [],
     [session?.messages, messagesProp]
@@ -442,41 +439,12 @@ export function AIChat({
   );
 
   // Emulate MessageComposer's typing callbacks for legacy composerProps
-  // consumers, replicating its exact state machine: start when the draft is
-  // non-empty, stop after 2s idle — then start again while the draft stays
-  // non-empty (a keepalive loop hosts' typing indicators rely on).
-  const [isTyping, setIsTyping] = React.useState(false);
-  const typingTimeoutRef = React.useRef<ReturnType<typeof setTimeout> | null>(
-    null
-  );
-  React.useEffect(() => {
-    if (!onTypingStart && !onTypingStop) return;
-    if (composerValue.length > 0 && !isTyping) {
-      setIsTyping(true);
-      onTypingStart?.();
-    }
-    if (typingTimeoutRef.current) {
-      clearTimeout(typingTimeoutRef.current);
-    }
-    typingTimeoutRef.current = setTimeout(() => {
-      if (isTyping) {
-        setIsTyping(false);
-        onTypingStop?.();
-      }
-    }, 2000);
-    return () => {
-      if (typingTimeoutRef.current) {
-        clearTimeout(typingTimeoutRef.current);
-      }
-    };
-  }, [composerValue, isTyping, onTypingStart, onTypingStop]);
-
-  // MessageComposer parity: typing stops immediately on send — its submit
-  // path fired this even when the host overrode `onSend`.
-  const stopTypingOnSend = () => {
-    setIsTyping(false);
-    onTypingStop?.();
-  };
+  // consumers (shared with MessageThread — see useTypingEmulation).
+  const { stopTyping } = useTypingEmulation({
+    value: composerValue,
+    onTypingStart,
+    onTypingStop,
+  });
 
   // Shared send path: stop typing, await the handler, and restore the draft
   // on failure (epoch-guarded so a stale failure never clobbers newer input).
@@ -485,7 +453,7 @@ export function AIChat({
     message: NewMessage,
     send: (message: NewMessage) => void | Promise<void>
   ) => {
-    stopTypingOnSend();
+    stopTyping();
     const epoch = draftEpochRef.current;
     try {
       // A returned promise is awaited so an async rejection follows the
@@ -692,11 +660,11 @@ export function AIChat({
             inputLabel={composerRest.inputLabel ?? 'Message'}
             acceptedFileTypes={
               composerRest.acceptedFileTypes ??
-              (legacyAttachments ? LEGACY_ACCEPTED_FILE_TYPES : undefined)
+              (legacyAttachments ? DEFAULT_ACCEPTED_FILE_TYPES : undefined)
             }
             maxFileSize={
               composerRest.maxFileSize ??
-              (legacyAttachments ? LEGACY_MAX_FILE_SIZE : undefined)
+              (legacyAttachments ? DEFAULT_MAX_FILE_SIZE : undefined)
             }
             value={composerValue}
             onValueChange={handleComposerValueChange}

@@ -257,7 +257,7 @@ const DEFAULT_ACCEPTED_FILE_TYPES: AttachmentKind[] = [
 
 /**
  * Map SuperChat's high-level {@link AttachmentKind} categories to the
- * `<input accept>` tokens consumed by the shared `MessageComposer`.
+ * `<input accept>` tokens consumed by the shared `ChatComposer`.
  */
 export function acceptTokensFor(
   kinds: AttachmentKind[] = DEFAULT_ACCEPTED_FILE_TYPES
@@ -269,7 +269,7 @@ export function acceptTokensFor(
 }
 
 /**
- * Read the `File` objects emitted by the shared `MessageComposer` into the
+ * Read the `File` objects emitted by the shared `ChatComposer` into the
  * base64 `data:` URL {@link ComposerAttachment}s SuperChat hosts expect.
  */
 export function filesToComposerAttachments(

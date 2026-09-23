@@ -110,20 +110,20 @@ const meta = {
 
 **The standardized chat input.** At \`md+\` \`ChatComposer\` renders as a single-row pill — a \`+\` menu (built-in "Attach files" plus host-supplied \`addMenuItems\`), an auto-growing textarea, an optional mic, and a send button that swaps to **stop** while \`isStreaming\`, side by side with the icon actions pinned to the bottom as the input grows. Below the \`md\` breakpoint the input stacks above the icon row. An optional row below the card holds an **agent selector** (\`showAgentSelector\` + \`agents\`) and a **model selector** (\`showModelSelector\` + \`modelSelectorProps\`, an embedded \`ComposerModelSelector\` rendered with \`variant="ghost"\` so it matches the agent selector — override via \`modelSelectorProps.variant\`), rendered as quiet text on the page background. No large filled buttons: every control is a small ghost icon; the send button fills with the primary color only when there is content to send (or always, with \`canSendWhenEmpty\` — see below).
 
-Sending: Enter sends, Shift+Enter inserts a newline; \`onSend({ content, attachments })\` receives the trimmed text and staged \`File\`s (the \`NewMessage\` shape shared with \`MessageComposer\`, so hosts can migrate mechanically). \`onSend\` may return a promise — the draft clears optimistically and a rejection is reported through \`onError\` with \`reason: 'send-failed'\` (hosts own retry/restore). \`replyTo\` (\`{ id, content, senderName }\`, same contract as \`MessageComposer\`) renders a dismissible preview row at the top of the card, focuses the input, and stamps \`replyToId\` onto the sent message; the host owns the state — clear it in \`onSend\`, and \`onCancelReply\` fires from the row's close button. Attachments arrive from the \`+\` menu picker, paste, drag-and-drop onto the card, or the imperative \`ChatComposerHandle.addFiles()\` (for page-level drop zones); they are validated against \`acceptedFileTypes\` / \`maxFileSize\` / \`maxAttachments\` with failures reported through \`onError(message, { reason, file })\`. \`mentionOptions\` enables the built-in \`@mention\` autocomplete — the same shared module \`MessageComposer\` uses (typing \`@\` opens a filtered listbox; arrows navigate, Enter/Tab insert, Escape dismisses). \`readOnly\` replaces the whole composer with a notice (\`readOnlyMessage\`). The value is controlled (\`value\` + \`onValueChange\`) or uncontrolled. The textarea auto-grows up to \`maxHeight\` (default 160px; any CSS length works, e.g. \`'40vh'\`).
+Sending: Enter sends, Shift+Enter inserts a newline; \`onSend({ content, attachments })\` receives the trimmed text and staged \`File\`s (the \`NewMessage\` shape from the Messaging module, so hosts can migrate mechanically). \`onSend\` may return a promise — the draft clears optimistically and a rejection is reported through \`onError\` with \`reason: 'send-failed'\` (hosts own retry/restore). \`replyTo\` (\`{ id, content, senderName }\`) renders a dismissible preview row at the top of the card, focuses the input, and stamps \`replyToId\` onto the sent message; the host owns the state — clear it in \`onSend\`, and \`onCancelReply\` fires from the row's close button. Attachments arrive from the \`+\` menu picker, paste, drag-and-drop onto the card, or the imperative \`ChatComposerHandle.addFiles()\` (for page-level drop zones); they are validated against \`acceptedFileTypes\` / \`maxFileSize\` / \`maxAttachments\` with failures reported through \`onError(message, { reason, file })\`. \`mentionOptions\` enables the built-in \`@mention\` autocomplete — the shared Messaging mention module (typing \`@\` opens a filtered listbox; arrows navigate, Enter/Tab insert, Escape dismisses). \`readOnly\` replaces the whole composer with a notice (\`readOnlyMessage\`). The value is controlled (\`value\` + \`onValueChange\`) or uncontrolled. The textarea auto-grows up to \`maxHeight\` (default 160px; any CSS length works, e.g. \`'40vh'\`).
 
 Host integration escape hatches: \`textareaProps\` spreads extra props onto the underlying textarea — host \`onKeyDown\` / \`onPaste\` / \`onChange\` run **before** the built-in handlers, and calling \`event.preventDefault()\` claims that event (e.g. a custom autocomplete overlay's arrow/Enter navigation — host key handling takes priority over the built-in mention menu and Enter-to-send — or opting out of paste-to-attach). \`ChatComposerHandle.getTextarea()\` returns the textarea element for caret work (\`setSelectionRange\` after inserting into the text). \`canSendWhenEmpty\` keeps send enabled while the composer is empty — for hosts that stage attachments outside the composer; \`onSend\` then receives \`{ content: '', attachments: [] }\` and the host owns any further guarding.
 
 ### Use it when
 
-- Building **any new chat surface** — AI assistants, patient messaging, support chat. This is the canonical composer going forward; prefer it over \`MessageComposer\` for new work.
+- Building **any new chat surface** — AI assistants, patient messaging, support chat. This is the canonical composer (the legacy \`MessageComposer\` was retired in 0.10.0 — see \`MIGRATION.md#chat-composer\`).
 - The surface needs per-message **agent or model choice** (AI chat), a \`+\` action menu, or voice input (\`onMicClick\` for a simple hook, \`micSlot\` to embed \`RecordButton\` for real recording).
 
 ### Don't use it when
 
 - You want the **complete multi-participant chat surface** — \`SuperChat\` mounts this composer internally (participants become \`mentionOptions\`, attachments reach the host as base64 \`dataUrl\`s) and adds the thread, header, and Markdown pipeline.
 - You want a **complete AI assistant surface** — \`AIChat\` mounts this composer internally (legacy \`MessageComposer\`-style \`composerProps\` keys are mapped for compatibility) and adds the message thread, streaming/generating states, and suggestion chips.
-- You are maintaining an existing \`MessageComposer\` surface and don't need the toolbar/selector rows — migrating is encouraged but not required.
+- You want a **human-to-human messaging thread** — \`MessageThread\` mounts this composer internally and adds the conversation header, message list, typing-callback emulation and lightbox.
 - A single-line command input fits better — \`CommandPalette\` or a plain \`Input\`.
 
 ### Example
@@ -166,7 +166,7 @@ const composerRef = useRef<ChatComposerHandle>(null);
         {
           type: 'alternative to',
           target: 'chat-messaging',
-          why: 'MessageComposer is the earlier messaging-thread composer; both share the same @mention autocomplete module and reply-to contract (replyTo / onCancelReply); ChatComposer is the standardized input with + menu, mic, stop, drag-and-drop and agent/model selector rows — prefer it for new work.',
+          why: 'ChatComposer is the standardized input (+ menu, mic, stop, drag-and-drop, agent/model selector rows) that MessageThread mounts; the Messaging kit supplies the thread primitives around it. The legacy MessageComposer was retired in 0.10.0 (see MIGRATION.md#chat-composer); ChatComposer reuses the Messaging mention module and NewMessage shape.',
         },
         {
           type: 'composes with',
@@ -251,7 +251,7 @@ export const WithMentions: Story = {
     docs: {
       description: {
         story:
-          'Typing `@` opens the same mention autocomplete used by `MessageComposer` (arrow keys to navigate, Enter/Tab to insert, Escape to dismiss).',
+          'Typing `@` opens the shared Messaging mention autocomplete (arrow keys to navigate, Enter/Tab to insert, Escape to dismiss).',
       },
     },
   },
@@ -292,7 +292,7 @@ export const WithReplyTo: Story = {
     docs: {
       description: {
         story:
-          'Same `replyTo` / `onCancelReply` contract as `MessageComposer`: the host owns the state — the ✕ button calls `onCancelReply`, sending stamps `replyToId` onto the message, and the host clears the reply in `onSend`.',
+          'The `replyTo` / `onCancelReply` state is host-owned: the ✕ button calls `onCancelReply`, sending stamps `replyToId` onto the message, and the host clears the reply in `onSend`.',
       },
     },
   },

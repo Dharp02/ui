@@ -5930,35 +5930,8 @@ body.condensed [data-slot='skeleton-bubble'] {
   width: 10rem !important;
 }
 
-/* --- Message Composer --- */
-
-/* Reply preview – compact */
-body.condensed [data-slot='composer-reply-preview'] {
-  padding: 0.25rem 0.75rem !important;
-  gap: 0.375rem !important;
-}
-
-body.condensed [data-slot='composer-reply-preview'] span {
-  font-size: 0.5625rem !important;
-}
-
-body.condensed [data-slot='composer-reply-preview'] p {
-  font-size: 0.6875rem !important;
-}
-
-/* Attachment previews – smaller thumbnails */
-body.condensed [data-slot='composer-attachments'] {
-  padding: 0.375rem !important;
-  gap: 0.25rem !important;
-}
-
-/* Input area – flex centered with breathing room */
-body.condensed [data-slot='composer-input-area'] {
-  display: flex !important;
-  align-items: center !important;
-  padding: 0.5rem 0.375rem !important;
-  gap: 0.25rem !important;
-}
+/* --- AttachmentPicker (standalone attach button; MessageComposer's other
+   `composer-*` slot rules were removed with its retirement in 0.10.0) --- */
 
 /* Attachment picker button – smaller */
 body.condensed [data-slot='attachment-picker-button'] {
@@ -5970,58 +5943,9 @@ body.condensed [data-slot='attachment-picker-button'] svg {
   height: 1rem !important;
 }
 
-/* Textarea wrapper – eliminate baseline gap */
-body.condensed [data-slot='composer-input-wrapper'] {
-  display: flex !important;
-  align-items: center !important;
-}
-
-/* Character counter – vertically centered */
-body.condensed [data-slot='composer-char-count'] {
-  top: 50% !important;
-  bottom: auto !important;
-  transform: translateY(-50%) !important;
-  right: 0.5rem !important;
-}
-
-body.condensed [data-slot='composer-char-count'] span {
-  font-size: 0.5625rem !important;
-}
-
-/* Textarea – smaller, vertically centered text */
-body.condensed [data-slot='composer-input'] {
-  font-size: 0.75rem !important;
-  line-height: 1.125rem !important;
-  padding: 0.25rem 0.75rem 0.125rem !important;
-  min-height: 0 !important;
-  height: auto !important;
-  border-radius: 1rem !important;
-}
-
-/* Trailing slot (e.g. record/mic button) – the standard view hard-codes a
-   44px height to match the comfortable textarea. In condensed the input row is
-   shorter, so let top/bottom define the height (clearing the fixed h-[44px]
-   via height:auto) to keep the icon centered and prevent the mic from drooping
-   below and clipping past the input edge. */
-body.condensed [data-slot='composer-input-trailing'] {
-  top: 0 !important;
-  bottom: 0 !important;
-  height: auto !important;
-}
-
-/* Send button – smaller */
-body.condensed [data-slot='composer-send-button'] {
-  padding: 0.25rem !important;
-  align-self: center !important;
-}
-
-body.condensed [data-slot='composer-send-button'] svg {
-  width: 0.875rem !important;
-  height: 0.875rem !important;
-}
-
-/* @mention suggestion listbox (shared by MessageComposer and ChatComposer) –
-   narrower menu, tighter options */
+/* @mention suggestion listbox (shared Messaging mention module — default slot
+   'composer-mention-list'; ChatComposer overrides to
+   'chat-composer-mention-list') – narrower menu, tighter options */
 body.condensed [data-slot='composer-mention-list'],
 body.condensed [data-slot='chat-composer-mention-list'] {
   width: 14rem !important;

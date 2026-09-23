@@ -148,6 +148,18 @@ describe('ChatComposer', () => {
     });
   });
 
+  it('stages imperative addFiles even when allowAttachments is false', () => {
+    // The prop only hides the composer's own attach affordances; explicit
+    // host calls (e.g. a camera capture slot) must still stage files.
+    const ref = React.createRef<ChatComposerHandle>();
+    renderWithTheme(<ChatComposer ref={ref} allowAttachments={false} />);
+
+    const file = new File(['data'], 'photo.png', { type: 'image/png' });
+    React.act(() => ref.current?.addFiles([file]));
+
+    expect(screen.getByText('photo.png')).toBeInTheDocument();
+  });
+
   it('rejects files over the limits and reports via onError', () => {
     const onError = vi.fn();
     const ref = React.createRef<ChatComposerHandle>();

@@ -53,13 +53,24 @@ should plug into — don't fork the message renderer.
 - The composer is **the shared `ChatComposer`** (`src/components/ChatComposer/`)
   — visual/behavioral changes to the input may belong there, not here. Legacy
   `MessageComposer`-era `composerProps` keys are mapped in `AIChat.tsx` (see
-  `AIChatLegacyComposerProps`). Inline images use the Messaging attachment
+  `AIChatLegacyComposerProps`). Typing emulation (`useTypingEmulation`) and the
+  attachment defaults (`DEFAULT_ACCEPTED_FILE_TYPES` / `DEFAULT_MAX_FILE_SIZE`)
+  are shared from the Messaging module — `MessageThread` consumes the same
+  ones. Inline images use the Messaging attachment
   lightbox.
 - Content block types live in `AIMessageContent` (`text` / `tool_use` /
   `tool_result` / `thinking` / `code`). Adding a block type means updating both
   the type union and `AIMessageDisplay`'s switch.
 - Modal variants render `role="dialog"` + `aria-modal`, trap focus, and close on
   `Escape`. Preserve that if you refactor the wrappers.
+- **Voiceprint namespacing** (`voiceprintNamespace` on `HandsFreeChat` /
+  `VoiceManager` / `VoiceSetup` / the hooks): `voiceprintStorageKey` in
+  `voiceprintStore.ts` is the single source of truth for scoped IndexedDB keys
+  (`key:encodeURIComponent(ns)`). Scoped namespaces must **never** run the
+  legacy localStorage migration — only the unscoped (`undefined`) path does —
+  so users of a shared browser profile can't inherit another user's
+  pre-namespace enrollment. The unscoped behavior is frozen for back-compat;
+  isolation is per-browser convenience, not authentication.
 
 ## Testing
 

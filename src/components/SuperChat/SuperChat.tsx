@@ -14,6 +14,7 @@ import * as React from 'react';
 import { cn } from '../../utils/cn';
 import { CloseIcon } from '../AI/icons';
 import { ChatComposer } from '../ChatComposer/ChatComposer';
+import { notifyComposerMigrationOnce } from '../ChatComposer/migration-notice';
 import type { NewMessage } from '../Messaging/types';
 import { createMarkdownRenderer } from './render/createMarkdownRenderer';
 import {
@@ -144,6 +145,10 @@ export function SuperChat({
   onBack,
 }: SuperChatProps) {
   const headingId = React.useId();
+
+  React.useEffect(() => {
+    notifyComposerMigrationOnce('SuperChat');
+  }, []);
 
   const renderText = React.useMemo<AIRenderTextContent>(
     () =>
