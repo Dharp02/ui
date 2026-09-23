@@ -37,6 +37,12 @@ describe('voiceprintStore namespaces', () => {
     );
   });
 
+  it('trims namespace whitespace so "user-a " and "user-a" share a store', () => {
+    expect(voiceprintStorageKey('voiceprints', ' user-a ')).toBe(
+      voiceprintStorageKey('voiceprints', 'user-a')
+    );
+  });
+
   it('isolates WHAT prints by namespace', async () => {
     await saveWhatPrints(prints(1), 'user-a');
     await saveWhatPrints(prints(2), 'user-b');

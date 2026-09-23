@@ -24,7 +24,11 @@ const ozBtn =
   'bg-ozwell hover:bg-ozwell active:bg-ozwell text-ozwell-foreground hover:brightness-95 active:brightness-90';
 
 export interface VoiceSetupProps {
-  /** Isolates persisted enrollment from other users of the same browser profile. */
+  /** Isolates persisted enrollment (WHO + WHAT prints) from other users of the same browser profile —
+   *  e.g. pass the signed-in user's id. Enroll with the SAME value the verifying surface
+   *  (`useHeyOzwell` / `HandsFreeChat`) and `VoiceManager` use, or they can't see this enrollment.
+   *  A scoped store starts empty — no legacy unscoped records are inherited. Omit for the original
+   *  shared store. */
   voiceprintNamespace?: string;
   /**
    * 'enroll' (default) = fresh first-time setup. 'add' = jump straight into appending a new voice/condition

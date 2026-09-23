@@ -116,7 +116,11 @@ export interface UseSpeakerVerifyOpts {
   /** Set false to skip loading the ~50 MB sherpa/TitaNet runtime (e.g. when the doctor-only gate is off).
    *  Defaults to true so existing callers are unchanged. */
   enabled?: boolean;
-  /** Isolates persisted enrollment from other users of the same browser profile. */
+  /** Isolates persisted enrollment from other users of the same browser profile — e.g. pass the
+   *  signed-in user's id. Every returned method (enroll / verify / identify / listVoices / clear…)
+   *  operates on that scoped store, which starts empty: scoped records do NOT inherit the legacy
+   *  unscoped key. Use the SAME value across enrollment, verification, and management (`useVoiceSetup`,
+   *  `useHeyOzwell`, `VoiceManager`), or they read different stores. Omit for the original shared one. */
   voiceprintNamespace?: string;
 }
 

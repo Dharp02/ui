@@ -17,9 +17,12 @@ const DB_VERSION = 1;
 
 export function voiceprintStorageKey(key: string, namespace?: string): string {
   if (namespace === undefined) return key;
-  if (namespace.trim().length === 0)
+  // Trim before encoding so accidental whitespace ("user-a " vs "user-a") can't silently split a
+  // user's voiceprints across distinct stores.
+  const ns = namespace.trim();
+  if (ns.length === 0)
     throw new Error('Voiceprint namespace must not be empty');
-  return `${key}:${encodeURIComponent(namespace)}`;
+  return `${key}:${encodeURIComponent(ns)}`;
 }
 
 function openDb(): Promise<IDBDatabase> {

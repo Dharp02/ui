@@ -30,7 +30,11 @@ const dangerOutline =
   'border-destructive text-destructive hover:bg-destructive/10 hover:text-destructive';
 
 export interface VoiceManagerProps {
-  /** Isolates persisted enrollment from other users of the same browser profile. */
+  /** Isolates persisted enrollment (WHO + WHAT prints) from other users of the same browser profile —
+   *  e.g. pass the signed-in user's id. Must be the SAME value the verifying surface (`useHeyOzwell` /
+   *  `HandsFreeChat`) uses, or this page manages a different store than the one gating wakes (it would
+   *  look empty and enroll into the wrong store). A scoped store starts empty — no legacy unscoped
+   *  records are inherited. Omit to manage the original shared store. */
   voiceprintNamespace?: string;
   /** Octopus logo source, forwarded to the enrollment screen. */
   logoSrc?: string;

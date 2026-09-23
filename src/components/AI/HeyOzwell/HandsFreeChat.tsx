@@ -30,7 +30,11 @@ import { useHeyOzwell } from './useHeyOzwell';
 import type { AISuggestedAction } from '../types';
 
 export interface HandsFreeChatProps {
-  /** Isolates persisted enrollment from other users of the same browser profile. */
+  /** Isolates persisted enrollment (WHO + WHAT prints) from other users of the same browser profile —
+   *  e.g. pass the signed-in user's id (`voiceprintNamespace={user.id}`). Scopes both the wake
+   *  verifier and the embedded VoiceManager; a scoped store starts empty (it does NOT inherit legacy
+   *  unscoped records). Omit to keep the original shared store. Any standalone `VoiceSetup` /
+   *  `VoiceManager` the host renders must receive the SAME value. */
   voiceprintNamespace?: string;
   /** Chat header title. */
   title?: string;

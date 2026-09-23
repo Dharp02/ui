@@ -46,6 +46,10 @@ export interface UseDiarizationOptions {
   /** Load the ~50 MB speaker runtime + warm Whisper. Set false to keep it dormant until it's needed
    *  (e.g. a host feature that's off). Default true. */
   enabled?: boolean;
+  /** Anchor clusters against THIS namespace's enrolled voices — pass the same value used at enrollment
+   *  (`useVoiceSetup` / `VoiceManager`), or scoped users get "Speaker N" (or another user's labels)
+   *  from the legacy shared store. Omit for the original unscoped store. */
+  voiceprintNamespace?: string;
 }
 
 export interface UseDiarizationResult {
@@ -82,8 +86,10 @@ export function useDiarization(
     inferRoles = false,
     enabled = true,
     minSegmentSeconds = 1.0,
+    voiceprintNamespace,
   } = options;
-  const sv = useSpeakerVerify({ enabled }); // loads the TitaNet runtime (only when enabled)
+  // loads the TitaNet runtime (only when enabled); scoped so identify() anchors to the right store
+  const sv = useSpeakerVerify({ enabled, voiceprintNamespace });
   const svRef = React.useRef(sv);
   svRef.current = sv;
 

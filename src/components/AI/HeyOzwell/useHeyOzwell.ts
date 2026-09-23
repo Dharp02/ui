@@ -60,7 +60,10 @@ function stopTrimLeadIn(): number {
 }
 
 export interface UseHeyOzwellOptions {
-  /** Isolates persisted enrollment from other users of the same browser profile. */
+  /** Isolates persisted enrollment (WHO + WHAT prints) from other users of the same browser profile —
+   *  e.g. pass the signed-in user's id. A scoped store starts empty (it does NOT inherit legacy
+   *  unscoped records); omit to keep the original shared store. Pass the SAME value to every voice
+   *  surface (`VoiceSetup` / `VoiceManager`), or verification and enrollment read different stores. */
   voiceprintNamespace?: string;
   /** ON: "hey ozwell" opens the chat AND starts dictating. OFF: it just opens the chat and waits. */
   autoDictateOnWake?: boolean;
@@ -100,8 +103,12 @@ export interface UseHeyOzwellOptions {
    *  mishearing, then press send) instead of sending it automatically. An accuracy safety net for clinical
    *  use — off by default so the hands-free flow stays hands-free. */
   reviewBeforeSend?: boolean;
-  /** Diarization tuning for conversation mode (threshold, maxSpeakers, minSegmentSeconds, inferRoles). */
-  diarizationOptions?: Omit<UseDiarizationOptions, 'enabled'>;
+  /** Diarization tuning for conversation mode (threshold, maxSpeakers, minSegmentSeconds, inferRoles).
+   *  `enabled` and `voiceprintNamespace` are owned by the hook (conversationMode / the shared prop). */
+  diarizationOptions?: Omit<
+    UseDiarizationOptions,
+    'enabled' | 'voiceprintNamespace'
+  >;
 }
 
 /** Props to spread onto <HeyOzwellToggle>. */
@@ -327,6 +334,7 @@ export function useHeyOzwell(
   const diar = useDiarization({
     ...diarizationOptions,
     enabled: conversationMode,
+    voiceprintNamespace,
   });
   const diarRef = React.useRef(diar);
   diarRef.current = diar;
@@ -598,11 +606,16 @@ export function useHeyOzwell(
     if (!requireDoctor || !active || !wake.ready) return;
     let cancelled = false;
     let tries = 0;
-    wakeRef.current?.setVoiceprint('hey-ozwell', []);
-    wakeRef.current?.setVoiceprint("ozwell-i'm-done", []);
+    // Track every phrase key pushed into the detector so cleanup resets ALL of them — a stored key
+    // beyond the two built-ins would otherwise keep gating wakes across a namespace switch.
+    const applied = new Set(['hey-ozwell', "ozwell-i'm-done"]);
+    for (const k of applied) wakeRef.current?.setVoiceprint(k, []);
     void loadWhatPrints(voiceprintNamespace).then((loaded) => {
       if (cancelled) return;
-      for (const k in loaded) wakeRef.current?.setVoiceprint(k, loaded[k]);
+      for (const k in loaded) {
+        applied.add(k);
+        wakeRef.current?.setVoiceprint(k, loaded[k]);
+      }
     });
     const tryOpen = () => {
       if (cancelled || rollRef.current) return;
@@ -613,8 +626,7 @@ export function useHeyOzwell(
     tryOpen();
     return () => {
       cancelled = true;
-      wakeRef.current?.setVoiceprint('hey-ozwell', []);
-      wakeRef.current?.setVoiceprint("ozwell-i'm-done", []);
+      for (const k of applied) wakeRef.current?.setVoiceprint(k, []);
       rollRef.current?.close();
       rollRef.current = null;
     };

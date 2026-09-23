@@ -34,7 +34,10 @@ const VP_CAP = 18;
 const delay = (ms: number) => new Promise((r) => setTimeout(r, ms)); // global setTimeout — safe to import in SSR/Node
 
 export interface UseVoiceSetupOptions {
-  /** Isolates persisted enrollment from other users of the same browser profile. */
+  /** Isolates persisted enrollment (WHO + WHAT prints) from other users of the same browser profile —
+   *  e.g. pass the signed-in user's id. A scoped store starts empty (it does NOT inherit legacy
+   *  unscoped records); omit to keep the original shared store. Enroll with the SAME value the
+   *  verifying surface (`useHeyOzwell` / `HandsFreeChat`) uses, or it can't see this enrollment. */
   voiceprintNamespace?: string;
   /** Start directly in "add a voice" (append) mode instead of a fresh enroll — for the settings menu's
    *  "Add a voice", which appends another authorized voice / condition to the existing voiceprints. */
@@ -115,6 +118,14 @@ export function useVoiceSetup(
     });
     return () => {
       cancelled = true;
+      // Namespace switched (or unmounted) mid-pass: abort the enrollment loop — its closures hold
+      // the PREVIOUS namespace's scoped handle, so letting it finish would enroll WHO/WHAT into the
+      // old namespace (or mix the freshly-hydrated whatRef into an old-namespace save). Mirrors
+      // cancel(): unblock a pending awaitWake so the loop actually sees the abort.
+      abortRef.current = true;
+      resolveRef.current?.('__cancelled__');
+      setPhase('intro');
+      setStep(0);
     };
   }, [voiceprintNamespace]);
 
