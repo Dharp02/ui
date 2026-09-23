@@ -117,6 +117,10 @@ const RichEditor = forwardRef<RichEditorHandle, RichEditorProps>(
     const readyRef = useRef<Promise<void> | null>(null);
     const loadingRef = useRef(false);
     const disabledRef = useRef(disabled);
+    // Whether collaboration actually started. False from the moment the kit
+    // fails to load, so a fallback editor behaves like the local one it now is
+    // — including picking up `value` changes, which a live CRDT must not.
+    const collabActiveRef = useRef(Boolean(collab));
 
     const [md, setMd] = useState<string>('');
 
@@ -214,7 +218,7 @@ const RichEditor = forwardRef<RichEditorHandle, RichEditorProps>(
 
     useEffect(() => {
       // In collab mode the CRDT owns the content; reloading would fight it.
-      if (collab || value === valueRef.current) return;
+      if (collabActiveRef.current || value === valueRef.current) return;
       valueRef.current = value;
       const editor = editorInstance.current;
       if (!editor) return;
@@ -265,7 +269,16 @@ const RichEditor = forwardRef<RichEditorHandle, RichEditorProps>(
       // collaborative mode additionally swaps `history` for the Yjs CRDT sync
       // and lazy-loads the Yjs kit (see `editorKits.ts` for why).
       const setup = async () => {
-        const editorKits = await createEditorKits(collab);
+        // Wrapped so a collab failure is recorded here as well as reported to
+        // the host — see `collabActiveRef`.
+        const collabConfig = collab && {
+          ...collab,
+          onUnavailable: (reason: unknown) => {
+            collabActiveRef.current = false;
+            collab.onUnavailable?.(reason);
+          },
+        };
+        const editorKits = await createEditorKits(collabConfig);
         if (disposed) return;
 
         editor = CoreEditor.create({
@@ -277,10 +290,18 @@ const RichEditor = forwardRef<RichEditorHandle, RichEditorProps>(
         });
 
         editorInstance.current = editor;
-        // The contenteditable surface has no implicit ARIA role, so labeling
-        // attributes are only permitted alongside an explicit textbox role.
-        const surfaceAttributes =
-          ariaLabel || ariaLabelledBy
+        // ProseMirror *replaces* its whole `attributes` object on setProps, and
+        // `CoreEditor` sets `class: 'kb-editor'` when it creates the view — the
+        // hook kerebron's own stylesheets and every consumer's sizing rule hang
+        // off. Re-declare it here, or merely naming the editor silently strips
+        // its styling (the surface collapses to one line, loses its font and
+        // colour, and on iOS stops opening the keyboard).
+        //
+        // The contenteditable surface has no implicit ARIA role, so the
+        // labelling attributes are only added alongside an explicit textbox one.
+        const surfaceAttributes = {
+          class: 'kb-editor',
+          ...(ariaLabel || ariaLabelledBy
             ? {
                 role: 'textbox',
                 'aria-multiline': 'true',
@@ -292,10 +313,11 @@ const RichEditor = forwardRef<RichEditorHandle, RichEditorProps>(
                   ? { 'aria-describedby': ariaDescribedBy }
                   : {}),
               }
-            : null;
+            : {}),
+        };
         editor.view.setProps({
           editable: () => !disabledRef.current,
-          ...(surfaceAttributes ? { attributes: surfaceAttributes } : {}),
+          attributes: surfaceAttributes,
         });
         editor.addEventListener('transaction', onTransaction);
 
@@ -307,7 +329,7 @@ const RichEditor = forwardRef<RichEditorHandle, RichEditorProps>(
         // shared content when the room already has edits — so the stored
         // markdown is the starting point without ever double-inserting.
         const joinRoom = () => {
-          if (collab && editor && !disposed) {
+          if (collabActiveRef.current && collab && editor && !disposed) {
             (
               editor.run as Record<string, (...args: unknown[]) => boolean>
             ).changeRoom?.(collab.room);

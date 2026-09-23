@@ -36,6 +36,18 @@ export interface CollabConfig {
    * Defaults to `globalThis.WebSocket`.
    */
   WebSocketPolyfill?: typeof globalThis.WebSocket;
+  /**
+   * Called when collaborative editing could not be started, with whatever went
+   * wrong. The editor then runs as a normal local one — see
+   * {@link createEditorKits}.
+   *
+   * Yjs and its provider are optional peers behind a dynamic `import()`, so a
+   * host that has not installed them (or is offline when the chunk is fetched,
+   * or is served a stale chunk after a deploy) gets a failed import here rather
+   * than at build time. Collaboration is a nicety; losing the editor is not, so
+   * the failure is reported and degraded past rather than thrown.
+   */
+  onUnavailable?: (reason: unknown) => void;
 }
 
 /**
@@ -98,18 +110,23 @@ const unsupportedByMarkdown = [
  * attribute, which `NodeParagraph` declares itself, so dropping
  * `ExtensionTextAlign` would leave four buttons wired to commands that no
  * longer exist. The extension stays; its buttons go.
+ *
+ * "Select parent node" is different: it works fine, but it is a ProseMirror
+ * authoring-internals affordance — it means nothing to someone writing a post,
+ * and there is no way to explain it in a tooltip that would.
  */
-const unsupportedMenuItems = [
+const removedMenuItems = [
   'Align left',
   'Align center',
   'Align right',
   'Justify',
+  'Select parent node',
 ] as const;
 
 /**
  * {@link AdvancedEditorKit} minus {@link unsafeExtensions} (and, for collab
  * mode, minus `history`), with {@link unsupportedByMarkdown} pruned out of the
- * nested basic-editor kit.
+ * nested basic-editor kit and {@link removedMenuItems} out of the toolbar.
  */
 class SafeAdvancedEditorKit implements EditorKit {
   name = 'advanced-editor';
@@ -155,7 +172,7 @@ function pruneUnsupportedMenuItems<T>(extension: T): T {
         .map((group) =>
           group.filter(
             (item) =>
-              !(unsupportedMenuItems as readonly string[]).includes(
+              !(removedMenuItems as readonly string[]).includes(
                 item?.spec?.title ?? ''
               )
           )
@@ -199,15 +216,25 @@ export async function createEditorKits(
 ): Promise<EditorKit[]> {
   if (!config) return [new SafeAdvancedEditorKit(false)];
 
-  const { HuddleYjsKit, defaultWsUrl } = await import('./collabKit');
-  const url = config.wsUrl ?? defaultWsUrl();
-  return [
-    new SafeAdvancedEditorKit(true),
-    new HuddleYjsKit(
-      url,
-      config.params ?? {},
-      config.WebSocketPolyfill,
-      config.user
-    ),
-  ];
+  try {
+    const { HuddleYjsKit, defaultWsUrl } = await import('./collabKit');
+    const url = config.wsUrl ?? defaultWsUrl();
+    return [
+      new SafeAdvancedEditorKit(true),
+      new HuddleYjsKit(
+        url,
+        config.params ?? {},
+        config.WebSocketPolyfill,
+        config.user
+      ),
+    ];
+  } catch (reason) {
+    // Plain mode, not no mode: the collaborative kit failing used to leave the
+    // caller with an editor that rendered nothing at all — an empty box where a
+    // post was being edited, with no way for the host to even detect it.
+    // `forCollab: false` so `history` comes back too; undo/redo belongs to the
+    // Yjs extension only while it is actually there.
+    config.onUnavailable?.(reason);
+    return [new SafeAdvancedEditorKit(false)];
+  }
 }
