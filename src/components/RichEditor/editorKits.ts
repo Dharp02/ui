@@ -80,22 +80,26 @@ const unsafeExtensions = ['autocomplete', 'hover', 'dev_toolkit'] as const;
 
 /**
  * Formatting this editor must not offer, because its own markdown
- * serialization cannot carry it.
+ * serialization drops it.
  *
- * {@link RichEditor} reads and writes `text/x-markdown`, and CommonMark has no
- * representation for underline, highlight, superscript, subscript or block
- * alignment. Applied, they survive in the live document and are then silently
- * dropped the moment the content round-trips — underline is the worst case, as
- * it comes back as *italic*, changing what the writer said rather than merely
- * losing it.
+ * {@link RichEditor} reads and writes `text/x-markdown`, and the converter's
+ * mark table (`pmToMdConverter`) has entries for em, strong, strike, code, link
+ * and underline — but none for these three. Applied, they survive in the live
+ * document and vanish the moment the content round-trips. Measured by writing
+ * each one, posting, and reading the stored markdown back: `HILITE`, `SUPER`,
+ * `SUBBY`, with no markup at all.
+ *
+ * Underline is deliberately NOT in this list: Kerebron's dialect writes it as
+ * `_text_` and parses `_text_` back to the mark, so it round-trips exactly. It
+ * only *looked* lossy because CommonMark readers render `_text_` as emphasis —
+ * a renderer mismatch, fixed on the app's side rather than by removing the tool.
  *
  * These are dropped as extensions rather than hidden as toolbar buttons so the
- * keyboard shortcuts (Mod-u and friends) go with them: `buildMenu` only builds
- * an item when the mark is in the schema, so removing the mark removes the
- * button, the shortcut and the ability to produce content that cannot be saved.
+ * keyboard shortcuts go with them: `buildMenu` only builds an item when the mark
+ * is in the schema, so removing the mark removes the button, the shortcut, and
+ * the ability to produce content that cannot be saved.
  */
 const unsupportedByMarkdown = [
-  'underline',
   'highlight',
   'superscript',
   'subscript',
