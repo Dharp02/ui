@@ -114,6 +114,14 @@ const unsupportedByMarkdown = [
  * "Select parent node" is different: it works fine, but it is a ProseMirror
  * authoring-internals affordance — it means nothing to someone writing a post,
  * and there is no way to explain it in a tooltip that would.
+ *
+ * "Insert image" is the costliest of the three. Its file picker runs
+ * `FileReader.readAsDataURL` and embeds the result in the document, so a 4 MB
+ * screenshot becomes ~5.8 MB of markdown: it never reaches the host's media
+ * store, and the post is likely to be refused outright by any request-body
+ * limit. Hosts that upload attachments properly (a Photo button, or paste and
+ * drop interception) should offer the image through that path instead; there is
+ * no seam here for the menu item to reach it.
  */
 const removedMenuItems = [
   'Align left',
@@ -121,6 +129,7 @@ const removedMenuItems = [
   'Align right',
   'Justify',
   'Select parent node',
+  'Insert image',
 ] as const;
 
 /**
