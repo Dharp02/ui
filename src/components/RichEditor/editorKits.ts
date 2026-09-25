@@ -99,11 +99,7 @@ const unsafeExtensions = ['autocomplete', 'hover', 'dev_toolkit'] as const;
  * is in the schema, so removing the mark removes the button, the shortcut, and
  * the ability to produce content that cannot be saved.
  */
-const unsupportedByMarkdown = [
-  'highlight',
-  'superscript',
-  'subscript',
-] as const;
+const unsupportedByMarkdown = [] as const;
 
 /**
  * Toolbar items removed by title rather than by dropping their extension.
