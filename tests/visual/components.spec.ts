@@ -681,7 +681,23 @@ test.describe('Visual Regression Tests - Templates', () => {
     ['social-proof-statssection--cards', 'template-stats-cards.png'],
     ['social-proof-testimonialsection--cards', 'template-testimonials.png'],
     // Pinned at the first frame by `animations: 'disabled'`: track, mask and duplicate copy.
-    ['social-proof-logocloudsection--marquee', 'template-logocloud-marquee.png'],
+    [
+      'social-proof-logocloudsection--marquee',
+      'template-logocloud-marquee.png',
+    ],
+    ['social-proof-statssection--ruled', 'template-stats-ruled.png'],
+    ['reports-benchmarktablesection--default', 'report-benchmark-table.png'],
+    ['reports-rankedlistsection--side-by-side', 'report-ranked-lists.png'],
+    [
+      'reports-tilecartogramsection--united-states',
+      'report-tile-cartogram.png',
+    ],
+    ['reports-metriclistsection--maturing', 'report-metric-list.png'],
+    [
+      'reports-reportmethodology--default',
+      'report-methodology-dark.png',
+      { globals: 'theme:dark' },
+    ],
   ];
 
   for (const [storyId, file, options] of sections) {
@@ -702,6 +718,51 @@ test.describe('Visual Regression Tests - Templates', () => {
     await expect(page).toHaveScreenshot('template-campaign-mobile.png', {
       animations: 'disabled',
       fullPage: true,
+    });
+  });
+});
+
+test.describe('Visual Regression Tests - Deck', () => {
+  // Reduced motion shows every reveal and skips the count-up, so frames are stable.
+  test.beforeEach(async ({ page }) => {
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+  });
+
+  const decks: [string, string, { globals?: string; mobile?: boolean }?][] = [
+    ['presentations-deck--all-slide-types', 'deck-cover.png'],
+    [
+      'presentations-deck--all-slide-types',
+      'deck-cover-eh.png',
+      { globals: 'brand:enterprise-health' },
+    ],
+    ['presentations-deck--light-tone', 'deck-light-metrics.png'],
+    [
+      'presentations-deck--all-slide-types',
+      'deck-cover-mobile.png',
+      { mobile: true },
+    ],
+  ];
+
+  for (const [storyId, file, options] of decks) {
+    test(`Deck - ${file}`, async ({ page }) => {
+      if (options?.mobile)
+        await page.setViewportSize({ width: 390, height: 844 });
+      await gotoStory(page, storyId, options);
+      await expect(page).toHaveScreenshot(file, { animations: 'disabled' });
+    });
+  }
+
+  test('Deck - Chart slide', async ({ page }) => {
+    await gotoStory(page, 'presentations-deck--all-slide-types');
+    await page
+      .locator('[data-slot="deck-slide"][data-index="3"]')
+      .scrollIntoViewIfNeeded();
+    await expect(page.locator('[data-index="3"]')).toHaveAttribute(
+      'data-seen',
+      ''
+    );
+    await expect(page).toHaveScreenshot('deck-chart.png', {
+      animations: 'disabled',
     });
   });
 });

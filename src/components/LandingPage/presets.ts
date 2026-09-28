@@ -97,7 +97,13 @@ export const landingPresets = {
       'A published data report: headline findings, the figures with their provenance, how they were built, and who wrote it.',
     sequence: [
       'hero',
+      'stats',
       'report-legend',
+      'features',
+      'benchmark-table',
+      'tile-cartogram',
+      'ranked-list',
+      'metric-list',
       'methodology',
       'byline',
       'link-groups',
@@ -230,9 +236,12 @@ export function validateLandingPage(
       });
 
   let last = -1;
+  const placed = new Set<LandingBlockType>();
   blocks.forEach((b, index) => {
     const rank = spec.sequence.indexOf(b.type);
-    if (rank === -1) return;
+    // Only a type's first block is placed; repeats (e.g. a summary and an outlook grid) may recur.
+    if (rank === -1 || placed.has(b.type)) return;
+    placed.add(b.type);
     if (rank < last)
       issues.push({
         severity: 'warning',

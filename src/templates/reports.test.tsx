@@ -191,10 +191,22 @@ describe('benchmark-report preset', () => {
     render(<LandingPage blocks={benchmarkReportBlocks} />);
     expect(screen.getAllByRole('heading', { level: 1 })).toHaveLength(1);
     expect(
-      validateLandingPage(benchmarkReportBlocks, 'benchmark-report').filter(
-        (i) => i.severity === 'error'
-      )
+      validateLandingPage(benchmarkReportBlocks, 'benchmark-report')
     ).toEqual([]);
+  });
+
+  it('warns when report figures come after the methodology', () => {
+    const [hero, , , , table] = benchmarkReportBlocks;
+    const methodology = benchmarkReportBlocks.find(
+      (b) => b.type === 'methodology'
+    )!;
+    const issues = validateLandingPage(
+      [hero, methodology, table],
+      'benchmark-report'
+    );
+    expect(issues.map((i) => i.message)).toContain(
+      '"benchmark-table" is out of the Benchmark report preset\'s recommended order.'
+    );
   });
 
   it('warns about benchmark values for unknown columns', () => {
