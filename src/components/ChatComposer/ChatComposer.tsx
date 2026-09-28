@@ -416,6 +416,18 @@ export const ChatComposer = React.forwardRef<
     }
   }, [replyToId]);
 
+  // Host-opt-in autofocus, applied on the client only after confirming a
+  // fine pointer. A rendered `autofocus` attribute would ship in SSR markup
+  // (where the touch check can't run) and pop the on-screen keyboard over
+  // the page the user just navigated to.
+  React.useEffect(() => {
+    if (!autoFocus) return;
+    if (window.matchMedia?.(TOUCH_DEVICE_QUERY).matches) return;
+    textareaRef.current?.focus();
+    // Mount-only, matching native `autofocus` semantics.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const hasText = value.trim().length > 0;
   const hasContent = hasText || attachments.length > 0;
   const isOverLimit = maxLength !== undefined && value.length > maxLength;
@@ -822,11 +834,6 @@ export const ChatComposer = React.forwardRef<
             }}
             placeholder={placeholder}
             disabled={disabled}
-            // Host-opt-in only; off by default. Skipped on touch devices,
-            // where focusing pops the on-screen keyboard over the page the
-            // user just navigated to.
-            // eslint-disable-next-line jsx-a11y/no-autofocus
-            autoFocus={autoFocus && !isTouchDevice}
             rows={1}
             aria-label={inputLabel}
             {...mention.inputProps}

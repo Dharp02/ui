@@ -16,7 +16,7 @@ export interface KeyboardInsetState {
 }
 
 export interface UseKeyboardInsetOptions {
-  /** Stop tracking (and clear the CSS variables). @default true */
+  /** Track the keyboard; `false` stops tracking and clears the CSS variables. @default true */
   enabled?: boolean;
 }
 

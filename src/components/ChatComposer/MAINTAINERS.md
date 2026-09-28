@@ -76,7 +76,9 @@ navigation → Enter-to-send. Don't reorder.
   (buttons, links, inputs, menus). New interactive children must match it or
   a tap on them will be swallowed.
 - **`autoFocus` is ignored on touch** (it would pop the keyboard on every
-  navigation). `replyTo` still focuses on touch — it follows a user tap.
+  navigation). It is applied by a mount effect after a client-side pointer
+  check, never as an `autofocus` attribute, so SSR markup can't trigger it.
+  `replyTo` still focuses on touch — it follows a user tap.
 - **Keyboard inset is the host's job.** The composer doesn't measure the
   keyboard; hosts mount `useKeyboardInset()` and size their shell from its
   CSS variables (see the *Mobile Keyboard Shell* story).
