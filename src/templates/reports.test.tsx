@@ -117,6 +117,17 @@ describe('MetricListSection', () => {
     expect(screen.getByText('Live data')).toBeInTheDocument();
     expect(screen.getByText('2.4 days')).toBeInTheDocument();
   });
+
+  it('translates the section badge through statusLabels', () => {
+    render(
+      <MetricListSection
+        title="Ops"
+        metrics={maturingMetrics}
+        statusLabels={{ maturing: 'Données en cours' }}
+      />
+    );
+    expect(screen.getByText('Données en cours')).toBeInTheDocument();
+  });
 });
 
 describe('ReportMethodology and ReportByline', () => {

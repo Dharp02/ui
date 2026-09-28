@@ -15,8 +15,8 @@ Covers `src/components/PointMap/` and the `@mieweb/ui/maps` entry (`src/maps.ts`
   every await (the Leaflet import and the `outlineUrl` fetch); cleanup calls
   `map.remove()`. StrictMode double-mounts and data changes must never leave a
   second map on the same element.
-- **The effect re-runs on data, not view.** `points`, `tileUrl`, `outlineUrl`,
-  `sizeBy` and `showValues` rebuild the map; `center`/`zoom` only seed it.
+- **The effect re-runs on data, not view.** `points`, `tileUrl`, `attribution`,
+  `outlineUrl`, `sizeBy` and `showValues` rebuild the map; `center`/`zoom` only seed it.
 - **Colours come from tokens read at runtime** (`--mieweb-primary-500`,
   `--mieweb-border`) because Leaflet paints SVG/canvas outside Tailwind.
 - **The text list is the accessible data.** The map is a labelled `role="group"`

@@ -7,6 +7,7 @@ import {
   mutedTextClass,
 } from '../../templates/Section';
 import type { SectionBaseProps } from '../../templates/types';
+import type { MetricStatusLabels } from '../MetricStatusBadge/MetricStatusBadge';
 
 export interface MetricDefinition {
   label: string;
@@ -31,6 +32,8 @@ export interface MetricListSectionProps extends Omit<
   takeaway?: string;
   /** Mark measured values as good news with a success rule. */
   positive?: boolean;
+  /** Translated text for the derived live / maturing badge. */
+  statusLabels?: MetricStatusLabels;
   labels?: MetricListSectionLabels;
 }
 

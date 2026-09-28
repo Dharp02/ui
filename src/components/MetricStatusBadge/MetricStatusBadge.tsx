@@ -4,6 +4,9 @@ import { cn } from '../../utils/cn';
 /** Where a figure comes from: measured, estimated, or still being instrumented. */
 export type MetricStatus = 'live' | 'modeled' | 'maturing';
 
+/** Translated badge text, per status. */
+export type MetricStatusLabels = Partial<Record<MetricStatus, string>>;
+
 export const defaultMetricStatusLabels: Record<MetricStatus, string> = {
   live: 'Live data',
   modeled: 'Modeled',

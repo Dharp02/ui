@@ -9,7 +9,10 @@ import {
   mutedTextClass,
 } from '../../templates/Section';
 import type { SectionBaseProps } from '../../templates/types';
-import type { MetricStatus } from '../MetricStatusBadge/MetricStatusBadge';
+import type {
+  MetricStatus,
+  MetricStatusLabels,
+} from '../MetricStatusBadge/MetricStatusBadge';
 
 export interface RankedItem {
   label: string;
@@ -39,6 +42,8 @@ export interface RankedListSectionProps extends Omit<
   layout?: 'stacked' | 'inline';
   bar?: 'primary' | 'accent' | 'success';
   status?: MetricStatus;
+  /** Translated text for the `status` badge. */
+  statusLabels?: MetricStatusLabels;
   /** BCP 47 locale for number formatting. */
   locale?: string;
 }

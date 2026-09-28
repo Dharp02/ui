@@ -7,7 +7,10 @@ import {
   mutedTextClass,
 } from '../../templates/Section';
 import type { SectionBaseProps } from '../../templates/types';
-import type { MetricStatus } from '../MetricStatusBadge/MetricStatusBadge';
+import type {
+  MetricStatus,
+  MetricStatusLabels,
+} from '../MetricStatusBadge/MetricStatusBadge';
 
 export interface StatItem {
   /** Numbers are locale-formatted; strings render as written. */
@@ -28,6 +31,8 @@ export interface StatsSectionProps extends SectionBaseProps {
   locale?: string;
   /** Provenance badge under the heading. */
   status?: MetricStatus;
+  /** Translated text for the `status` badge. */
+  statusLabels?: MetricStatusLabels;
 }
 
 const columnClass = [

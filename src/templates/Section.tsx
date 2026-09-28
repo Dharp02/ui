@@ -4,6 +4,7 @@ import { buttonVariants } from '../components/Button/button-variants';
 import {
   MetricStatusBadge,
   type MetricStatus,
+  type MetricStatusLabels,
 } from '../components/MetricStatusBadge/MetricStatusBadge';
 import { cn } from '../utils/cn';
 import { TemplateIcon, type TemplateIconRegistry } from './icons';
@@ -180,6 +181,8 @@ export interface SectionShellProps extends Omit<
   spacing?: 'default' | 'compact';
   /** Provenance badge under the heading, for sections that report figures. */
   status?: MetricStatus;
+  /** Translated text for the `status` badge. */
+  statusLabels?: MetricStatusLabels;
   /** Accepted so sections can forward their props; the shell renders no links or images. */
   components?: TemplateComponents;
 }
@@ -199,6 +202,7 @@ export const SectionShell = React.forwardRef<HTMLElement, SectionShellProps>(
       width = 'wide',
       spacing = 'default',
       status,
+      statusLabels,
       className,
       children,
       components,
@@ -238,7 +242,11 @@ export const SectionShell = React.forwardRef<HTMLElement, SectionShellProps>(
                 align === 'center' && 'justify-center'
               )}
             >
-              <MetricStatusBadge status={status} onDark={tone === 'brand'} />
+              <MetricStatusBadge
+                status={status}
+                label={statusLabels?.[status]}
+                onDark={tone === 'brand'}
+              />
             </div>
           )}
           {children}

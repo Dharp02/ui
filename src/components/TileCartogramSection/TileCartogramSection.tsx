@@ -7,7 +7,10 @@ import {
   mutedTextClass,
 } from '../../templates/Section';
 import type { SectionBaseProps } from '../../templates/types';
-import type { MetricStatus } from '../MetricStatusBadge/MetricStatusBadge';
+import type {
+  MetricStatus,
+  MetricStatusLabels,
+} from '../MetricStatusBadge/MetricStatusBadge';
 import { usStateTiles, type TileBucket, type TilePosition } from './tiles';
 
 export interface TileValue {
@@ -34,6 +37,8 @@ export interface TileCartogramSectionProps extends Omit<
   mapTitle?: string;
   mapDescription?: string;
   status?: MetricStatus;
+  /** Translated text for the `status` badge. */
+  statusLabels?: MetricStatusLabels;
 }
 
 // 0 is "no data"; 1–4 step up the primary scale.

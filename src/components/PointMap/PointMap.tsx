@@ -104,8 +104,8 @@ export const PointMap = React.forwardRef<HTMLDivElement, PointMapProps>(
                 })
                 .addTo(map);
           }
+          if (cancelled || !map) return;
           for (const p of points) {
-            if (!map) break;
             const radius =
               sizeBy === 'value' && p.value != null
                 ? 6 + (p.value / max) * 22
@@ -142,7 +142,7 @@ export const PointMap = React.forwardRef<HTMLDivElement, PointMapProps>(
       };
       // Rebuild when the data changes; the view props only seed the map.
       // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [points, tileUrl, outlineUrl, sizeBy, showValues]);
+    }, [points, tileUrl, attribution, outlineUrl, sizeBy, showValues]);
 
     return (
       <div
