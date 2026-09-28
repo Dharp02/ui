@@ -1,6 +1,5 @@
 import * as React from 'react';
 import { cn } from '../../utils/cn';
-import { useMediaQuery } from '../../hooks/useMediaQuery';
 import { Dropdown, DropdownItem, DropdownSeparator } from '../Dropdown';
 import {
   ComposerModelSelector,
@@ -307,6 +306,18 @@ const MAX_INPUT_HEIGHT = 160;
 /** Touch-first devices (phones, tablets without a trackpad). */
 const TOUCH_DEVICE_QUERY = '(hover: none) and (pointer: coarse)';
 
+// Touch detection as an external store: during hydration React renders the
+// server snapshot (fine pointer) and then re-renders with the client value,
+// so SSR-emitted attributes like `enterkeyhint` never go stale.
+const subscribeTouchDevice = (onChange: () => void) => {
+  const query = window.matchMedia?.(TOUCH_DEVICE_QUERY);
+  query?.addEventListener('change', onChange);
+  return () => query?.removeEventListener('change', onChange);
+};
+const getTouchDeviceSnapshot = () =>
+  window.matchMedia?.(TOUCH_DEVICE_QUERY).matches ?? false;
+const getServerTouchDeviceSnapshot = () => false;
+
 /**
  * Card descendants that keep their own pointer behavior (and text that
  * stays selectable) instead of forwarding a tap to the textarea.
@@ -409,7 +420,11 @@ export const ChatComposer = React.forwardRef<
   const [addMenuOpen, setAddMenuOpen] = React.useState(false);
   const [agentMenuOpen, setAgentMenuOpen] = React.useState(false);
 
-  const isTouchDevice = useMediaQuery(TOUCH_DEVICE_QUERY);
+  const isTouchDevice = React.useSyncExternalStore(
+    subscribeTouchDevice,
+    getTouchDeviceSnapshot,
+    getServerTouchDeviceSnapshot
+  );
   const sendsOnEnter =
     submitOnEnter === 'always' ||
     (submitOnEnter === 'desktop' && !isTouchDevice);
