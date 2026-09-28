@@ -663,9 +663,22 @@ export const miewebUISafelist = [
   'invisible',
   'transition-opacity',
   'bottom-2',
-  'self-end',
+  'mt-auto',
   // Dropdown submenu flyout — preferred width clamped to the viewport.
   'min-w-[min(10rem,calc(100vw-1rem))]',
+  // SuperChat jump-to-bottom (floating scroll-anchoring affordance) and the
+  // thread viewport wrapper / content sizer it positions against.
+  'bottom-3',
+  'z-20',
+  'bg-white',
+  'p-2',
+  'shadow-lg',
+  'space-y-4',
+  'hover:bg-neutral-50',
+  'hover:text-neutral-800',
+  'focus-visible:ring-primary-500',
+  'dark:hover:bg-neutral-700',
+  'dark:hover:text-neutral-100',
   // SuperChat mermaid diagram wrapper — arbitrary variants applied to the
   // injected <svg> so the diagram sizes naturally instead of collapsing.
   '[&_svg]:h-auto',
@@ -928,6 +941,16 @@ export const miewebUISafelist = [
   'border-dashed',
   'border-2',
   'bg-primary-500/10',
+  // Modules/Views — accentClasses resolves an Accent token name to a wash, a
+  // border and a solid marker, so none of them appear literally in a
+  // consumer's own source. The wash and marker classes are listed elsewhere in
+  // this file; these borders and the neutral marker are not.
+  'border-primary-500/40',
+  'border-success/40',
+  'border-warning/40',
+  'border-destructive/40',
+  'border-info/40',
+  'bg-muted-foreground',
   'gap-0.5',
   'p-0.5',
   // Floating labels (labelVariant="floating" on Input / Textarea / DateInput /

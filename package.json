@@ -241,7 +241,8 @@
     "prepare": "npm run build:datavis && npm run build:css && npm run copy:brand-css && npm run copy:style-css && npm run copy:markdown-css && npm run copy:kerebron-css",
     "dev": "tsup --watch",
     "prebuild": "npm run build:esheet && npm run build:datavis",
-    "build": "node --max-old-space-size=8192 ./node_modules/tsup/dist/cli-default.js && npm run build:css && npm run copy:brand-css && npm run copy:style-css && npm run copy:markdown-css && npm run copy:kerebron-css",
+    "build": "node --max-old-space-size=8192 ./node_modules/tsup/dist/cli-default.js && npm run build:dts && npm run build:css && npm run copy:brand-css && npm run copy:style-css && npm run copy:markdown-css && npm run copy:kerebron-css",
+    "build:dts": "node scripts/build-dts.mjs",
     "build:esheet": "if [ ! -f packages/esheet/packages/core/dist/index.d.ts ] || [ ! -f packages/esheet/packages/renderer/src/index.output.css ] || [ ! -f packages/esheet/packages/builder/src/index.output.css ]; then cd packages/esheet && pnpm install --frozen-lockfile && pnpm --filter '@esheet/builder...' --filter '@esheet/renderer...' build; fi",
     "build:datavis": "node scripts/build-datavis.mjs",
     "build:css": "mkdir -p dist && npx @tailwindcss/cli -i ./src/styles/base.css -o ./dist/styles.css --minify",
@@ -276,6 +277,7 @@
   "peerDependencies": {
     "@kerebron/editor": ">=0.8.6",
     "@kerebron/editor-kits": ">=0.8.6",
+    "@kerebron/extension-basic-editor": ">=0.8.6",
     "@kerebron/extension-yjs": ">=0.8.6",
     "@kerebron/wasm": ">=0.8.6",
     "@mieweb/q": "1.0.0",
@@ -314,6 +316,9 @@
       "optional": true
     },
     "@kerebron/editor-kits": {
+      "optional": true
+    },
+    "@kerebron/extension-basic-editor": {
       "optional": true
     },
     "@kerebron/extension-yjs": {
@@ -409,6 +414,7 @@
     "@eslint/js": "^9.39.3",
     "@kerebron/editor": "^0.8.6",
     "@kerebron/editor-kits": "^0.8.6",
+    "@kerebron/extension-basic-editor": "^0.8.6",
     "@kerebron/extension-yjs": "^0.8.6",
     "@kerebron/wasm": "^0.8.6",
     "@mieweb/datavis": "link:./packages/datavis",

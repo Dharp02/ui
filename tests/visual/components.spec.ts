@@ -286,6 +286,11 @@ test.describe('Visual Regression Tests - Core Components', () => {
     // MessageThread now embeds the shared ChatComposer in its border-t frame
     // (composer unification #465). Message footers show wall-clock times, so
     // mask them to keep the snapshot deterministic.
+    // Story data timestamps messages relative to Date.now(); near midnight
+    // UTC the "N hours ago" messages cross a day boundary and grow an extra
+    // Today/Yesterday separator, shifting the whole thread (CI-only flake).
+    // Freeze the clock at midday so the separators are deterministic.
+    await page.clock.setFixedTime(new Date('2026-01-15T12:00:00'));
     await gotoStory(page, 'chat-messaging--full-thread');
     await page
       .locator("[data-slot='chat-composer-input']")
@@ -300,6 +305,11 @@ test.describe('Visual Regression Tests - Core Components', () => {
   }) => {
     // Dark-mode composer frame (border-t dark:border-neutral-700) around the
     // shared ChatComposer card.
+    // Story data timestamps messages relative to Date.now(); near midnight
+    // UTC the "N hours ago" messages cross a day boundary and grow an extra
+    // Today/Yesterday separator, shifting the whole thread (CI-only flake).
+    // Freeze the clock at midday so the separators are deterministic.
+    await page.clock.setFixedTime(new Date('2026-01-15T12:00:00'));
     await gotoStory(page, 'chat-messaging--full-thread', {
       globals: 'theme:dark',
     });
@@ -368,6 +378,42 @@ test.describe('Visual Regression Tests - Core Components', () => {
       .locator("[data-slot='chat-composer-input']")
       .waitFor({ state: 'visible' });
     await expect(page).toHaveScreenshot('ai-chat-playground-condensed.png');
+  });
+
+  test('AIMessage - Thinking active (streaming)', async ({ page }) => {
+    // Expanded violet "Thinking" pill with the reasoning text visible.
+    await gotoStory(page, 'chat-aimessage--thinking-active');
+    await expect(page).toHaveScreenshot('ai-message-thinking-active.png');
+  });
+
+  test('AIMessage - Thinking complete', async ({ page }) => {
+    // Collapsed "Thought" pill above the answer text.
+    await gotoStory(page, 'chat-aimessage--thinking-complete');
+    await expect(page).toHaveScreenshot('ai-message-thinking-complete.png');
+  });
+
+  test('AIMessage - Thinking auto-collapses when streaming finishes', async ({
+    page,
+  }) => {
+    // The story streams for ~3s, then completes: the pill must start
+    // expanded and auto-collapse on the transition (ThinkingBlock's
+    // autoCollapsed state driving CollapsiblePill's defaultOpen resync).
+    await gotoStory(page, 'chat-aimessage--thinking-auto-collapse');
+    const pill = page.getByRole('button', { name: /^thinking$/i });
+    await expect(pill).toHaveAttribute('aria-expanded', 'true');
+
+    const collapsed = page.getByRole('button', {
+      name: /^thought( for \d+s)?$/i,
+    });
+    await expect(collapsed).toHaveAttribute('aria-expanded', 'false', {
+      timeout: 10000,
+    });
+    // Settled collapsed state (collapse animation is 300ms; screenshot
+    // auto-disables animations). The elapsed label is timing-dependent
+    // ("Thought for 3s"), well inside the 5% diff tolerance.
+    await expect(page).toHaveScreenshot(
+      'ai-message-thinking-auto-collapse.png'
+    );
   });
 
   test('Avatar - Default', async ({ page }) => {
@@ -566,6 +612,89 @@ test.describe('Visual Regression Tests - EH Frontdoor Components', () => {
     // the detail card is deterministic.
     await gotoStory(page, 'showcase-radialexplorer--static');
     await expect(page).toHaveScreenshot('radialexplorer-static.png', {
+      animations: 'disabled',
+    });
+  });
+
+  // ---------------------------------------------------------------------------
+  // Views
+  //
+  // Every view pins "today" through the `now` prop and reads dates in an
+  // explicit `timeZone`, so these are stable on any agent clock. The accent
+  // wash / border / marker treatment is shared across the family, which is what
+  // makes it worth pinning: a token regression would land in all six at once.
+  // ---------------------------------------------------------------------------
+
+  test('ListView - Grouped by stage', async ({ page }) => {
+    await gotoStory(page, 'views-listview--grouped-by-stage');
+    await expect(page).toHaveScreenshot('listview-grouped.png', {
+      animations: 'disabled',
+    });
+  });
+
+  test('ListView - Condensed', async ({ page }) => {
+    // Density is CSS-only, keyed off data-slot, so this has to be driven by the
+    // `density` global — the Compact story only sets the component's own prop,
+    // which would leave the `body.condensed` rules in condensed-view.css
+    // inactive and let a regression in them pass.
+    await gotoStory(page, 'views-listview--grouped-by-stage', {
+      globals: 'density:condensed',
+    });
+    await expect(page).toHaveScreenshot('listview-condensed.png', {
+      animations: 'disabled',
+    });
+  });
+
+  test('BoardView - Default', async ({ page }) => {
+    // Cards at rest: no drag in flight, so the transform is identity.
+    await gotoStory(page, 'views-boardview--default');
+    await expect(page).toHaveScreenshot('boardview-default.png', {
+      animations: 'disabled',
+    });
+  });
+
+  test('CalendarView - Multi-day spans', async ({ page }) => {
+    // The six-week grid plus bars that repeat across week rows — the layout
+    // most likely to break silently.
+    await gotoStory(page, 'views-calendarview--multi-day-spans');
+    await expect(page).toHaveScreenshot('calendarview-spans.png', {
+      animations: 'disabled',
+    });
+  });
+
+  test('GanttView - Swimlanes', async ({ page }) => {
+    await gotoStory(page, 'views-ganttview--swimlanes');
+    await expect(page).toHaveScreenshot('ganttview-swimlanes.png', {
+      animations: 'disabled',
+    });
+  });
+
+  test('ViewSwitcher - RTL', async ({ page }) => {
+    // Logical properties only: the pills must mirror without a physical-
+    // direction utility anywhere in the family.
+    await gotoStory(page, 'views-viewswitcher--rtl');
+    await expect(page).toHaveScreenshot('viewswitcher-rtl.png', {
+      animations: 'disabled',
+    });
+  });
+
+  test('ViewSet - With a detail pane', async ({ page }) => {
+    // The assembled page: toolbar, switcher, filters, the active view and the
+    // detail column. Deliberately not the Default story — that one sets a
+    // `storageKey`, so a previous run's view choice would be restored from
+    // localStorage and the snapshot would depend on test order.
+    await gotoStory(page, 'views-viewset--with-detail-pane');
+    await expect(page).toHaveScreenshot('viewset-detail.png', {
+      animations: 'disabled',
+    });
+  });
+
+  test('ViewSet - With a detail pane (mobile)', async ({ page }) => {
+    // Below lg the detail column drops under the view; below sm the switcher
+    // drops its labels to icons.
+    await page.setViewportSize({ width: 390, height: 844 });
+    await gotoStory(page, 'views-viewset--with-detail-pane');
+    await expect(page).toHaveScreenshot('viewset-detail-mobile.png', {
       animations: 'disabled',
     });
   });
