@@ -65,7 +65,10 @@ export type LandingBlock =
   | ({ type: 'testimonials' } & BlockData<TestimonialSectionProps>)
   | ({ type: 'resources' } & BlockData<ResourceCardsSectionProps>)
   | ({ type: 'faq' } & BlockData<FaqSectionProps>)
-  | ({ type: 'lead-form' } & BlockData<LeadFormSectionProps>)
+  | ({ type: 'lead-form' } & Omit<BlockData<LeadFormSectionProps>, 'action'> & {
+        /** A URL, or the name of a function in `LandingPage`'s `actions` map. */
+        action: string;
+      })
   | ({ type: 'cta' } & BlockData<CtaSectionProps>)
   | CustomBlock;
 
@@ -101,10 +104,12 @@ export interface LandingPageProps extends React.HTMLAttributes<HTMLDivElement> {
   /** Site-owned sections for `{ type: 'custom', component }` blocks. */
   // eslint-disable-next-line @typescript-eslint/no-explicit-any -- each custom section owns its props
   custom?: Record<string, React.ComponentType<any>>;
+  /** Form actions (e.g. Server Actions, React 19) that `lead-form` blocks name in `action`. */
+  actions?: Record<string, (formData: FormData) => void | Promise<void>>;
 }
 
 export const LandingPage = React.forwardRef<HTMLDivElement, LandingPageProps>(
-  ({ blocks, icons, components, custom, ...rest }, ref) => (
+  ({ blocks, icons, components, custom, actions, ...rest }, ref) => (
     <div ref={ref} data-slot="landing-page" {...rest}>
       {blocks.map((block, i) => {
         const key = block.id ?? `${block.type}-${i}`;
@@ -125,6 +130,9 @@ export const LandingPage = React.forwardRef<HTMLDivElement, LandingPageProps>(
             components={components}
             {...(takesIcons.has(type) ? { icons } : {})}
             {...props}
+            {...(block.type === 'lead-form'
+              ? { action: actions?.[block.action] ?? block.action }
+              : {})}
           />
         );
       })}

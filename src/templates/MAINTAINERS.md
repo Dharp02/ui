@@ -21,9 +21,14 @@ Covers `src/templates/` (shared internals), `src/templates.ts` (the
   `Button/Button`.** The component module carries client hooks; the variants
   module is hook-free.
 - **Block data is JSON.** `LandingBlock` strips DOM event handlers, `children`,
-  `components` and `icons` (`BlockData<P>` in `LandingPage.tsx`). Anything
-  non-serializable — site image/link components, icon registries, custom
-  section components — is a `LandingPage` prop, never a block field.
+  `components` and `icons` (`BlockData<P>` in `LandingPage.tsx`), and narrows a
+  `lead-form` block's `action` to a string resolved against `LandingPage`'s
+  `actions` map. Anything non-serializable — site image/link components, icon
+  registries, custom section components, Server Actions — is a `LandingPage`
+  prop, never a block field.
+- **React 18 and 19.** `fetchpriority` is spelled per React version
+  (`fetchPriorityHigh` in `Section.tsx`); function form actions are React 19
+  only and documented as such.
 - **Every section destructures `components`.** Sections that render no links
   or images still receive it from `LandingPage`; `SectionShell` swallows it for
   sections that spread `...rest` into the shell. A section that renders its own

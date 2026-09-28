@@ -95,6 +95,14 @@ export const landingPresets = {
 
 export type LandingPresetId = keyof typeof landingPresets;
 
+/** Block types whose items render `h3` titles under the section's `h2`. */
+const headedItems = new Set<LandingBlockType>([
+  'features',
+  'process',
+  'pricing',
+  'resources',
+]);
+
 export interface LandingPageIssue {
   severity: 'error' | 'warning';
   message: string;
@@ -150,6 +158,34 @@ export function validateLandingPage(
         message: `Duplicate id "${b.id}" (also block ${seen.get(b.id)}).`,
       });
     else seen.set(b.id, index);
+  });
+
+  blocks.forEach((b, index) => {
+    // Item titles are h3; without the section's h2 the outline skips a level.
+    if (headedItems.has(b.type) && !('title' in b && b.title))
+      issues.push({
+        severity: 'warning',
+        index,
+        message: `"${b.type}" has no title, so its h3 item titles skip the h2 level.`,
+      });
+    if (b.type !== 'comparison') return;
+    b.rows.forEach((row, r) => {
+      if (row.values.length !== b.columns.length)
+        issues.push({
+          severity: 'error',
+          index,
+          message: `Comparison row ${r} ("${row.feature}") has ${row.values.length} values for ${b.columns.length} columns.`,
+        });
+    });
+    if (
+      b.highlightColumn !== undefined &&
+      (b.highlightColumn < 0 || b.highlightColumn >= b.columns.length)
+    )
+      issues.push({
+        severity: 'warning',
+        index,
+        message: `highlightColumn ${b.highlightColumn} is outside the ${b.columns.length} comparison columns.`,
+      });
   });
 
   if (!preset) return issues;

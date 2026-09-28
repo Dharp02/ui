@@ -483,6 +483,7 @@ export const pricingBlocks: LandingBlock[] = [
   },
   {
     type: 'pricing',
+    title: 'Plans',
     plans,
     note: 'Service fees (exams, screens) are billed at clinic rates.',
   },

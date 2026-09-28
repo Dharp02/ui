@@ -44,7 +44,7 @@ An inline lead-capture section: heading and pitch beside (or above) a form of co
 
 ### Limitations
 
-- \`action\` is a URL (posted with \`method\`) or a React form action such as a Server Action. Validation beyond the browser's \`required\`/\`type\` checks, spam protection, success and error states belong to the app.
+- \`action\` is a URL (posted with \`method\`) or a React form action such as a Server Action — function actions need React 19; on React 18 pass a URL. In a \`LandingPage\` block, \`action\` is a string: a URL, or the name of a function in \`LandingPage\`'s \`actions\` map, so the block stays JSON. Validation beyond the browser's \`required\`/\`type\` checks, spam protection, success and error states belong to the app.
 - Every input has a \`<label>\`; required fields are marked with a visual asterisk and the \`required\` attribute.
 - Field labels and \`submitLabel\` default to English — pass translated \`fields\`.
 - The form card always uses the theme surface, so inputs stay legible on a \`brand\` band.`,

@@ -70,6 +70,24 @@ describe('LandingPage', () => {
     ).toBeInTheDocument();
   });
 
+  it('resolves a lead-form action name from the actions map, else posts to the URL', () => {
+    const requestPlan = async () => undefined;
+    const { container } = render(
+      <LandingPage
+        actions={{ requestPlan }}
+        blocks={[
+          { type: 'lead-form', id: 'a', title: 'A', action: 'requestPlan' },
+          { type: 'lead-form', id: 'b', title: 'B', action: '/api/lead' },
+        ]}
+      />
+    );
+    const [named, url] = container.querySelectorAll('form');
+    expect(named.getAttribute('action')).not.toBe('requestPlan');
+    expect(named).not.toHaveAttribute('method');
+    expect(url).toHaveAttribute('action', '/api/lead');
+    expect(url).toHaveAttribute('method', 'post');
+  });
+
   it('renders custom blocks from the map and skips unknown ones', () => {
     const blocks: LandingBlock[] = [
       { type: 'custom', component: 'roi', id: 'roi', props: { label: 'ROI' } },
@@ -149,6 +167,25 @@ describe('validateLandingPage', () => {
       issues.filter((i) => i.severity === 'error').map((i) => i.message)
     ).toEqual([expect.stringContaining('"cta"')]);
     expect(issues.find((i) => i.severity === 'warning')?.index).toBe(2);
+  });
+
+  it('flags mismatched comparison rows, a stray highlight and untitled item sections', () => {
+    const issues = validateLandingPage([
+      hero,
+      {
+        type: 'comparison',
+        title: 'C',
+        columns: ['A', 'B'],
+        rows: [{ feature: 'f', values: [true] }],
+        highlightColumn: 2,
+      },
+      { type: 'features', features: [] },
+    ]);
+    expect(issues.map((i) => [i.severity, i.index])).toEqual([
+      ['error', 1],
+      ['warning', 1],
+      ['warning', 2],
+    ]);
   });
 
   it('accepts a custom preset object', () => {

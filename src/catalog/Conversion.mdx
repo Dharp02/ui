@@ -21,6 +21,8 @@ import { Meta } from '@storybook/addon-docs/blocks';
 
 - A page usually opens with `HeroSection` and closes with `CtaSection`, both pointing at the same
   destination.
-- `LeadFormSection` posts to a URL or a React form action (a Next.js Server Action works). Spam
+- `LeadFormSection` posts to a URL or a React form action (a Next.js Server Action works on React 19).
+  As a `LandingPage` block, `action` is a string — a URL or the name of a function in the page's
+  `actions` map — so page data stays JSON. Spam
   protection, validation beyond the browser's, and success/error states are the app's.
 - Buttons wrap their labels instead of overflowing, so translated copy stays inside the viewport.

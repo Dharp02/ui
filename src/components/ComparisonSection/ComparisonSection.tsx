@@ -132,9 +132,10 @@ export const ComparisonSection = React.forwardRef<
                   >
                     {row.feature}
                   </th>
-                  {row.values.map((value, i) => (
+                  {/* One cell per column, so a short or long `values` array can't skew the table. */}
+                  {columns.map((column, i) => (
                     <td
-                      key={i}
+                      key={column}
                       className={cn(
                         cellClass,
                         'text-center text-sm',
@@ -142,7 +143,7 @@ export const ComparisonSection = React.forwardRef<
                           'bg-primary-500/10 font-semibold'
                       )}
                     >
-                      {renderValue(value)}
+                      {renderValue(row.values[i] ?? '')}
                     </td>
                   ))}
                 </tr>

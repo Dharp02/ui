@@ -15,6 +15,7 @@ export interface LogoItem {
   /** Logo image; without it the name renders as a wordmark. */
   src?: string;
   href?: string;
+  trackingId?: string;
 }
 
 export interface LogoCloudSectionProps extends SectionBaseProps {
@@ -65,6 +66,7 @@ function Logo({
   return logo.href ? (
     <TemplateAnchor
       href={logo.href}
+      trackingId={logo.trackingId}
       components={components}
       tabIndex={hidden ? -1 : undefined}
       className="focus-visible:ring-ring inline-flex rounded focus-visible:ring-2 focus-visible:outline-none"

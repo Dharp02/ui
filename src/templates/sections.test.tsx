@@ -46,6 +46,13 @@ describe('HeroSection', () => {
     expect(within(trail).getAllByRole('link')).toHaveLength(1);
   });
 
+  it('loads the hero image eagerly at high priority', () => {
+    render(<HeroSection title="T" image={dashboardImage} />);
+    const img = screen.getByRole('img');
+    expect(img).toHaveAttribute('fetchpriority', 'high');
+    expect(img).not.toHaveAttribute('loading');
+  });
+
   it('uses the split layout only when there is an image', () => {
     const { container, rerender } = render(
       <HeroSection title="T" variant="split" />
@@ -91,6 +98,16 @@ describe('FaqSection', () => {
 });
 
 describe('ComparisonSection', () => {
+  it('renders one cell per column even when a row is short', () => {
+    const { container } = render(
+      <ComparisonSection
+        columns={['A', 'B', 'C']}
+        rows={[{ feature: 'Short', values: [true] }]}
+      />
+    );
+    expect(container.querySelectorAll('tbody td')).toHaveLength(3);
+  });
+
   it('labels boolean cells for screen readers and highlights a column', () => {
     render(
       <ComparisonSection
@@ -164,6 +181,18 @@ describe('LeadFormSection', () => {
 });
 
 describe('LogoCloudSection', () => {
+  it('tracks logo links', () => {
+    render(
+      <LogoCloudSection
+        logos={[{ name: 'Acme', href: '/acme', trackingId: 'logo-acme' }]}
+      />
+    );
+    expect(screen.getByRole('link', { name: 'Acme' })).toHaveAttribute(
+      'data-track',
+      'logo-acme'
+    );
+  });
+
   it('hides the marquee copy from assistive tech and the tab order', () => {
     const { container } = render(
       <LogoCloudSection

@@ -63,6 +63,13 @@ export function TemplateAnchor({
   return Link ? <Link {...all}>{children}</Link> : <a {...all}>{children}</a>;
 }
 
+// React 18 only passes the lowercase attribute through; React 19 wants camelCase.
+const fetchPriorityHigh = (
+  React.version.startsWith('18.')
+    ? { fetchpriority: 'high' }
+    : { fetchPriority: 'high' }
+) as React.ImgHTMLAttributes<HTMLImageElement>;
+
 /** An `<img>`, or the site's `components.Image`. */
 export function TemplateImg({
   components,
@@ -76,7 +83,7 @@ export function TemplateImg({
       {...image}
       alt={image.alt}
       loading={priority ? undefined : 'lazy'}
-      fetchPriority={priority ? 'high' : undefined}
+      {...(priority ? fetchPriorityHigh : {})}
       decoding="async"
     />
   );

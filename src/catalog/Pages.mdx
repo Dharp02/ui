@@ -48,8 +48,11 @@ export function RoiCalculatorSection({ preset }: { preset: string }) {
 
 ## Shared contract
 
-- **Headings.** The hero renders the page's only `h1`; every other section an `h2`; items inside
-  a section `h3`. Headings always set their own colour, so a host site's base heading styles never
+- **Headings.** The hero renders the page's only `h1`; a section's `title` is its `h2`. Card, step,
+  plan and resource titles are `h3` — give those sections a `title` so the outline never skips a
+  level (`validateLandingPage` warns). FAQ questions are `<summary>` text, stats are a `<dl>`,
+  comparison rows are `<th scope="row">` and testimonials are `<figure>`s, none of them headings.
+  Headings always set their own colour, so a host site's base heading styles never
   turn them dark-on-dark on a `brand` band.
 - **Tones.** `default`, `muted` and `brand`. Alternate `default` and `muted` down a page and save
   `brand` for the hero or closing call to action.
