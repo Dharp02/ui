@@ -7,6 +7,7 @@ import {
   mutedTextClass,
 } from '../../templates/Section';
 import type { SectionBaseProps } from '../../templates/types';
+import type { MetricStatus } from '../MetricStatusBadge/MetricStatusBadge';
 
 export interface StatItem {
   /** Numbers are locale-formatted; strings render as written. */
@@ -21,9 +22,12 @@ export interface StatItem {
 
 export interface StatsSectionProps extends SectionBaseProps {
   stats: StatItem[];
-  variant?: 'plain' | 'cards';
+  /** `ruled` sets an accent rule beside each figure — a report's key-findings band. */
+  variant?: 'plain' | 'cards' | 'ruled';
   /** BCP 47 locale for number formatting. */
   locale?: string;
+  /** Provenance badge under the heading. */
+  status?: MetricStatus;
 }
 
 const columnClass = [
@@ -63,13 +67,21 @@ export const StatsSection = React.forwardRef<HTMLElement, StatsSectionProps>(
         >
           {stats.map((stat) => {
             const Trend = stat.trend === 'down' ? TrendingDown : TrendingUp;
+            const ruled = variant === 'ruled';
+            const shown =
+              typeof stat.value === 'number'
+                ? format.format(stat.value)
+                : stat.value;
+            const long =
+              `${stat.prefix ?? ''}${shown}${stat.suffix ?? ''}`.length > 6;
             return (
               <div
                 key={stat.label}
                 className={cn(
                   'flex flex-col-reverse gap-2',
-                  align === 'center' && 'items-center text-center',
-                  variant === 'cards' && cn('rounded-2xl p-6', cardClass(tone))
+                  align === 'center' && !ruled && 'items-center text-center',
+                  variant === 'cards' && cn('rounded-2xl p-6', cardClass(tone)),
+                  ruled && 'border-accent/70 border-s-2 ps-5'
                 )}
               >
                 <dt>
@@ -84,7 +96,10 @@ export const StatsSection = React.forwardRef<HTMLElement, StatsSectionProps>(
                 </dt>
                 <dd
                   className={cn(
-                    'flex items-center gap-2 text-4xl font-bold tracking-tight tabular-nums sm:text-5xl',
+                    'flex items-center gap-2 font-bold tracking-tight tabular-nums',
+                    ruled && long
+                      ? 'text-2xl sm:text-3xl'
+                      : 'text-4xl sm:text-5xl',
                     tone === 'brand'
                       ? 'text-white'
                       : 'text-primary-800 dark:text-primary-300'
@@ -94,9 +109,7 @@ export const StatsSection = React.forwardRef<HTMLElement, StatsSectionProps>(
                     <Trend aria-hidden="true" className="size-7 shrink-0" />
                   )}
                   {stat.prefix}
-                  {typeof stat.value === 'number'
-                    ? format.format(stat.value)
-                    : stat.value}
+                  {shown}
                   {stat.suffix}
                 </dd>
               </div>

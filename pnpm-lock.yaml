@@ -93,16 +93,16 @@ importers:
         version: 0.0.5(@types/react@19.2.14)(immer@11.1.8)(react@19.2.4)(use-sync-external-store@1.6.0(react@19.2.4))
       '@esheet/builder':
         specifier: 0.0.5
-        version: 0.0.5(@kerebron/editor-kits@0.8.9(svelte@5.56.3(@typescript-eslint/types@8.56.1)))(@kerebron/editor@0.8.9)(@kerebron/extension-yjs@0.8.9)(@kerebron/wasm@0.8.9)(@mieweb/datavis@packages+datavis)(@types/react@19.2.14)(ag-grid-community@35.1.0)(ag-grid-react@35.1.0(react-dom@19.2.4(react@19.2.4))(react@19.2.4))(datavis-ace@4.1.0)(immer@11.1.8)(katex@0.17.0)(mermaid@11.15.0)(monaco-editor@0.55.1)(papaparse@5.5.3)(react-dom@19.2.4(react@19.2.4))(react-markdown@10.1.0(@types/react@19.2.14)(react@19.2.4))(rehype-highlight@7.0.2)(rehype-katex@7.0.1)(rehype-sanitize@6.0.0)(remark-gfm@4.0.1)(remark-math@6.0.0)(use-sync-external-store@1.6.0(react@19.2.4))(wavesurfer.js@7.12.1)(y-protocols@1.0.6(yjs@13.6.30))(yjs@13.6.30)
+        version: 0.0.5(@kerebron/editor-kits@0.8.9(svelte@5.56.3(@typescript-eslint/types@8.56.1)))(@kerebron/editor@0.8.9)(@kerebron/extension-yjs@0.8.9)(@kerebron/wasm@0.8.9)(@types/react@19.2.14)(ag-grid-community@35.1.0)(ag-grid-react@35.1.0(react-dom@19.2.4(react@19.2.4))(react@19.2.4))(datavis-ace@4.1.0)(immer@11.1.8)(katex@0.17.0)(mermaid@11.15.0)(monaco-editor@0.55.1)(papaparse@5.5.3)(react-dom@19.2.4(react@19.2.4))(react-markdown@10.1.0(@types/react@19.2.14)(react@19.2.4))(rehype-highlight@7.0.2)(rehype-katex@7.0.1)(rehype-sanitize@6.0.0)(remark-gfm@4.0.1)(remark-math@6.0.0)(use-sync-external-store@1.6.0(react@19.2.4))(wavesurfer.js@7.12.1)(y-protocols@1.0.6(yjs@13.6.30))(yjs@13.6.30)
       '@esheet/core':
         specifier: 0.0.5
         version: 0.0.5(@types/react@19.2.14)(immer@11.1.8)(react@19.2.4)(use-sync-external-store@1.6.0(react@19.2.4))
       '@esheet/fields':
         specifier: 0.0.5
-        version: 0.0.5(@kerebron/editor-kits@0.8.9(svelte@5.56.3(@typescript-eslint/types@8.56.1)))(@kerebron/editor@0.8.9)(@kerebron/extension-yjs@0.8.9)(@kerebron/wasm@0.8.9)(@mieweb/datavis@packages+datavis)(@types/react@19.2.14)(ag-grid-community@35.1.0)(ag-grid-react@35.1.0(react-dom@19.2.4(react@19.2.4))(react@19.2.4))(datavis-ace@4.1.0)(immer@11.1.8)(js-yaml@4.1.1)(katex@0.17.0)(mermaid@11.15.0)(papaparse@5.5.3)(react-markdown@10.1.0(@types/react@19.2.14)(react@19.2.4))(rehype-highlight@7.0.2)(rehype-katex@7.0.1)(rehype-sanitize@6.0.0)(remark-gfm@4.0.1)(remark-math@6.0.0)(use-sync-external-store@1.6.0(react@19.2.4))(wavesurfer.js@7.12.1)(y-protocols@1.0.6(yjs@13.6.30))(yjs@13.6.30)
+        version: 0.0.5(@kerebron/editor-kits@0.8.9(svelte@5.56.3(@typescript-eslint/types@8.56.1)))(@kerebron/editor@0.8.9)(@kerebron/extension-yjs@0.8.9)(@kerebron/wasm@0.8.9)(@types/react@19.2.14)(ag-grid-community@35.1.0)(ag-grid-react@35.1.0(react-dom@19.2.4(react@19.2.4))(react@19.2.4))(datavis-ace@4.1.0)(immer@11.1.8)(js-yaml@4.1.1)(katex@0.17.0)(mermaid@11.15.0)(papaparse@5.5.3)(react-markdown@10.1.0(@types/react@19.2.14)(react@19.2.4))(rehype-highlight@7.0.2)(rehype-katex@7.0.1)(rehype-sanitize@6.0.0)(remark-gfm@4.0.1)(remark-math@6.0.0)(use-sync-external-store@1.6.0(react@19.2.4))(wavesurfer.js@7.12.1)(y-protocols@1.0.6(yjs@13.6.30))(yjs@13.6.30)
       '@esheet/renderer':
         specifier: 0.0.5
-        version: 0.0.5(@kerebron/editor-kits@0.8.9(svelte@5.56.3(@typescript-eslint/types@8.56.1)))(@kerebron/editor@0.8.9)(@kerebron/extension-yjs@0.8.9)(@kerebron/wasm@0.8.9)(@mieweb/datavis@packages+datavis)(@types/react@19.2.14)(ag-grid-community@35.1.0)(ag-grid-react@35.1.0(react-dom@19.2.4(react@19.2.4))(react@19.2.4))(datavis-ace@4.1.0)(immer@11.1.8)(katex@0.17.0)(mermaid@11.15.0)(papaparse@5.5.3)(react-markdown@10.1.0(@types/react@19.2.14)(react@19.2.4))(react@19.2.4)(rehype-highlight@7.0.2)(rehype-katex@7.0.1)(rehype-sanitize@6.0.0)(remark-gfm@4.0.1)(remark-math@6.0.0)(use-sync-external-store@1.6.0(react@19.2.4))(wavesurfer.js@7.12.1)(y-protocols@1.0.6(yjs@13.6.30))(yjs@13.6.30)
+        version: 0.0.5(@kerebron/editor-kits@0.8.9(svelte@5.56.3(@typescript-eslint/types@8.56.1)))(@kerebron/editor@0.8.9)(@kerebron/extension-yjs@0.8.9)(@kerebron/wasm@0.8.9)(@types/react@19.2.14)(ag-grid-community@35.1.0)(ag-grid-react@35.1.0(react-dom@19.2.4(react@19.2.4))(react@19.2.4))(datavis-ace@4.1.0)(immer@11.1.8)(katex@0.17.0)(mermaid@11.15.0)(papaparse@5.5.3)(react-markdown@10.1.0(@types/react@19.2.14)(react@19.2.4))(react@19.2.4)(rehype-highlight@7.0.2)(rehype-katex@7.0.1)(rehype-sanitize@6.0.0)(remark-gfm@4.0.1)(remark-math@6.0.0)(use-sync-external-store@1.6.0(react@19.2.4))(wavesurfer.js@7.12.1)(y-protocols@1.0.6(yjs@13.6.30))(yjs@13.6.30)
       '@eslint/js':
         specifier: ^9.39.3
         version: 9.39.3
@@ -172,6 +172,9 @@ importers:
       '@types/js-yaml':
         specifier: ^4.0.9
         version: 4.0.9
+      '@types/leaflet':
+        specifier: ^1.9.22
+        version: 1.9.22
       '@types/luxon':
         specifier: ^3.7.1
         version: 3.7.1
@@ -274,6 +277,9 @@ importers:
       katex:
         specifier: ^0.17.0
         version: 0.17.0
+      leaflet:
+        specifier: ^1.9.4
+        version: 1.9.4
       mermaid:
         specifier: ^11.15.0
         version: 11.15.0
@@ -2051,6 +2057,9 @@ packages:
 
   '@types/katex@0.16.8':
     resolution: {integrity: sha512-trgaNyfU+Xh2Tc+ABIb44a5AYUpicB3uwirOioeOkNPPbmgRNtcWyDeeFRzjPZENO9Vq8gvVqfhaaXWLlevVwg==}
+
+  '@types/leaflet@1.9.22':
+    resolution: {integrity: sha512-h3lhECYEKDasG7LFHu+GiHqAvsgLuQvlJvVZzJDGONo3sEL+wUOqSFLnwkZlK0qVxnxbuGFW8iBlJNYs5wgndA==}
 
   '@types/luxon@3.7.1':
     resolution: {integrity: sha512-H3iskjFIAn5SlJU7OuxUmTEpebK6TKB8rxZShDslBMZJ5u9S//KM1sbdAisiSrqwLQncVjnpi2OK2J51h+4lsg==}
@@ -4330,6 +4339,9 @@ packages:
 
   layout-base@2.0.1:
     resolution: {integrity: sha512-dp3s92+uNI1hWIpPGH3jK2kxE2lMjdXdr+DH8ynZHpd6PUlH6x6cbuXnoMmiNumznqaNO31xu9e79F0uuZ0JFg==}
+
+  leaflet@1.9.4:
+    resolution: {integrity: sha512-nxS1ynzJOmOlHp+iL3FyWqK89GtNL8U8rvlMOsQdTTssxZwCXh8N2NB3GDQOL+YR3XnWyZAxwQixURb+FA74PA==}
 
   leven@3.1.0:
     resolution: {integrity: sha512-qsda+H8jTaUaN/x5vzW2rzc+8Rw4TAQ/4KjB46IwK5VH+IlVeeeje/EoZRpiXvIqjFgK84QffqPztGI3VBLG1A==}
@@ -6702,12 +6714,12 @@ snapshots:
       - react
       - use-sync-external-store
 
-  '@esheet/builder@0.0.5(@kerebron/editor-kits@0.8.9(svelte@5.56.3(@typescript-eslint/types@8.56.1)))(@kerebron/editor@0.8.9)(@kerebron/extension-yjs@0.8.9)(@kerebron/wasm@0.8.9)(@mieweb/datavis@packages+datavis)(@types/react@19.2.14)(ag-grid-community@35.1.0)(ag-grid-react@35.1.0(react-dom@19.2.4(react@19.2.4))(react@19.2.4))(datavis-ace@4.1.0)(immer@11.1.8)(katex@0.17.0)(mermaid@11.15.0)(monaco-editor@0.55.1)(papaparse@5.5.3)(react-dom@19.2.4(react@19.2.4))(react-markdown@10.1.0(@types/react@19.2.14)(react@19.2.4))(rehype-highlight@7.0.2)(rehype-katex@7.0.1)(rehype-sanitize@6.0.0)(remark-gfm@4.0.1)(remark-math@6.0.0)(use-sync-external-store@1.6.0(react@19.2.4))(wavesurfer.js@7.12.1)(y-protocols@1.0.6(yjs@13.6.30))(yjs@13.6.30)':
+  '@esheet/builder@0.0.5(@kerebron/editor-kits@0.8.9(svelte@5.56.3(@typescript-eslint/types@8.56.1)))(@kerebron/editor@0.8.9)(@kerebron/extension-yjs@0.8.9)(@kerebron/wasm@0.8.9)(@types/react@19.2.14)(ag-grid-community@35.1.0)(ag-grid-react@35.1.0(react-dom@19.2.4(react@19.2.4))(react@19.2.4))(datavis-ace@4.1.0)(immer@11.1.8)(katex@0.17.0)(mermaid@11.15.0)(monaco-editor@0.55.1)(papaparse@5.5.3)(react-dom@19.2.4(react@19.2.4))(react-markdown@10.1.0(@types/react@19.2.14)(react@19.2.4))(rehype-highlight@7.0.2)(rehype-katex@7.0.1)(rehype-sanitize@6.0.0)(remark-gfm@4.0.1)(remark-math@6.0.0)(use-sync-external-store@1.6.0(react@19.2.4))(wavesurfer.js@7.12.1)(y-protocols@1.0.6(yjs@13.6.30))(yjs@13.6.30)':
     dependencies:
       '@esheet/adapters': 0.0.5(@types/react@19.2.14)(immer@11.1.8)(react@19.2.4)(use-sync-external-store@1.6.0(react@19.2.4))
       '@esheet/core': 0.0.5(@types/react@19.2.14)(immer@11.1.8)(react@19.2.4)(use-sync-external-store@1.6.0(react@19.2.4))
-      '@esheet/fields': 0.0.5(@kerebron/editor-kits@0.8.9(svelte@5.56.3(@typescript-eslint/types@8.56.1)))(@kerebron/editor@0.8.9)(@kerebron/extension-yjs@0.8.9)(@kerebron/wasm@0.8.9)(@mieweb/datavis@packages+datavis)(@types/react@19.2.14)(ag-grid-community@35.1.0)(ag-grid-react@35.1.0(react-dom@19.2.4(react@19.2.4))(react@19.2.4))(datavis-ace@4.1.0)(immer@11.1.8)(js-yaml@4.1.1)(katex@0.17.0)(mermaid@11.15.0)(papaparse@5.5.3)(react-markdown@10.1.0(@types/react@19.2.14)(react@19.2.4))(rehype-highlight@7.0.2)(rehype-katex@7.0.1)(rehype-sanitize@6.0.0)(remark-gfm@4.0.1)(remark-math@6.0.0)(use-sync-external-store@1.6.0(react@19.2.4))(wavesurfer.js@7.12.1)(y-protocols@1.0.6(yjs@13.6.30))(yjs@13.6.30)
-      '@mieweb/ui': 0.7.1-dev.13(@kerebron/editor-kits@0.8.9(svelte@5.56.3(@typescript-eslint/types@8.56.1)))(@kerebron/editor@0.8.9)(@kerebron/extension-yjs@0.8.9)(@kerebron/wasm@0.8.9)(@mieweb/datavis@packages+datavis)(ag-grid-community@35.1.0)(ag-grid-react@35.1.0(react-dom@19.2.4(react@19.2.4))(react@19.2.4))(datavis-ace@4.1.0)(js-yaml@4.1.1)(katex@0.17.0)(mermaid@11.15.0)(papaparse@5.5.3)(react-dom@19.2.4(react@19.2.4))(react-markdown@10.1.0(@types/react@19.2.14)(react@19.2.4))(react@19.2.4)(rehype-highlight@7.0.2)(rehype-katex@7.0.1)(rehype-sanitize@6.0.0)(remark-gfm@4.0.1)(remark-math@6.0.0)(wavesurfer.js@7.12.1)(y-protocols@1.0.6(yjs@13.6.30))(yjs@13.6.30)
+      '@esheet/fields': 0.0.5(@kerebron/editor-kits@0.8.9(svelte@5.56.3(@typescript-eslint/types@8.56.1)))(@kerebron/editor@0.8.9)(@kerebron/extension-yjs@0.8.9)(@kerebron/wasm@0.8.9)(@types/react@19.2.14)(ag-grid-community@35.1.0)(ag-grid-react@35.1.0(react-dom@19.2.4(react@19.2.4))(react@19.2.4))(datavis-ace@4.1.0)(immer@11.1.8)(js-yaml@4.1.1)(katex@0.17.0)(mermaid@11.15.0)(papaparse@5.5.3)(react-markdown@10.1.0(@types/react@19.2.14)(react@19.2.4))(rehype-highlight@7.0.2)(rehype-katex@7.0.1)(rehype-sanitize@6.0.0)(remark-gfm@4.0.1)(remark-math@6.0.0)(use-sync-external-store@1.6.0(react@19.2.4))(wavesurfer.js@7.12.1)(y-protocols@1.0.6(yjs@13.6.30))(yjs@13.6.30)
+      '@mieweb/ui': 0.7.1-dev.13(@kerebron/editor-kits@0.8.9(svelte@5.56.3(@typescript-eslint/types@8.56.1)))(@kerebron/editor@0.8.9)(@kerebron/extension-yjs@0.8.9)(@kerebron/wasm@0.8.9)(ag-grid-community@35.1.0)(ag-grid-react@35.1.0(react-dom@19.2.4(react@19.2.4))(react@19.2.4))(datavis-ace@4.1.0)(js-yaml@4.1.1)(katex@0.17.0)(mermaid@11.15.0)(papaparse@5.5.3)(react-dom@19.2.4(react@19.2.4))(react-markdown@10.1.0(@types/react@19.2.14)(react@19.2.4))(react@19.2.4)(rehype-highlight@7.0.2)(rehype-katex@7.0.1)(rehype-sanitize@6.0.0)(remark-gfm@4.0.1)(remark-math@6.0.0)(wavesurfer.js@7.12.1)(y-protocols@1.0.6(yjs@13.6.30))(yjs@13.6.30)
       '@monaco-editor/react': 4.7.0(monaco-editor@0.55.1)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
       js-yaml: 4.1.1
       react: 19.2.4
@@ -6719,7 +6731,6 @@ snapshots:
       - '@kerebron/editor-kits'
       - '@kerebron/extension-yjs'
       - '@kerebron/wasm'
-      - '@mieweb/datavis'
       - '@types/react'
       - ag-grid-community
       - ag-grid-react
@@ -6752,10 +6763,10 @@ snapshots:
       - react
       - use-sync-external-store
 
-  '@esheet/fields@0.0.5(@kerebron/editor-kits@0.8.9(svelte@5.56.3(@typescript-eslint/types@8.56.1)))(@kerebron/editor@0.8.9)(@kerebron/extension-yjs@0.8.9)(@kerebron/wasm@0.8.9)(@mieweb/datavis@packages+datavis)(@types/react@19.2.14)(ag-grid-community@35.1.0)(ag-grid-react@35.1.0(react-dom@19.2.4(react@19.2.4))(react@19.2.4))(datavis-ace@4.1.0)(immer@11.1.8)(js-yaml@4.1.1)(katex@0.17.0)(mermaid@11.15.0)(papaparse@5.5.3)(react-markdown@10.1.0(@types/react@19.2.14)(react@19.2.4))(rehype-highlight@7.0.2)(rehype-katex@7.0.1)(rehype-sanitize@6.0.0)(remark-gfm@4.0.1)(remark-math@6.0.0)(use-sync-external-store@1.6.0(react@19.2.4))(wavesurfer.js@7.12.1)(y-protocols@1.0.6(yjs@13.6.30))(yjs@13.6.30)':
+  '@esheet/fields@0.0.5(@kerebron/editor-kits@0.8.9(svelte@5.56.3(@typescript-eslint/types@8.56.1)))(@kerebron/editor@0.8.9)(@kerebron/extension-yjs@0.8.9)(@kerebron/wasm@0.8.9)(@types/react@19.2.14)(ag-grid-community@35.1.0)(ag-grid-react@35.1.0(react-dom@19.2.4(react@19.2.4))(react@19.2.4))(datavis-ace@4.1.0)(immer@11.1.8)(js-yaml@4.1.1)(katex@0.17.0)(mermaid@11.15.0)(papaparse@5.5.3)(react-markdown@10.1.0(@types/react@19.2.14)(react@19.2.4))(rehype-highlight@7.0.2)(rehype-katex@7.0.1)(rehype-sanitize@6.0.0)(remark-gfm@4.0.1)(remark-math@6.0.0)(use-sync-external-store@1.6.0(react@19.2.4))(wavesurfer.js@7.12.1)(y-protocols@1.0.6(yjs@13.6.30))(yjs@13.6.30)':
     dependencies:
       '@esheet/core': 0.0.5(@types/react@19.2.14)(immer@11.1.8)(react@19.2.4)(use-sync-external-store@1.6.0(react@19.2.4))
-      '@mieweb/ui': 0.7.1-dev.13(@kerebron/editor-kits@0.8.9(svelte@5.56.3(@typescript-eslint/types@8.56.1)))(@kerebron/editor@0.8.9)(@kerebron/extension-yjs@0.8.9)(@kerebron/wasm@0.8.9)(@mieweb/datavis@packages+datavis)(ag-grid-community@35.1.0)(ag-grid-react@35.1.0(react-dom@19.2.4(react@19.2.4))(react@19.2.4))(datavis-ace@4.1.0)(js-yaml@4.1.1)(katex@0.17.0)(mermaid@11.15.0)(papaparse@5.5.3)(react-dom@19.2.4(react@19.2.4))(react-markdown@10.1.0(@types/react@19.2.14)(react@19.2.4))(react@19.2.4)(rehype-highlight@7.0.2)(rehype-katex@7.0.1)(rehype-sanitize@6.0.0)(remark-gfm@4.0.1)(remark-math@6.0.0)(wavesurfer.js@7.12.1)(y-protocols@1.0.6(yjs@13.6.30))(yjs@13.6.30)
+      '@mieweb/ui': 0.7.1-dev.13(@kerebron/editor-kits@0.8.9(svelte@5.56.3(@typescript-eslint/types@8.56.1)))(@kerebron/editor@0.8.9)(@kerebron/extension-yjs@0.8.9)(@kerebron/wasm@0.8.9)(ag-grid-community@35.1.0)(ag-grid-react@35.1.0(react-dom@19.2.4(react@19.2.4))(react@19.2.4))(datavis-ace@4.1.0)(js-yaml@4.1.1)(katex@0.17.0)(mermaid@11.15.0)(papaparse@5.5.3)(react-dom@19.2.4(react@19.2.4))(react-markdown@10.1.0(@types/react@19.2.14)(react@19.2.4))(react@19.2.4)(rehype-highlight@7.0.2)(rehype-katex@7.0.1)(rehype-sanitize@6.0.0)(remark-gfm@4.0.1)(remark-math@6.0.0)(wavesurfer.js@7.12.1)(y-protocols@1.0.6(yjs@13.6.30))(yjs@13.6.30)
       lucide-react: 0.562.0(react@19.2.4)
       react: 19.2.4
       react-dom: 19.2.4(react@19.2.4)
@@ -6766,7 +6777,6 @@ snapshots:
       - '@kerebron/editor-kits'
       - '@kerebron/extension-yjs'
       - '@kerebron/wasm'
-      - '@mieweb/datavis'
       - '@types/react'
       - ag-grid-community
       - ag-grid-react
@@ -6787,11 +6797,11 @@ snapshots:
       - y-protocols
       - yjs
 
-  '@esheet/renderer@0.0.5(@kerebron/editor-kits@0.8.9(svelte@5.56.3(@typescript-eslint/types@8.56.1)))(@kerebron/editor@0.8.9)(@kerebron/extension-yjs@0.8.9)(@kerebron/wasm@0.8.9)(@mieweb/datavis@packages+datavis)(@types/react@19.2.14)(ag-grid-community@35.1.0)(ag-grid-react@35.1.0(react-dom@19.2.4(react@19.2.4))(react@19.2.4))(datavis-ace@4.1.0)(immer@11.1.8)(katex@0.17.0)(mermaid@11.15.0)(papaparse@5.5.3)(react-markdown@10.1.0(@types/react@19.2.14)(react@19.2.4))(react@19.2.4)(rehype-highlight@7.0.2)(rehype-katex@7.0.1)(rehype-sanitize@6.0.0)(remark-gfm@4.0.1)(remark-math@6.0.0)(use-sync-external-store@1.6.0(react@19.2.4))(wavesurfer.js@7.12.1)(y-protocols@1.0.6(yjs@13.6.30))(yjs@13.6.30)':
+  '@esheet/renderer@0.0.5(@kerebron/editor-kits@0.8.9(svelte@5.56.3(@typescript-eslint/types@8.56.1)))(@kerebron/editor@0.8.9)(@kerebron/extension-yjs@0.8.9)(@kerebron/wasm@0.8.9)(@types/react@19.2.14)(ag-grid-community@35.1.0)(ag-grid-react@35.1.0(react-dom@19.2.4(react@19.2.4))(react@19.2.4))(datavis-ace@4.1.0)(immer@11.1.8)(katex@0.17.0)(mermaid@11.15.0)(papaparse@5.5.3)(react-markdown@10.1.0(@types/react@19.2.14)(react@19.2.4))(react@19.2.4)(rehype-highlight@7.0.2)(rehype-katex@7.0.1)(rehype-sanitize@6.0.0)(remark-gfm@4.0.1)(remark-math@6.0.0)(use-sync-external-store@1.6.0(react@19.2.4))(wavesurfer.js@7.12.1)(y-protocols@1.0.6(yjs@13.6.30))(yjs@13.6.30)':
     dependencies:
       '@esheet/adapters': 0.0.5(@types/react@19.2.14)(immer@11.1.8)(react@19.2.4)(use-sync-external-store@1.6.0(react@19.2.4))
       '@esheet/core': 0.0.5(@types/react@19.2.14)(immer@11.1.8)(react@19.2.4)(use-sync-external-store@1.6.0(react@19.2.4))
-      '@esheet/fields': 0.0.5(@kerebron/editor-kits@0.8.9(svelte@5.56.3(@typescript-eslint/types@8.56.1)))(@kerebron/editor@0.8.9)(@kerebron/extension-yjs@0.8.9)(@kerebron/wasm@0.8.9)(@mieweb/datavis@packages+datavis)(@types/react@19.2.14)(ag-grid-community@35.1.0)(ag-grid-react@35.1.0(react-dom@19.2.4(react@19.2.4))(react@19.2.4))(datavis-ace@4.1.0)(immer@11.1.8)(js-yaml@4.1.1)(katex@0.17.0)(mermaid@11.15.0)(papaparse@5.5.3)(react-markdown@10.1.0(@types/react@19.2.14)(react@19.2.4))(rehype-highlight@7.0.2)(rehype-katex@7.0.1)(rehype-sanitize@6.0.0)(remark-gfm@4.0.1)(remark-math@6.0.0)(use-sync-external-store@1.6.0(react@19.2.4))(wavesurfer.js@7.12.1)(y-protocols@1.0.6(yjs@13.6.30))(yjs@13.6.30)
+      '@esheet/fields': 0.0.5(@kerebron/editor-kits@0.8.9(svelte@5.56.3(@typescript-eslint/types@8.56.1)))(@kerebron/editor@0.8.9)(@kerebron/extension-yjs@0.8.9)(@kerebron/wasm@0.8.9)(@types/react@19.2.14)(ag-grid-community@35.1.0)(ag-grid-react@35.1.0(react-dom@19.2.4(react@19.2.4))(react@19.2.4))(datavis-ace@4.1.0)(immer@11.1.8)(js-yaml@4.1.1)(katex@0.17.0)(mermaid@11.15.0)(papaparse@5.5.3)(react-markdown@10.1.0(@types/react@19.2.14)(react@19.2.4))(rehype-highlight@7.0.2)(rehype-katex@7.0.1)(rehype-sanitize@6.0.0)(remark-gfm@4.0.1)(remark-math@6.0.0)(use-sync-external-store@1.6.0(react@19.2.4))(wavesurfer.js@7.12.1)(y-protocols@1.0.6(yjs@13.6.30))(yjs@13.6.30)
       js-yaml: 4.1.1
     optionalDependencies:
       react: 19.2.4
@@ -6800,7 +6810,6 @@ snapshots:
       - '@kerebron/editor-kits'
       - '@kerebron/extension-yjs'
       - '@kerebron/wasm'
-      - '@mieweb/datavis'
       - '@types/react'
       - ag-grid-community
       - ag-grid-react
@@ -7352,7 +7361,7 @@ snapshots:
       ag-grid-react: 35.1.0(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
       wavesurfer.js: 7.12.1
 
-  '@mieweb/ui@0.7.1-dev.13(@kerebron/editor-kits@0.8.9(svelte@5.56.3(@typescript-eslint/types@8.56.1)))(@kerebron/editor@0.8.9)(@kerebron/extension-yjs@0.8.9)(@kerebron/wasm@0.8.9)(@mieweb/datavis@packages+datavis)(ag-grid-community@35.1.0)(ag-grid-react@35.1.0(react-dom@19.2.4(react@19.2.4))(react@19.2.4))(datavis-ace@4.1.0)(js-yaml@4.1.1)(katex@0.17.0)(mermaid@11.15.0)(papaparse@5.5.3)(react-dom@19.2.4(react@19.2.4))(react-markdown@10.1.0(@types/react@19.2.14)(react@19.2.4))(react@19.2.4)(rehype-highlight@7.0.2)(rehype-katex@7.0.1)(rehype-sanitize@6.0.0)(remark-gfm@4.0.1)(remark-math@6.0.0)(wavesurfer.js@7.12.1)(y-protocols@1.0.6(yjs@13.6.30))(yjs@13.6.30)':
+  '@mieweb/ui@0.7.1-dev.13(@kerebron/editor-kits@0.8.9(svelte@5.56.3(@typescript-eslint/types@8.56.1)))(@kerebron/editor@0.8.9)(@kerebron/extension-yjs@0.8.9)(@kerebron/wasm@0.8.9)(ag-grid-community@35.1.0)(ag-grid-react@35.1.0(react-dom@19.2.4(react@19.2.4))(react@19.2.4))(datavis-ace@4.1.0)(js-yaml@4.1.1)(katex@0.17.0)(mermaid@11.15.0)(papaparse@5.5.3)(react-dom@19.2.4(react@19.2.4))(react-markdown@10.1.0(@types/react@19.2.14)(react@19.2.4))(react@19.2.4)(rehype-highlight@7.0.2)(rehype-katex@7.0.1)(rehype-sanitize@6.0.0)(remark-gfm@4.0.1)(remark-math@6.0.0)(wavesurfer.js@7.12.1)(y-protocols@1.0.6(yjs@13.6.30))(yjs@13.6.30)':
     dependencies:
       '@swc/helpers': 0.5.19
       '@tanstack/react-virtual': 3.14.3(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
@@ -7373,7 +7382,6 @@ snapshots:
       '@kerebron/editor-kits': 0.8.9(svelte@5.56.3(@typescript-eslint/types@8.56.1))
       '@kerebron/extension-yjs': 0.8.9
       '@kerebron/wasm': 0.8.9
-      '@mieweb/datavis': link:packages/datavis
       ag-grid-community: 35.1.0
       ag-grid-react: 35.1.0(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
       datavis-ace: 4.1.0
@@ -8166,6 +8174,10 @@ snapshots:
   '@types/junit-report-builder@3.0.2': {}
 
   '@types/katex@0.16.8': {}
+
+  '@types/leaflet@1.9.22':
+    dependencies:
+      '@types/geojson': 7946.0.16
 
   '@types/luxon@3.7.1': {}
 
@@ -10959,6 +10971,8 @@ snapshots:
   layout-base@1.0.2: {}
 
   layout-base@2.0.1: {}
+
+  leaflet@1.9.4: {}
 
   leven@3.1.0: {}
 

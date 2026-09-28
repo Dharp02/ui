@@ -1,6 +1,10 @@
 import * as React from 'react';
 import { ArrowRight } from 'lucide-react';
 import { buttonVariants } from '../components/Button/button-variants';
+import {
+  MetricStatusBadge,
+  type MetricStatus,
+} from '../components/MetricStatusBadge/MetricStatusBadge';
 import { cn } from '../utils/cn';
 import { TemplateIcon, type TemplateIconRegistry } from './icons';
 import type {
@@ -174,6 +178,8 @@ export interface SectionShellProps extends Omit<
   align?: SectionAlign;
   width?: 'wide' | 'narrow';
   spacing?: 'default' | 'compact';
+  /** Provenance badge under the heading, for sections that report figures. */
+  status?: MetricStatus;
   /** Accepted so sections can forward their props; the shell renders no links or images. */
   components?: TemplateComponents;
 }
@@ -192,6 +198,7 @@ export const SectionShell = React.forwardRef<HTMLElement, SectionShellProps>(
       align = 'start',
       width = 'wide',
       spacing = 'default',
+      status,
       className,
       children,
       components,
@@ -224,6 +231,16 @@ export const SectionShell = React.forwardRef<HTMLElement, SectionShellProps>(
             titleId={titleId}
             className={cn(width === 'narrow' && 'max-w-none')}
           />
+          {status && (
+            <div
+              className={cn(
+                'mt-4 flex',
+                align === 'center' && 'justify-center'
+              )}
+            >
+              <MetricStatusBadge status={status} onDark={tone === 'brand'} />
+            </div>
+          )}
           {children}
         </div>
       </section>

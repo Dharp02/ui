@@ -91,6 +91,22 @@ export const landingPresets = {
     ],
     required: ['hero', 'pricing', 'faq'],
   },
+  'benchmark-report': {
+    label: 'Benchmark report',
+    description:
+      'A published data report: headline findings, the figures with their provenance, how they were built, and who wrote it.',
+    sequence: [
+      'hero',
+      'report-legend',
+      'methodology',
+      'byline',
+      'link-groups',
+      'pdf-embed',
+      'lead-form',
+      'cta',
+    ],
+    required: ['hero', 'methodology'],
+  },
 } satisfies Record<string, LandingPreset>;
 
 export type LandingPresetId = keyof typeof landingPresets;
@@ -101,6 +117,8 @@ const headedItems = new Set<LandingBlockType>([
   'process',
   'pricing',
   'resources',
+  'metric-list',
+  'link-groups',
 ]);
 
 export interface LandingPageIssue {
@@ -168,6 +186,18 @@ export function validateLandingPage(
         index,
         message: `"${b.type}" has no title, so its h3 item titles skip the h2 level.`,
       });
+    if (b.type === 'benchmark-table') {
+      const keys = new Set(b.columns.map((c) => c.key));
+      b.rows.forEach((row) => {
+        const unknown = Object.keys(row.values).filter((k) => !keys.has(k));
+        if (unknown.length)
+          issues.push({
+            severity: 'warning',
+            index,
+            message: `Benchmark row "${row.label}" has values for unknown columns: ${unknown.join(', ')}.`,
+          });
+      });
+    }
     if (b.type !== 'comparison') return;
     b.rows.forEach((row, r) => {
       if (row.values.length !== b.columns.length)

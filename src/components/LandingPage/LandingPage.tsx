@@ -34,6 +34,33 @@ import {
   type TestimonialSectionProps,
 } from '../TestimonialSection';
 import { VideoSection, type VideoSectionProps } from '../VideoSection';
+import {
+  BenchmarkTableSection,
+  type BenchmarkTableSectionProps,
+} from '../BenchmarkTableSection';
+import {
+  LinkGroupsSection,
+  type LinkGroupsSectionProps,
+} from '../LinkGroupsSection';
+import {
+  MetricListSection,
+  type MetricListSectionProps,
+} from '../MetricListSection';
+import { PdfEmbedSection, type PdfEmbedSectionProps } from '../PdfEmbedSection';
+import {
+  RankedListSection,
+  type RankedListSectionProps,
+} from '../RankedListSection';
+import { ReportByline, type ReportBylineProps } from '../ReportByline';
+import { ReportLegend, type ReportLegendProps } from '../ReportLegend';
+import {
+  ReportMethodology,
+  type ReportMethodologyProps,
+} from '../ReportMethodology';
+import {
+  TileCartogramSection,
+  type TileCartogramSectionProps,
+} from '../TileCartogramSection';
 import type { TemplateIconRegistry } from '../../templates/icons';
 import type { TemplateComponents } from '../../templates/types';
 
@@ -70,6 +97,15 @@ export type LandingBlock =
         action: string;
       })
   | ({ type: 'cta' } & BlockData<CtaSectionProps>)
+  | ({ type: 'report-legend' } & BlockData<ReportLegendProps>)
+  | ({ type: 'benchmark-table' } & BlockData<BenchmarkTableSectionProps>)
+  | ({ type: 'ranked-list' } & BlockData<RankedListSectionProps>)
+  | ({ type: 'tile-cartogram' } & BlockData<TileCartogramSectionProps>)
+  | ({ type: 'metric-list' } & BlockData<MetricListSectionProps>)
+  | ({ type: 'methodology' } & BlockData<ReportMethodologyProps>)
+  | ({ type: 'byline' } & BlockData<ReportBylineProps>)
+  | ({ type: 'link-groups' } & BlockData<LinkGroupsSectionProps>)
+  | ({ type: 'pdf-embed' } & BlockData<PdfEmbedSectionProps>)
   | CustomBlock;
 
 export type LandingBlockType = LandingBlock['type'];
@@ -89,6 +125,15 @@ const sections = {
   faq: FaqSection,
   'lead-form': LeadFormSection,
   cta: CtaSection,
+  'report-legend': ReportLegend,
+  'benchmark-table': BenchmarkTableSection,
+  'ranked-list': RankedListSection,
+  'tile-cartogram': TileCartogramSection,
+  'metric-list': MetricListSection,
+  methodology: ReportMethodology,
+  byline: ReportByline,
+  'link-groups': LinkGroupsSection,
+  'pdf-embed': PdfEmbedSection,
 } satisfies Record<Exclude<LandingBlockType, 'custom'>, unknown>;
 
 /** Block types whose section resolves icon tokens. */
