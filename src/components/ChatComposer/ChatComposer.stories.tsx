@@ -324,7 +324,7 @@ export const WithLeadingSlot: Story = {
         <button
           type="button"
           aria-label="Toggle voice activation"
-          className="text-primary-600 hover:bg-primary-50 dark:text-primary-400 dark:hover:bg-primary-950 flex h-8 w-8 items-center justify-center rounded-lg"
+          className="flex h-8 w-8 items-center justify-center rounded-lg text-neutral-500 transition-colors duration-150 hover:bg-neutral-100 hover:text-neutral-900 dark:text-neutral-400 dark:hover:bg-neutral-700 dark:hover:text-white"
         >
           <AudioWaveform className="h-4 w-4" aria-hidden="true" />
         </button>
