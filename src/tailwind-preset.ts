@@ -1092,6 +1092,10 @@ export const miewebUISafelist = [
   'rounded-2xl',
   'dark:bg-[#1c1c1e]',
   'dark:border-[#2e2e30]',
+  // ChatComposer mobile keyboard: 16px input below sm (no iOS zoom) and
+  // tap-to-focus card cursor (text-base is safelisted above)
+  'sm:text-sm',
+  'cursor-text',
   'md:col-span-1',
   'md:col-start-2',
   'md:row-start-1',
