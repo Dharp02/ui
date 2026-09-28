@@ -51,7 +51,7 @@ import { PointMap } from '@mieweb/ui/maps';
 - Needs the optional \`leaflet\` peer and its CSS; client-only (Leaflet is loaded on mount).
 - Tiles default to OpenStreetMap, which asks heavy users to use their own tile service — pass \`tileUrl\` and \`attribution\` for production.
 - \`outlineUrl\` fetches a GeoJSON file (e.g. US states) the site hosts.
-- The map itself is an image to assistive tech; the list beneath carries the data. Scroll-wheel zoom is off so the page scrolls past it.`,
+- The map is a labelled group whose zoom controls and attribution stay keyboard-reachable; the list beneath carries the data for screen readers. Scroll-wheel zoom is off so the page scrolls past it.`,
       },
     },
     catalog: {

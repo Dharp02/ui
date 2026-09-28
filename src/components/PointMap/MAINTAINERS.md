@@ -19,8 +19,10 @@ Covers `src/components/PointMap/` and the `@mieweb/ui/maps` entry (`src/maps.ts`
   `sizeBy` and `showValues` rebuild the map; `center`/`zoom` only seed it.
 - **Colours come from tokens read at runtime** (`--mieweb-primary-500`,
   `--mieweb-border`) because Leaflet paints SVG/canvas outside Tailwind.
-- **The text list is the accessible data.** The map is `role="img"`; keep every
-  point's label and value in the list beneath it (`hideList` is opt-out).
+- **The text list is the accessible data.** The map is a labelled `role="group"`
+  (`aria-roledescription="map"`), not `role="img"`, so Leaflet's zoom buttons,
+  keyboard panning and attribution link stay reachable. Keep every point's label
+  and value in the list beneath it (`hideList` is opt-out).
 - **Styles.** Consumers import `leaflet/dist/leaflet.css`; the permanent value
   label (`.mie-map-value`) is styled in `src/styles/effects.css`.
 

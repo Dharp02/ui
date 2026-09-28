@@ -209,6 +209,20 @@ describe('benchmark-report preset', () => {
     );
   });
 
+  it('warns when report blocks render h3s without a section title', () => {
+    const issues = validateLandingPage([
+      { type: 'ranked-list', lists: [{ title: 'Top', items: [] }] },
+      { type: 'ranked-list', lists: [{ items: [] }] },
+      { type: 'tile-cartogram', mapTitle: 'Density', values: {}, legend: [] },
+      { type: 'methodology', sources: [], citation: 'Cite me' },
+    ]);
+    expect(
+      issues
+        .filter((i) => i.message.includes('skip the h2'))
+        .map((i) => i.index)
+    ).toEqual([0, 2, 3]);
+  });
+
   it('warns about benchmark values for unknown columns', () => {
     const issues = validateLandingPage([
       {

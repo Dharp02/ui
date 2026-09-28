@@ -127,6 +127,14 @@ const headedItems = new Set<LandingBlockType>([
   'link-groups',
 ]);
 
+/** Whether a block renders `h3`s only in some configurations. */
+const rendersH3 = (b: LandingBlock) =>
+  headedItems.has(b.type) ||
+  (b.type === 'ranked-list' && b.lists.some((l) => l.title)) ||
+  (b.type === 'tile-cartogram' && !!b.mapTitle) ||
+  (b.type === 'methodology' &&
+    !!(b.citation || b.notes?.length || b.resources));
+
 export interface LandingPageIssue {
   severity: 'error' | 'warning';
   message: string;
@@ -186,7 +194,7 @@ export function validateLandingPage(
 
   blocks.forEach((b, index) => {
     // Item titles are h3; without the section's h2 the outline skips a level.
-    if (headedItems.has(b.type) && !('title' in b && b.title))
+    if (rendersH3(b) && !('title' in b && b.title))
       issues.push({
         severity: 'warning',
         index,

@@ -153,7 +153,8 @@ export const PointMap = React.forwardRef<HTMLDivElement, PointMapProps>(
       >
         <div
           ref={mapEl}
-          role="img"
+          role="group"
+          aria-roledescription="map"
           aria-label={label}
           className="bg-muted isolate w-full overflow-hidden rounded-xl"
           style={{ height }}
