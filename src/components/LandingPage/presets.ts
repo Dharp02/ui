@@ -147,6 +147,13 @@ export function validateLandingPage(
       index: firstHero,
       message: 'The hero is not the first block.',
     });
+  if (h1Heroes.length > 0 && h1Heroes[0] !== firstHero)
+    issues.push({
+      severity: 'warning',
+      index: h1Heroes[0],
+      message:
+        'The h1 hero is not the first hero: an h2 hero precedes the page h1.',
+    });
 
   const seen = new Map<string, number>();
   blocks.forEach((b, index) => {

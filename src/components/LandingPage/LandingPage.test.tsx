@@ -158,6 +158,17 @@ describe('validateLandingPage', () => {
     ]);
   });
 
+  it('warns when an h2 hero precedes the h1 hero', () => {
+    const issues = validateLandingPage([{ ...hero, headingLevel: 'h2' }, hero]);
+    expect(issues).toEqual([
+      expect.objectContaining({
+        severity: 'warning',
+        index: 1,
+        message: expect.stringContaining('not the first hero'),
+      }),
+    ]);
+  });
+
   it('reports missing required blocks and out-of-order blocks for a preset', () => {
     const issues = validateLandingPage(
       [hero, faq, { type: 'features', features: [] }],
