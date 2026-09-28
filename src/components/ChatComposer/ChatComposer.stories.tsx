@@ -380,7 +380,14 @@ function MobileKeyboardShellDemo() {
       <header className="shrink-0 border-b border-neutral-200 px-4 py-3 text-sm font-medium dark:border-neutral-700">
         Keyboard {isKeyboardOpen ? `open (${keyboardInset}px)` : 'closed'}
       </header>
-      <div className="min-h-0 flex-1 overflow-y-auto p-4 text-sm text-neutral-600 dark:text-neutral-300">
+      <div
+        className="min-h-0 flex-1 overflow-y-auto p-4 text-sm text-neutral-600 dark:text-neutral-300"
+        // tabIndex makes this scrollable region keyboard-accessible (axe: scrollable-region-focusable)
+        // eslint-disable-next-line jsx-a11y/no-noninteractive-tabindex
+        tabIndex={0}
+        role="region"
+        aria-label="Messages"
+      >
         {Array.from({ length: 30 }, (_, index) => (
           <p key={index} className="py-1">
             Message {index + 1}
