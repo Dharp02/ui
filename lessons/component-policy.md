@@ -364,9 +364,10 @@ flowchart TD
   transport and render messages you already have (see the Chat family and
   `src/components/AI/OZWELL-BACKEND.md`).
 - **The embedded Ozwell assistant (`@ozwell/react`, from ozwellai-api)** — a
-  drop-in, page-aware assistant that handles its own end-user sign-in and can
-  **read and act on the host page** through tool calls. Use it when the user asks
-  to "add Ozwell" or to let Ozwell click / read / fill something on the page.
+  drop-in, page-aware assistant that can **read and act on the host page**
+  through tool calls. Use it when the user asks to "add Ozwell" or to let Ozwell
+  click / read / fill something on the page. (With an app agent key it acts as
+  that agent; configure no key and it instead gates on end-user sign-in.)
 
 For the page-aware assistant: install `@ozwell/react` (Vue/Svelte variants
 exist), render `OzwellChat`, declare page actions in `tools`, and perform each

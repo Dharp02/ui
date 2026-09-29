@@ -205,12 +205,13 @@ Two different things share the "Ozwell" name — pick deliberately:
 
 - **`OzwellChat` / `AIChat` (this library)** — the *chat UI shell*. You own the
   transport and render messages you already have. Use it when the assistant is
-  part of your own product and you wire the answers yourself (see the Chat
-  family and `src/components/AI/OZWELL-BACKEND.md`).
+  part of your own product and you wire the answers yourself (see the
+  [Chat family](https://ui.mieweb.org/?path=/docs/modules-chat-overview--docs)
+  and the [Ozwell backend guide](https://github.com/mieweb/ui/blob/main/src/components/AI/OZWELL-BACKEND.md)).
 - **The embedded Ozwell assistant (`@ozwell/react`, from ozwellai-api)** — a
-  drop-in, page-aware assistant that handles its own end-user sign-in and can
-  **read and act on your page** through tool calls. Use this when the user says
-  things like "add Ozwell" or "let Ozwell click / read / fill something on the page."
+  drop-in, page-aware assistant that can **read and act on your page** through
+  tool calls. Use this when the user says things like "add Ozwell" or "let
+  Ozwell click / read / fill something on the page."
 
 To add the page-aware assistant to a `@mieweb/ui` app:
 
