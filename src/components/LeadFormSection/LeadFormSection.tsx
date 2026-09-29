@@ -7,6 +7,7 @@ import {
   cardClass,
   containerClass,
   mutedTextClass,
+  safeHref,
   toneClass,
 } from '../../templates/Section';
 import type { SectionBaseProps } from '../../templates/types';
@@ -29,7 +30,11 @@ export interface LeadFormSectionProps extends Omit<
   'align' | 'onSubmit'
 > {
   title: string;
-  /** A URL, or a React form action such as a Next.js Server Action. */
+  /**
+   * A URL, or a React form action such as a Next.js Server Action. A URL is
+   * page data: if its scheme is not http(s), mailto or tel the section
+   * renders nothing, so an executable action never reaches the form.
+   */
   action: string | ((formData: FormData) => void | Promise<void>);
   /** Only used with a URL `action`. */
   method?: 'post' | 'get';
@@ -110,6 +115,11 @@ export const LeadFormSection = React.forwardRef<
     const baseId = React.useId();
     const titleId = `${baseId}-title`;
     const split = layout === 'split';
+    // Same trust boundary as TemplateAnchor hrefs — and after the hooks, so
+    // the hook count stays stable if `action` changes.
+    const resolvedAction =
+      typeof action === 'string' ? safeHref(action) : action;
+    if (resolvedAction == null) return null;
     return (
       <section
         ref={ref}
@@ -134,8 +144,8 @@ export const LeadFormSection = React.forwardRef<
             titleId={titleId}
           />
           <form
-            action={action}
-            method={typeof action === 'string' ? method : undefined}
+            action={resolvedAction}
+            method={typeof resolvedAction === 'string' ? method : undefined}
             aria-labelledby={titleId}
             className={cn(
               'grid gap-5 rounded-2xl p-6 sm:grid-cols-2 sm:p-8',

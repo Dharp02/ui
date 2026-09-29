@@ -179,6 +179,13 @@ describe('LeadFormSection', () => {
     render(<LeadFormSection title="Talk to us" action="/lead" />);
     expect(screen.getAllByRole('textbox')).toHaveLength(4);
   });
+
+  it('renders nothing when the action URL has an executable scheme', () => {
+    const { container } = render(
+      <LeadFormSection title="Lead" action="javascript:alert(1)" />
+    );
+    expect(container).toBeEmptyDOMElement();
+  });
 });
 
 describe('LogoCloudSection', () => {
