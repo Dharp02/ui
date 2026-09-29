@@ -164,7 +164,7 @@ describe('LandingPage', () => {
     expect(container.querySelector('a')).toHaveAttribute('data-client-nav');
   });
 
-  it('disarms an executable lead-form action URL from page data', () => {
+  it('skips a lead-form block whose action URL is executable', () => {
     const { container } = render(
       <LandingPage
         blocks={[
@@ -176,9 +176,8 @@ describe('LandingPage', () => {
         ]}
       />
     );
-    const form = container.querySelector('form');
-    expect(form).not.toBeNull();
-    expect(form).not.toHaveAttribute('action');
+    // No form at all — an action-less form would submit to the current URL.
+    expect(container.querySelector('form')).toBeNull();
   });
 });
 
@@ -235,6 +234,20 @@ describe('validateLandingPage', () => {
         severity: 'error',
         index: 1,
         message: expect.stringContaining('faqs'),
+      }),
+    ]);
+  });
+
+  it('flags an unsafe lead-form action the renderer would skip', () => {
+    const issues = validateLandingPage([
+      hero,
+      { type: 'lead-form', title: 'Lead', action: 'javascript:alert(1)' },
+    ]);
+    expect(issues).toEqual([
+      expect.objectContaining({
+        severity: 'error',
+        index: 1,
+        message: expect.stringContaining('Unsafe lead-form action'),
       }),
     ]);
   });

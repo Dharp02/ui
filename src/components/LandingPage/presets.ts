@@ -1,3 +1,4 @@
+import { safeHref } from '../../templates/Section';
 import {
   landingBlockTypes,
   type LandingBlock,
@@ -133,6 +134,13 @@ export function validateLandingPage(
         severity: 'error',
         index,
         message: `Unknown block type "${b.type}": the renderer skips this block.`,
+      });
+    // A named action resolves like a relative URL; unsafe schemes never do.
+    if (b.type === 'lead-form' && safeHref(b.action) == null)
+      issues.push({
+        severity: 'error',
+        index,
+        message: `Unsafe lead-form action "${b.action}": the renderer skips this block.`,
       });
   });
 

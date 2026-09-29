@@ -137,6 +137,14 @@ export const LandingPage = React.forwardRef<HTMLDivElement, LandingPageProps>(
         // must not control, and inject the framework-owned props after the
         // spread so a block cannot override the site's adapters.
         if (!Section) return null;
+        // A non-named lead-form action is a form URL — same trust boundary as
+        // hrefs. No safe action means no form: an action-less form would
+        // submit the lead to the current document URL instead of going inert.
+        const action =
+          block.type === 'lead-form'
+            ? (actions?.[block.action] ?? safeHref(block.action))
+            : undefined;
+        if (block.type === 'lead-form' && action == null) return null;
         const data = { ...props } as Record<string, unknown>;
         delete data.children;
         delete data.dangerouslySetInnerHTML;
@@ -146,10 +154,7 @@ export const LandingPage = React.forwardRef<HTMLDivElement, LandingPageProps>(
             {...data}
             components={components}
             {...(takesIcons.has(type) ? { icons } : {})}
-            {...(block.type === 'lead-form'
-              ? // A non-named action is a form URL — same trust boundary as hrefs.
-                { action: actions?.[block.action] ?? safeHref(block.action) }
-              : {})}
+            {...(block.type === 'lead-form' ? { action } : {})}
           />
         );
       })}
