@@ -48,6 +48,23 @@ export const containerClass = (width: 'wide' | 'narrow' = 'wide') =>
     width === 'narrow' ? 'max-w-3xl' : 'max-w-7xl'
   );
 
+const SAFE_HREF_SCHEME = /^(?:https?|mailto|tel):/i;
+
+/**
+ * A URL from page data, or `undefined` if its scheme is not http(s), mailto or
+ * tel. Content/CMS URLs are untrusted, and a `javascript:` href is script
+ * execution — React and site Link adapters render it verbatim.
+ */
+export function safeHref(href: string | undefined): string | undefined {
+  if (href == null) return undefined;
+  // Browsers drop tab/newline and leading controls when parsing, so
+  // `java\tscript:` still runs — match the scheme on the stripped value.
+  // eslint-disable-next-line no-control-regex
+  const stripped = href.replace(/[\u0000-\u0020]/g, '');
+  if (!/^[a-z][a-z0-9+.-]*:/i.test(stripped)) return href; // relative, hash, query, //
+  return SAFE_HREF_SCHEME.test(stripped) ? href : undefined;
+}
+
 /** An anchor, or the site's `components.Link`, with `trackingId` as `data-track`. */
 export function TemplateAnchor({
   components,
@@ -59,8 +76,17 @@ export function TemplateAnchor({
   trackingId?: string;
 }) {
   const Link = components?.Link;
-  const all = { ...props, 'data-track': trackingId };
-  return Link ? <Link {...all}>{children}</Link> : <a {...all}>{children}</a>;
+  const href = safeHref(props.href);
+  const all = { ...props, href, 'data-track': trackingId };
+  // Adapters require an href (Next's Link throws), so a dropped one falls back
+  // to an inert plain anchor.
+  return Link && href != null ? (
+    <Link {...all} href={href}>
+      {children}
+    </Link>
+  ) : (
+    <a {...all}>{children}</a>
+  );
 }
 
 // React 18 only passes the lowercase attribute through; React 19 wants camelCase.

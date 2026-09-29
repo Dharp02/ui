@@ -35,6 +35,7 @@ import {
 } from '../TestimonialSection';
 import { VideoSection, type VideoSectionProps } from '../VideoSection';
 import type { TemplateIconRegistry } from '../../templates/icons';
+import { safeHref } from '../../templates/Section';
 import type { TemplateComponents } from '../../templates/types';
 
 /** A section the site renders itself, looked up by name in `LandingPage`'s `custom` map. */
@@ -146,7 +147,8 @@ export const LandingPage = React.forwardRef<HTMLDivElement, LandingPageProps>(
             components={components}
             {...(takesIcons.has(type) ? { icons } : {})}
             {...(block.type === 'lead-form'
-              ? { action: actions?.[block.action] ?? block.action }
+              ? // A non-named action is a form URL — same trust boundary as hrefs.
+                { action: actions?.[block.action] ?? safeHref(block.action) }
               : {})}
           />
         );

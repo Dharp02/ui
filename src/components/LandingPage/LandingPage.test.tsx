@@ -163,6 +163,23 @@ describe('LandingPage', () => {
     );
     expect(container.querySelector('a')).toHaveAttribute('data-client-nav');
   });
+
+  it('disarms an executable lead-form action URL from page data', () => {
+    const { container } = render(
+      <LandingPage
+        blocks={[
+          {
+            type: 'lead-form',
+            title: 'Lead',
+            action: 'javascript:alert(1)',
+          },
+        ]}
+      />
+    );
+    const form = container.querySelector('form');
+    expect(form).not.toBeNull();
+    expect(form).not.toHaveAttribute('action');
+  });
 });
 
 describe('validateLandingPage', () => {
