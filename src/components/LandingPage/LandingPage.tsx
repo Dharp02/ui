@@ -91,6 +91,12 @@ const sections = {
   cta: CtaSection,
 } satisfies Record<Exclude<LandingBlockType, 'custom'>, unknown>;
 
+/** Every block type the renderer knows — `validateLandingPage` checks runtime data against it. */
+export const landingBlockTypes = [
+  ...Object.keys(sections),
+  'custom',
+] as LandingBlockType[];
+
 /** Block types whose section resolves icon tokens. */
 const takesIcons = new Set<LandingBlockType>(['features', 'process']);
 
@@ -121,15 +127,24 @@ export const LandingPage = React.forwardRef<HTMLDivElement, LandingPageProps>(
         }
         const { type, ...props } = block;
         // `type` narrowed `props` to this section's props; TS can't correlate the lookup.
-        const Section = sections[type] as unknown as React.ComponentType<
-          Record<string, unknown>
-        >;
+        const Section = sections[type] as unknown as
+          | React.ComponentType<Record<string, unknown>>
+          | undefined;
+        // Runtime page data bypasses `BlockData`, so guard what TypeScript
+        // cannot: skip unknown types the way unknown `custom` components are
+        // skipped (`validateLandingPage` reports them), drop the props JSON
+        // must not control, and inject the framework-owned props after the
+        // spread so a block cannot override the site's adapters.
+        if (!Section) return null;
+        const data = { ...props } as Record<string, unknown>;
+        delete data.children;
+        delete data.dangerouslySetInnerHTML;
         return (
           <Section
             key={key}
+            {...data}
             components={components}
             {...(takesIcons.has(type) ? { icons } : {})}
-            {...props}
             {...(block.type === 'lead-form'
               ? { action: actions?.[block.action] ?? block.action }
               : {})}

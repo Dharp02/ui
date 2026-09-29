@@ -1,4 +1,8 @@
-import type { LandingBlock, LandingBlockType } from './LandingPage';
+import {
+  landingBlockTypes,
+  type LandingBlock,
+  type LandingBlockType,
+} from './LandingPage';
 
 export interface LandingPreset {
   label: string;
@@ -121,6 +125,16 @@ export function validateLandingPage(
 ): LandingPageIssue[] {
   const issues: LandingPageIssue[] = [];
   const types = blocks.map((b) => b.type);
+
+  const knownTypes = new Set<string>(landingBlockTypes);
+  blocks.forEach((b, index) => {
+    if (!knownTypes.has(b.type))
+      issues.push({
+        severity: 'error',
+        index,
+        message: `Unknown block type "${b.type}": the renderer skips this block.`,
+      });
+  });
 
   const h1Heroes = blocks.flatMap((b, i) =>
     b.type === 'hero' && (b.headingLevel ?? 'h1') === 'h1' ? [i] : []

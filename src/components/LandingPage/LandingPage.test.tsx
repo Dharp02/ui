@@ -124,6 +124,45 @@ describe('LandingPage', () => {
     );
     expect(screen.getAllByTestId('crew-icon')).toHaveLength(2);
   });
+
+  it('skips unknown block types and strips props JSON must not control', () => {
+    const { container } = render(
+      <LandingPage
+        blocks={[
+          { type: 'faqs', items: [] } as unknown as LandingBlock,
+          {
+            type: 'cta',
+            title: 'Go',
+            dangerouslySetInnerHTML: { __html: '<b>owned</b>' },
+          } as unknown as LandingBlock,
+        ]}
+      />
+    );
+    expect(container.querySelectorAll('section')).toHaveLength(1);
+    expect(container.innerHTML).not.toContain('owned');
+  });
+
+  it('keeps the site adapters when a block tries to override them', () => {
+    const Link = ({ children, ...props }: React.ComponentProps<'a'>) => (
+      <a data-client-nav="" {...props}>
+        {children}
+      </a>
+    );
+    const { container } = render(
+      <LandingPage
+        components={{ Link }}
+        blocks={[
+          {
+            type: 'cta',
+            title: 'Go',
+            primaryCta: { label: 'Start', href: '/start' },
+            components: { Link: 'bogus' },
+          } as unknown as LandingBlock,
+        ]}
+      />
+    );
+    expect(container.querySelector('a')).toHaveAttribute('data-client-nav');
+  });
 });
 
 describe('validateLandingPage', () => {
@@ -165,6 +204,20 @@ describe('validateLandingPage', () => {
         severity: 'warning',
         index: 1,
         message: expect.stringContaining('not the first hero'),
+      }),
+    ]);
+  });
+
+  it('flags unknown block types the renderer would skip', () => {
+    const issues = validateLandingPage([
+      hero,
+      { type: 'faqs', items: [] } as unknown as LandingBlock,
+    ]);
+    expect(issues).toEqual([
+      expect.objectContaining({
+        severity: 'error',
+        index: 1,
+        message: expect.stringContaining('faqs'),
       }),
     ]);
   });
