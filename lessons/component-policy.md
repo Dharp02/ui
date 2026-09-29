@@ -364,16 +364,20 @@ flowchart TD
   transport and render messages you already have (see the Chat family and
   `src/components/AI/OZWELL-BACKEND.md`).
 - **The embedded Ozwell assistant (`@ozwell/react`, from ozwellai-api)** — a
-  drop-in, page-aware assistant that signs in on its own and can **read and act
-  on the host page** through tool calls. Use it when the user asks to "add
-  Ozwell" or to let Ozwell click / read / fill something on the page.
+  drop-in, page-aware assistant that handles its own end-user sign-in and can
+  **read and act on the host page** through tool calls. Use it when the user asks
+  to "add Ozwell" or to let Ozwell click / read / fill something on the page.
 
 For the page-aware assistant: install `@ozwell/react` (Vue/Svelte variants
-exist), render `OzwellChat`, pass an **agent key** (never a parent key) via
-`VITE_OZWELL_AGENT_KEY`, declare page actions in `tools`, and perform each one
-in `onToolCall(name, args, respond)`. The canonical guide — including a full
-Vite + MIE UI "Click Hello World" example — lives at
-https://docs.ozwell.ai → Frontend → React. The conversation stays private; the
-host page only ever receives the tool calls it declares.
+exist), render `OzwellChat`, declare page actions in `tools`, and perform each
+one in `onToolCall(name, args, respond)` — always `respond(...)`, returning
+`isError: true` for an unknown tool or missing target. Authenticate with a
+**site-approved agent key** (`agnt_key-…`) via `VITE_OZWELL_AGENT_KEY`; Vite
+inlines `VITE_*` into the browser bundle, so never expose a parent (`ozw_…`),
+admin, or provider key that way. The canonical guide — with a full Vite + MIE UI
+"Click Hello World" example — lives at <https://docs.ozwell.ai/frontend/react>.
+Conversation content is never relayed to the host; the host receives only the
+tool calls it declares, lifecycle/error events, and data the user explicitly
+shares (opt-in).
 
 This mirrors Rule 16 in [agent/mieweb-ui.instructions.md](../agent/mieweb-ui.instructions.md); keep the two in sync.

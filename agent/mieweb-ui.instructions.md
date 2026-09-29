@@ -208,37 +208,61 @@ Two different things share the "Ozwell" name — pick deliberately:
   part of your own product and you wire the answers yourself (see the Chat
   family and `src/components/AI/OZWELL-BACKEND.md`).
 - **The embedded Ozwell assistant (`@ozwell/react`, from ozwellai-api)** — a
-  drop-in, page-aware assistant that signs in on its own and can **read and act
-  on your page** through tool calls. Use this when the user says things like
-  "add Ozwell" or "let Ozwell click / read / fill something on the page."
+  drop-in, page-aware assistant that handles its own end-user sign-in and can
+  **read and act on your page** through tool calls. Use this when the user says
+  things like "add Ozwell" or "let Ozwell click / read / fill something on the page."
 
 To add the page-aware assistant to a `@mieweb/ui` app:
 
 - Install `@ozwell/react` alongside `@mieweb/ui` (Vue and Svelte variants exist too).
-- Render `OzwellChat` from `@ozwell/react`, pass an **agent key** (never a parent
-  key) via `VITE_OZWELL_AGENT_KEY`, and declare the page actions in `tools`.
-- Handle each call in `onToolCall(name, args, respond)` — perform the DOM action
-  (click a button, fill a field, read content) and then call `respond(result)`.
-- Follow the canonical guide — including a full **Vite + MIE UI "Click Hello
-  World"** example — at https://docs.ozwell.ai → Frontend → React.
+- Render `OzwellChat` from `@ozwell/react` and declare the page actions in `tools`.
+- Authenticate with a **site-approved agent key** (`agnt_key-…`) via
+  `VITE_OZWELL_AGENT_KEY`. Vite inlines every `VITE_*` value into the browser
+  bundle — this is **not** secret storage, so never expose a parent (`ozw_…`),
+  admin, or model-provider key this way; use a server-side integration when a
+  credential must stay private.
+- Handle each call in `onToolCall(name, args, respond)`: perform the DOM action
+  and **always** `respond(...)`. Return `isError: true` for an unknown tool name
+  or a missing target, so the assistant never claims an action that did not happen.
+- Follow the canonical guide — a full **Vite + MIE UI "Click Hello World"**
+  example — at <https://docs.ozwell.ai/frontend/react>.
 
 ```tsx
-import { OzwellChat } from '@ozwell/react';
+import { useRef } from 'react';
+import { Button } from '@mieweb/ui';
+import { OzwellChat, type OzwellTool } from '@ozwell/react';
 
-<button id="hello">Hello World</button>
-<OzwellChat
-  apiKey={import.meta.env.VITE_OZWELL_AGENT_KEY}
-  tools={[{ type: 'function', function: {
+const tools: OzwellTool[] = [{
+  type: 'function',
+  function: {
     name: 'click_hello_world',
     description: 'Click the Hello World button when the user asks.',
-    parameters: { type: 'object', properties: {} },
-  } }]}
-  onToolCall={(name, _args, respond) => {
-    if (name === 'click_hello_world') document.getElementById('hello')?.click();
-    respond({ content: [{ type: 'text', text: 'Clicked Hello World' }] });
-  }}
-/>
+    parameters: { type: 'object', properties: {}, required: [] },
+  },
+}];
+
+export default function App() {
+  const button = useRef<HTMLButtonElement>(null);
+  return (
+    <>
+      <Button ref={button}>Hello World</Button>
+      <OzwellChat
+        apiKey={import.meta.env.VITE_OZWELL_AGENT_KEY}
+        tools={tools}
+        onToolCall={(name, _args, respond) => {
+          if (name !== 'click_hello_world' || !button.current) {
+            respond({ isError: true, content: [{ type: 'text', text: 'Tool unavailable' }] });
+            return;
+          }
+          button.current.click();
+          respond({ content: [{ type: 'text', text: 'Clicked Hello World' }] });
+        }}
+      />
+    </>
+  );
+}
 ```
 
-Privacy: the conversation stays between the user and Ozwell; the host page
-receives only the tool calls it declares — never the chat content.
+Privacy: conversation content stays between the user and Ozwell and is never
+relayed to the host page. The host receives only the tool calls it declares,
+lifecycle/error events, and any data the user explicitly shares (opt-in).
