@@ -476,6 +476,8 @@ describe('shared pieces', () => {
     expect(safeHref('javascript:alert(1)')).toBeUndefined();
     expect(safeHref('\tjava\nscript:alert(1)')).toBeUndefined();
     expect(safeHref('data:text/html,<script>x</script>')).toBeUndefined();
+    expect(safeHref('')).toBeUndefined();
+    expect(safeHref('  ')).toBeUndefined();
     expect(safeHref(undefined)).toBeUndefined();
   });
 

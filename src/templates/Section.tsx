@@ -61,6 +61,8 @@ export function safeHref(href: string | undefined): string | undefined {
   // `java\tscript:` still runs — match the scheme on the stripped value.
   // eslint-disable-next-line no-control-regex
   const stripped = href.replace(/[\u0000-\u0020]/g, '');
+  // Blank means "current document URL" as a form action — not a real target.
+  if (!stripped) return undefined;
   if (!/^[a-z][a-z0-9+.-]*:/i.test(stripped)) return href; // relative, hash, query, //
   return SAFE_HREF_SCHEME.test(stripped) ? href : undefined;
 }
