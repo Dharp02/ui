@@ -355,3 +355,25 @@ flowchart TD
 | **2. Build**      | No equivalent exists yet                | Build locally following @mieweb/ui patterns (CVA, forwardRef, theme vars, a11y) |
 | **2.5. Module**   | It renders a collection the caller owns | Props in, callbacks out; no data access, router or framework import             |
 | **3. Contribute** | Local component is stable + generic     | PR to `mieweb/ui`, then replace local with import                               |
+
+## Embedding the Ozwell assistant (page-aware chat)
+
+"Ozwell" names two different things — choose deliberately:
+
+- **`OzwellChat` / `AIChat` (this library)** — the chat *UI shell*. You own the
+  transport and render messages you already have (see the Chat family and
+  `src/components/AI/OZWELL-BACKEND.md`).
+- **The embedded Ozwell assistant (`@ozwell/react`, from ozwellai-api)** — a
+  drop-in, page-aware assistant that signs in on its own and can **read and act
+  on the host page** through tool calls. Use it when the user asks to "add
+  Ozwell" or to let Ozwell click / read / fill something on the page.
+
+For the page-aware assistant: install `@ozwell/react` (Vue/Svelte variants
+exist), render `OzwellChat`, pass an **agent key** (never a parent key) via
+`VITE_OZWELL_AGENT_KEY`, declare page actions in `tools`, and perform each one
+in `onToolCall(name, args, respond)`. The canonical guide — including a full
+Vite + MIE UI "Click Hello World" example — lives at
+https://docs.ozwell.ai → Frontend → React. The conversation stays private; the
+host page only ever receives the tool calls it declares.
+
+This mirrors Rule 16 in [agent/mieweb-ui.instructions.md](../agent/mieweb-ui.instructions.md); keep the two in sync.

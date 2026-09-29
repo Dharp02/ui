@@ -198,3 +198,47 @@ abstraction solely to make it contributable.
 Follow the repository's permissions and approval requirements for commits,
 pushes, and PR creation. Do not treat these instructions as authorization to
 publish changes.
+
+## Rule 16: Embedding the Ozwell assistant that acts on the page
+
+Two different things share the "Ozwell" name — pick deliberately:
+
+- **`OzwellChat` / `AIChat` (this library)** — the *chat UI shell*. You own the
+  transport and render messages you already have. Use it when the assistant is
+  part of your own product and you wire the answers yourself (see the Chat
+  family and `src/components/AI/OZWELL-BACKEND.md`).
+- **The embedded Ozwell assistant (`@ozwell/react`, from ozwellai-api)** — a
+  drop-in, page-aware assistant that signs in on its own and can **read and act
+  on your page** through tool calls. Use this when the user says things like
+  "add Ozwell" or "let Ozwell click / read / fill something on the page."
+
+To add the page-aware assistant to a `@mieweb/ui` app:
+
+- Install `@ozwell/react` alongside `@mieweb/ui` (Vue and Svelte variants exist too).
+- Render `OzwellChat` from `@ozwell/react`, pass an **agent key** (never a parent
+  key) via `VITE_OZWELL_AGENT_KEY`, and declare the page actions in `tools`.
+- Handle each call in `onToolCall(name, args, respond)` — perform the DOM action
+  (click a button, fill a field, read content) and then call `respond(result)`.
+- Follow the canonical guide — including a full **Vite + MIE UI "Click Hello
+  World"** example — at https://docs.ozwell.ai → Frontend → React.
+
+```tsx
+import { OzwellChat } from '@ozwell/react';
+
+<button id="hello">Hello World</button>
+<OzwellChat
+  apiKey={import.meta.env.VITE_OZWELL_AGENT_KEY}
+  tools={[{ type: 'function', function: {
+    name: 'click_hello_world',
+    description: 'Click the Hello World button when the user asks.',
+    parameters: { type: 'object', properties: {} },
+  } }]}
+  onToolCall={(name, _args, respond) => {
+    if (name === 'click_hello_world') document.getElementById('hello')?.click();
+    respond({ content: [{ type: 'text', text: 'Clicked Hello World' }] });
+  }}
+/>
+```
+
+Privacy: the conversation stays between the user and Ozwell; the host page
+receives only the tool calls it declares — never the chat content.
