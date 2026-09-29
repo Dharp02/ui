@@ -93,6 +93,50 @@ test.describe('Visual Regression Tests - Core Components', () => {
     await expect(page).toHaveScreenshot('button-missing-utilities.png');
   });
 
+  test('Button - Outline dark hover/active stays WCAG AA legible', async ({
+    page,
+  }) => {
+    // Issue #511: the dark hover fill left the label at ~3.3:1 contrast.
+    // Axe never sees interaction states, so guard them here with both
+    // screenshots and a computed-style contrast check (the 5% pixel
+    // tolerance alone can mask small color shifts).
+    await gotoStory(page, 'actions-button--outline', {
+      globals: 'theme:dark',
+    });
+    const button = page.locator("button[data-slot='button']");
+
+    const labelContrast = () =>
+      button.evaluate((el) => {
+        const toLinear = (channel: number) => {
+          const v = channel / 255;
+          return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4;
+        };
+        const luminance = (color: string) => {
+          const [r, g, b] = (color.match(/\d+(\.\d+)?/g) ?? []).map(Number);
+          return (
+            0.2126 * toLinear(r) + 0.7152 * toLinear(g) + 0.0722 * toLinear(b)
+          );
+        };
+        const style = getComputedStyle(el);
+        const [lighter, darker] = [
+          luminance(style.color),
+          luminance(style.backgroundColor),
+        ].sort((a, b) => b - a);
+        return (lighter + 0.05) / (darker + 0.05);
+      });
+
+    await button.hover();
+    await page.waitForTimeout(300); // let the 200ms color transition settle
+    expect(await labelContrast()).toBeGreaterThanOrEqual(4.5); // WCAG AA
+    await expect(page).toHaveScreenshot('button-outline-dark-hover.png');
+
+    await page.mouse.down();
+    await page.waitForTimeout(300);
+    expect(await labelContrast()).toBeGreaterThanOrEqual(4.5);
+    await expect(page).toHaveScreenshot('button-outline-dark-active.png');
+    await page.mouse.up();
+  });
+
   test('Input - Default', async ({ page }) => {
     await gotoStory(page, 'text-inputs-input--default');
     await expect(page).toHaveScreenshot('input-default.png');
