@@ -766,6 +766,7 @@ module.exports = {
     'bg-white/25',
     'border-white/70',
     'dark:border-white/70',
+    'dark:bg-primary-800',
     'dark:bg-primary-900/60',
     'dark:hover:bg-white/10',
     'group-open:rotate-180',

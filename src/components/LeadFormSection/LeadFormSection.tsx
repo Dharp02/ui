@@ -1,6 +1,7 @@
 import * as React from 'react';
 import { cn } from '../../utils/cn';
 import { buttonVariants } from '../Button/button-variants';
+import { RequiredMark, inputVariants } from '../Input';
 import {
   SectionHeading,
   cardClass,
@@ -75,9 +76,10 @@ export const defaultLeadFormFields: LeadFormField[] = [
 ];
 
 const controlClass = cn(
-  'block w-full rounded-lg border border-input bg-background px-3 py-2.5 text-foreground',
-  'placeholder:text-muted-foreground',
-  'focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none'
+  // Input's field styling (single source of truth for form controls); h-auto
+  // and py-2.5 because this one class also sizes <textarea> and <select>.
+  inputVariants({ size: 'md' }),
+  'block h-auto py-2.5'
 );
 
 export const LeadFormSection = React.forwardRef<
@@ -165,12 +167,7 @@ export const LeadFormSection = React.forwardRef<
                     className="mb-1.5 block text-sm font-medium"
                   >
                     {field.label}
-                    {field.required && (
-                      <span aria-hidden="true" className="text-destructive">
-                        {' '}
-                        *
-                      </span>
-                    )}
+                    {field.required && <RequiredMark />}
                   </label>
                   {field.type === 'textarea' ? (
                     <textarea
