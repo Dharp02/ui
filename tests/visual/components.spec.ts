@@ -326,6 +326,79 @@ test.describe('Visual Regression Tests - Core Components', () => {
     );
   });
 
+  test('ChatComposer - Mobile keyboard shell (native) moves only the composer dock', async ({
+    page,
+  }) => {
+    // Issue #514 / PR #516: with source:'native' the shell keeps its full
+    // height and only the composer dock pads up by --mieweb-keyboard-inset.
+    // The native path is driven by synthetic keyboardWillShow/Hide window
+    // events, so it can be exercised deterministically here.
+    await page.setViewportSize({ width: 390, height: 844 });
+    await gotoStory(page, 'chat-chatcomposer--mobile-keyboard-shell', {
+      args: 'source:native',
+    });
+
+    const html = page.locator('html');
+    const header = page.locator('#storybook-root header');
+    const composer = page.locator("[data-slot='chat-composer-input']");
+
+    await expect(html).toHaveAttribute('data-keyboard-source', 'native');
+    await expect(html).not.toHaveAttribute('data-keyboard-open');
+    const closedHeaderBox = await header.boundingBox();
+    const closedComposerBox = await composer.boundingBox();
+    await expect(page).toHaveScreenshot(
+      'chat-composer-keyboard-shell-native-closed.png'
+    );
+
+    const keyboardHeight = 320;
+    await page.evaluate((height) => {
+      window.dispatchEvent(
+        Object.assign(new Event('keyboardWillShow'), { keyboardHeight: height })
+      );
+    }, keyboardHeight);
+    // Let the 250ms padding-bottom transition finish.
+    await page.waitForTimeout(400);
+
+    await expect(html).toHaveAttribute('data-keyboard-open', '');
+    const cssVars = await page.evaluate(() => {
+      const style = getComputedStyle(document.documentElement);
+      return {
+        inset: style.getPropertyValue('--mieweb-keyboard-inset').trim(),
+        viewportHeight: style
+          .getPropertyValue('--mieweb-visual-viewport-height')
+          .trim(),
+        offsetTop: style
+          .getPropertyValue('--mieweb-visual-viewport-offset-top')
+          .trim(),
+      };
+    });
+    expect(cssVars.inset).toBe(`${keyboardHeight}px`);
+    // Native mode must leave the visual-viewport variables unset.
+    expect(cssVars.viewportHeight).toBe('');
+    expect(cssVars.offsetTop).toBe('');
+
+    // The full-height shell and its header must not move…
+    const openHeaderBox = await header.boundingBox();
+    expect(openHeaderBox).toEqual(closedHeaderBox);
+    // …while the composer dock rides up by roughly the keyboard height
+    // (inset + 0.5rem open padding replaces the 1rem closed padding).
+    const openComposerBox = await composer.boundingBox();
+    const composerRise =
+      (closedComposerBox?.y ?? 0) - (openComposerBox?.y ?? 0);
+    expect(composerRise).toBeGreaterThan(keyboardHeight - 32);
+    expect(composerRise).toBeLessThanOrEqual(keyboardHeight);
+    await expect(page).toHaveScreenshot(
+      'chat-composer-keyboard-shell-native-open.png'
+    );
+
+    await page.evaluate(() => {
+      window.dispatchEvent(new Event('keyboardWillHide'));
+    });
+    await page.waitForTimeout(400);
+    await expect(html).not.toHaveAttribute('data-keyboard-open');
+    expect(await composer.boundingBox()).toEqual(closedComposerBox);
+  });
+
   test('MessageThread - Full thread with shared composer', async ({ page }) => {
     // MessageThread now embeds the shared ChatComposer in its border-t frame
     // (composer unification #465). Message footers show wall-clock times, so
