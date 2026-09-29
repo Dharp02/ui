@@ -37,6 +37,7 @@ import { VideoSection, type VideoSectionProps } from '../VideoSection';
 import type { TemplateIconRegistry } from '../../templates/icons';
 import { safeHref } from '../../templates/Section';
 import type { TemplateComponents } from '../../templates/types';
+import { ownProperty } from '../../utils/own';
 
 /** A section the site renders itself, looked up by name in `LandingPage`'s `custom` map. */
 export interface CustomBlock {
@@ -120,17 +121,20 @@ export const LandingPage = React.forwardRef<HTMLDivElement, LandingPageProps>(
     <div ref={ref} data-slot="landing-page" {...rest}>
       {blocks.map((block, i) => {
         const key = block.id ?? `${block.type}-${i}`;
+        // Own-property lookups throughout: block data is runtime JSON, so
+        // `"toString"` must mean "unknown", not `Object.prototype.toString`.
         if (block.type === 'custom') {
-          const Custom = custom?.[block.component];
+          const Custom = ownProperty(custom, block.component);
           return Custom ? (
             <Custom key={key} id={block.id} {...block.props} />
           ) : null;
         }
         const { type, ...props } = block;
         // `type` narrowed `props` to this section's props; TS can't correlate the lookup.
-        const Section = sections[type] as unknown as
-          | React.ComponentType<Record<string, unknown>>
-          | undefined;
+        const Section = ownProperty(
+          sections as Record<string, unknown>,
+          type
+        ) as React.ComponentType<Record<string, unknown>> | undefined;
         // Runtime page data bypasses `BlockData`, so guard what TypeScript
         // cannot: skip unknown types the way unknown `custom` components are
         // skipped (`validateLandingPage` reports them), drop the props JSON
@@ -142,7 +146,7 @@ export const LandingPage = React.forwardRef<HTMLDivElement, LandingPageProps>(
         // submit the lead to the current document URL instead of going inert.
         const action =
           block.type === 'lead-form'
-            ? (actions?.[block.action] ?? safeHref(block.action))
+            ? (ownProperty(actions, block.action) ?? safeHref(block.action))
             : undefined;
         if (block.type === 'lead-form' && action == null) return null;
         const data = { ...props } as Record<string, unknown>;

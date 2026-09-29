@@ -58,6 +58,7 @@ import {
   Zap,
 } from 'lucide-react';
 import { cn } from '../utils/cn';
+import { ownProperty } from '../utils/own';
 
 export type TemplateIconComponent = React.ComponentType<{
   className?: string;
@@ -141,8 +142,11 @@ export interface TemplateIconProps {
 }
 
 export function TemplateIcon({ name, icons, className }: TemplateIconProps) {
-  const Icon: TemplateIconComponent | undefined =
-    icons?.[name] ?? (templateIcons as TemplateIconRegistry)[name];
+  // Icon names are page/CMS data — own properties only, or "toString" would
+  // resolve to a prototype method instead of the lettermark/null fallback.
+  const Icon =
+    ownProperty(icons, name) ??
+    ownProperty(templateIcons as TemplateIconRegistry, name);
   if (Icon)
     return (
       <Icon

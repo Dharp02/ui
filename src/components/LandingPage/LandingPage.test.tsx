@@ -179,6 +179,21 @@ describe('LandingPage', () => {
     // No form at all — an action-less form would submit to the current URL.
     expect(container.querySelector('form')).toBeNull();
   });
+
+  it('treats prototype members as unknown blocks and components', () => {
+    const { container } = render(
+      <LandingPage
+        custom={{}}
+        blocks={[
+          { type: 'custom', component: 'toString' },
+          { type: 'constructor' } as unknown as LandingBlock,
+        ]}
+      />
+    );
+    expect(
+      container.querySelector('[data-slot="landing-page"]')
+    ).toBeEmptyDOMElement();
+  });
 });
 
 describe('validateLandingPage', () => {
@@ -200,6 +215,34 @@ describe('validateLandingPage', () => {
       ['error', 2],
       ['warning', 1],
       ['error', 3],
+    ]);
+  });
+
+  it('flags FAQ item ids that collide with page ids', () => {
+    const issues = validateLandingPage([
+      hero,
+      { type: 'cta', id: 'contact', title: 'Go' },
+      {
+        type: 'faq',
+        title: 'FAQ',
+        items: [
+          { id: 'contact', question: 'Q1', answer: 'A1' },
+          { id: 'q2', question: 'Q2', answer: 'A2' },
+          { id: 'q2', question: 'Q2 again', answer: 'A2' },
+        ],
+      },
+    ]);
+    expect(issues).toEqual([
+      expect.objectContaining({
+        severity: 'error',
+        index: 2,
+        message: expect.stringContaining('"contact"'),
+      }),
+      expect.objectContaining({
+        severity: 'error',
+        index: 2,
+        message: expect.stringContaining('"q2"'),
+      }),
     ]);
   });
 

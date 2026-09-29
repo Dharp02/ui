@@ -179,14 +179,22 @@ export function validateLandingPage(
 
   const seen = new Map<string, number>();
   blocks.forEach((b, index) => {
-    if (!b.id) return;
-    if (seen.has(b.id))
-      issues.push({
-        severity: 'error',
-        index,
-        message: `Duplicate id "${b.id}" (also block ${seen.get(b.id)}).`,
-      });
-    else seen.set(b.id, index);
+    // FAQ item ids become DOM ids too, so they share the page-wide namespace.
+    const ids = [
+      ...(b.id ? [b.id] : []),
+      ...(b.type === 'faq'
+        ? b.items.flatMap((item) => (item.id ? [item.id] : []))
+        : []),
+    ];
+    ids.forEach((id) => {
+      if (seen.has(id))
+        issues.push({
+          severity: 'error',
+          index,
+          message: `Duplicate id "${id}" (also block ${seen.get(id)}).`,
+        });
+      else seen.set(id, index);
+    });
   });
 
   blocks.forEach((b, index) => {

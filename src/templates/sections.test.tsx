@@ -523,5 +523,8 @@ describe('shared pieces', () => {
     expect(container).toHaveTextContent('EHR');
     rerender(<TemplateIcon name="not-a-token" />);
     expect(container).toBeEmptyDOMElement();
+    // Prototype members are not icons — CMS data must fall through, not crash.
+    rerender(<TemplateIcon name="constructor" icons={{}} />);
+    expect(container).toBeEmptyDOMElement();
   });
 });
