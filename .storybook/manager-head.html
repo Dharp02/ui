@@ -4,3 +4,26 @@
   the Storybook theme global. Do not add prefers-color-scheme overrides here:
   they follow the OS theme and clash with the in-app light/dark toggle.
 -->
+<!--
+  Ozwell assistant embed (hosted CDN widget from mieweb/ozwellai-api).
+  Lives in the manager shell so it floats over the whole Storybook without
+  polluting story canvases, visual snapshots, or the test-runner (which load
+  iframe.html directly and never execute manager scripts).
+
+  The widget only mounts when an agent key is available:
+    - production: set OZWELL_AGENT_KEY below to the site-approved agent key
+      (agnt_key-..., created in Ozwell Manager; safe to embed client-side)
+    - local dev:  localStorage.setItem('ozwellAgentKey', 'agnt_key-...') and reload
+-->
+<script>
+  (function () {
+    var OZWELL_AGENT_KEY = ''; // site agent key for ui.mieweb.org
+    var key = OZWELL_AGENT_KEY || window.localStorage.getItem('ozwellAgentKey');
+    if (!key) return;
+    window.OzwellChatConfig = { apiKey: key };
+    var script = document.createElement('script');
+    script.src = 'https://ozwellapi.os.mieweb.org/widget';
+    script.async = true;
+    document.head.appendChild(script);
+  })();
+</script>
