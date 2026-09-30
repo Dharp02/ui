@@ -189,5 +189,19 @@
     script.src = 'https://ozwellapi.os.mieweb.org/widget';
     script.async = true;
     document.head.appendChild(script);
+
+    // Temporary launcher icon fix (remove when mieweb/ozwellai-api#296
+    // ships): the loader hardcodes the launcher image to the host page's
+    // /favicon.ico, which this site doesn't serve — so the button renders a
+    // broken image. Swap in the Ozwell mark this Storybook already serves
+    // for HeyOzwell. Polled rather than observed because the loader
+    // re-renders the button's innerHTML on panel toggles, restoring the
+    // broken favicon after any one-shot swap.
+    setInterval(function () {
+      var img = document.querySelector('#ozwell-chat-button img');
+      if (img && img.getAttribute('src') !== './ozwell/icon.svg') {
+        img.src = './ozwell/icon.svg';
+      }
+    }, 500);
   })();
 </script>

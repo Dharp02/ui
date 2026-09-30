@@ -111,6 +111,23 @@ test.describe('Ozwell embed - manager shell', () => {
     );
     expect(restricted).toBe(false);
   });
+
+  test('swaps the launcher favicon for the bundled Ozwell mark (ozwellai-api#296)', async ({
+    page,
+  }) => {
+    await gotoManagerWithStubbedWidget(page);
+    // The stub never mounts the real launcher, so simulate the loader's DOM.
+    await page.evaluate(() => {
+      const button = document.createElement('button');
+      button.id = 'ozwell-chat-button';
+      button.innerHTML = '<img src="/favicon.ico" alt="Chat" />';
+      document.body.appendChild(button);
+    });
+    await expect(page.locator('#ozwell-chat-button img')).toHaveAttribute(
+      'src',
+      /\/ozwell\/icon\.svg$/
+    );
+  });
 });
 
 test.describe('Ozwell embed - iOS viewport shield', () => {
