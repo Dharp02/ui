@@ -215,7 +215,7 @@ Two different things share the "Ozwell" name — pick deliberately:
 
 To add the page-aware assistant to a `@mieweb/ui` app:
 
-- Install `@ozwell/react` alongside `@mieweb/ui` (Vue and Svelte variants exist too).
+- Install `@ozwell/react` alongside `@mieweb/ui`.
 - Render `OzwellChat` from `@ozwell/react` and declare the page actions in `tools`.
 - Authenticate with a **site-approved agent key** (`agnt_key-…`) via
   `VITE_OZWELL_AGENT_KEY`. Vite inlines every `VITE_*` value into the browser
@@ -226,7 +226,7 @@ To add the page-aware assistant to a `@mieweb/ui` app:
   and **always** `respond(...)`. Return `isError: true` for an unknown tool name
   or a missing target, so the assistant never claims an action that did not happen.
 - Follow the canonical guide — a full **Vite + MIE UI "Click Hello World"**
-  example — at <https://docs.ozwell.ai/frontend/react>.
+  example — at <https://mieweb.github.io/ozwellai-api/frontend/react/>.
 
 ```tsx
 import { useRef } from 'react';

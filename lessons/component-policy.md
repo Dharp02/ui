@@ -369,14 +369,14 @@ flowchart TD
   click / read / fill something on the page. (With an app agent key it acts as
   that agent; configure no key and it instead gates on end-user sign-in.)
 
-For the page-aware assistant: install `@ozwell/react` (Vue/Svelte variants
-exist), render `OzwellChat`, declare page actions in `tools`, and perform each
+For the page-aware assistant: install `@ozwell/react`, render `OzwellChat`,
+declare page actions in `tools`, and perform each
 one in `onToolCall(name, args, respond)` — always `respond(...)`, returning
 `isError: true` for an unknown tool or missing target. Authenticate with a
 **site-approved agent key** (`agnt_key-…`) via `VITE_OZWELL_AGENT_KEY`; Vite
 inlines `VITE_*` into the browser bundle, so never expose a parent (`ozw_…`),
 admin, or provider key that way. The canonical guide — with a full Vite + MIE UI
-"Click Hello World" example — lives at <https://docs.ozwell.ai/frontend/react>.
+"Click Hello World" example — lives at <https://mieweb.github.io/ozwellai-api/frontend/react/>.
 Conversation content is never relayed to the host; the host receives only the
 tool calls it declares, lifecycle/error events, and data the user explicitly
 shares (opt-in).
