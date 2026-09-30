@@ -66,6 +66,7 @@ test.describe('Ozwell embed - manager shell', () => {
     expect(config.toolNames).toEqual([
       'list_components',
       'get_component_stories',
+      'get_component_docs',
       'open_story',
     ]);
     expect(config.widgetScript).toBe(true);
@@ -100,6 +101,37 @@ test.describe('Ozwell embed - manager shell', () => {
       isError: boolean;
     };
     expect(unknown.isError).toBe(true);
+  });
+
+  test('answers usage questions from the generated docs corpus', async ({
+    page,
+  }) => {
+    await gotoManagerWithStubbedWidget(page);
+
+    const docs = (await callTool(page, 'get_component_docs', {
+      component: 'button',
+    })) as {
+      success: boolean;
+      component: string;
+      description: string;
+      examples: string[];
+      category: string;
+      categoryGuidance: string;
+      docsPageId: string;
+    };
+    expect(docs.success).toBe(true);
+    expect(docs.component).toBe('Button');
+    expect(docs.description).toContain('button component');
+    expect(docs.examples.length).toBeGreaterThan(0);
+    expect(docs.examples[0]).toContain('<Button');
+    expect(docs.category).toBe('Inputs/Actions');
+    expect(docs.categoryGuidance).toContain('Which one?');
+    expect(docs.docsPageId).toBe('actions-button--docs');
+
+    const missing = (await callTool(page, 'get_component_docs', {
+      component: 'NotARealThing',
+    })) as { isError: boolean };
+    expect(missing.isError).toBe(true);
   });
 
   test('does not restrict viewport zoom on non-iOS browsers (WCAG 1.4.4)', async ({
