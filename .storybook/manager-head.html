@@ -203,30 +203,37 @@
           } else if (name === 'get_component_docs') {
             loadDocs()
               .then(function (docs) {
-                var want = String(args.component || '').toLowerCase();
-                var byName = function (n) {
-                  return n.toLowerCase() === want;
+                // Normalize so 'EsheetRenderer' matches the 'ESheet Renderer'
+                // title segment and casing/punctuation never miss.
+                var norm = function (s) {
+                  return String(s).toLowerCase().replace(/[^a-z0-9]/g, '');
                 };
+                var want = norm(args.component || '');
+                var titles = Object.keys(docs.stories);
                 // Story titles carry the canonical name and the export
                 // mapping (e.g. 'ReconciliationPanel' -> AIReconciliationPanel).
-                var storyTitle = Object.keys(docs.stories).filter(function (t) {
-                  var entry = docs.stories[t];
-                  return (
-                    byName(t.split('/').pop()) ||
-                    (entry.component && byName(entry.component))
-                  );
-                })[0];
+                // A title-segment match outranks a component-export match:
+                // several demo stories can share one meta component.
+                var storyTitle =
+                  titles.filter(function (t) {
+                    return norm(t.split('/').pop()) === want;
+                  })[0] ||
+                  titles.filter(function (t) {
+                    var c = docs.stories[t].component;
+                    return c && norm(c) === want;
+                  })[0];
                 var storyDoc = storyTitle && docs.stories[storyTitle];
                 var compName =
-                  Object.keys(docs.components).filter(byName)[0] ||
-                  (storyDoc && storyDoc.component);
+                  Object.keys(docs.components).filter(function (n) {
+                    return norm(n) === want;
+                  })[0] || (storyDoc && storyDoc.component);
                 var jsdoc = compName && docs.components[compName];
                 // Canonical index title gives the docs page id + category.
                 var title =
                   storyTitle && comps[storyTitle]
                     ? storyTitle
                     : Object.keys(comps).filter(function (t) {
-                        return byName(t.split('/').pop());
+                        return norm(t.split('/').pop()) === want;
                       })[0];
                 var category = title && title.split('/').slice(0, -1).join('/');
                 var guidance = category && docs.categories[category];

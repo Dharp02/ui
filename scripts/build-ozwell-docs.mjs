@@ -116,12 +116,82 @@ const storyFiles = readdirSync(srcDir, { recursive: true })
   .filter((f) => f.endsWith('.stories.tsx'))
   .map((f) => join(srcDir, f));
 
+/**
+ * Return the source of the object literal starting at `src[start]` ('{'),
+ * balancing braces while skipping strings, template literals (incl. ${}),
+ * and comments — meta docs descriptions contain braces inside backticks.
+ */
+function sliceObjectLiteral(src, start) {
+  let depth = 0;
+  const stack = []; // template-literal nesting
+  for (let i = start; i < src.length; i++) {
+    const ch = src[i];
+    const next = src[i + 1];
+    if (ch === '/' && next === '/') {
+      i = src.indexOf('\n', i);
+      if (i === -1) break;
+    } else if (ch === '/' && next === '*') {
+      i = src.indexOf('*/', i) + 1;
+    } else if (ch === "'" || ch === '"') {
+      for (i++; i < src.length && src[i] !== ch; i++) if (src[i] === '\\') i++;
+    } else if (ch === '`') {
+      for (i++; i < src.length; i++) {
+        if (src[i] === '\\') i++;
+        else if (src[i] === '$' && src[i + 1] === '{') {
+          stack.push('tpl');
+          i++;
+          break;
+        } else if (src[i] === '`') break;
+      }
+    } else if (ch === '}' && stack.length) {
+      // resume the template literal that the ${} interrupted
+      stack.pop();
+      for (i++; i < src.length; i++) {
+        if (src[i] === '\\') i++;
+        else if (src[i] === '$' && src[i + 1] === '{') {
+          stack.push('tpl');
+          i++;
+          break;
+        } else if (src[i] === '`') break;
+      }
+    } else if (ch === '{') {
+      depth++;
+    } else if (ch === '}') {
+      depth--;
+      if (depth === 0) return src.slice(start, i + 1);
+    }
+  }
+  return null;
+}
+
+/**
+ * Return the source of the CSF meta object — the object literal bound to
+ * the default export. Sample data earlier in the file may contain its own
+ * `title:`/`component:` fields, so field extraction must be scoped here.
+ */
+function metaObjectSource(src) {
+  let start = -1;
+  const named = src.match(/export default (\w+)/);
+  if (named) {
+    const decl = src.match(
+      new RegExp(`const ${named[1]}[^=]*=\\s*\\{`)
+    );
+    if (decl) start = decl.index + decl[0].length - 1;
+  } else {
+    const inline = src.match(/export default\s*\{/);
+    if (inline) start = inline.index + inline[0].length - 1;
+  }
+  return start === -1 ? null : sliceObjectLiteral(src, start);
+}
+
 for (const file of storyFiles) {
   const src = readFileSync(file, 'utf8');
-  const title = src.match(/\btitle:\s*['"]([^'"]+)['"]/)?.[1];
+  const meta = metaObjectSource(src);
+  if (!meta) continue;
+  const title = meta.match(/\btitle:\s*['"]([^'"]+)['"]/)?.[1];
   if (!title) continue;
-  const componentName = src.match(/\bcomponent:\s*([A-Za-z0-9_]+)/)?.[1] ?? null;
-  const descMatch = src.match(
+  const componentName = meta.match(/\bcomponent:\s*([A-Za-z0-9_]+)/)?.[1] ?? null;
+  const descMatch = meta.match(
     /description:\s*\{\s*component:\s*(?:`((?:[^`\\]|\\[\s\S])*)`|'((?:[^'\\]|\\.)*)')/
   );
   let description = descMatch ? (descMatch[1] ?? descMatch[2]) : null;

@@ -139,6 +139,18 @@ test.describe('Ozwell embed - manager shell', () => {
     expect(mapped.component).toBe('AIReconciliationPanel');
     expect(mapped.description).toBeTruthy();
 
+    // Generator must scope meta extraction to the CSF default export:
+    // these files contain sample data with their own `title:`/`component:`
+    // fields ('Patient Intake Form', CodeLookup) before the real meta.
+    for (const name of ['EsheetBuilder', 'EsheetRenderer']) {
+      const esheet = (await callTool(page, 'get_component_docs', {
+        component: name,
+      })) as { success: boolean; component: string; category: string };
+      expect(esheet.success).toBe(true);
+      expect(esheet.component).toBe(name);
+      expect(esheet.category).toBe('Inputs/Composite forms');
+    }
+
     const missing = (await callTool(page, 'get_component_docs', {
       component: 'NotARealThing',
     })) as { isError: boolean };
