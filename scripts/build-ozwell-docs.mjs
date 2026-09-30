@@ -57,11 +57,13 @@ const catalogDir = join(root, 'src/catalog');
 for (const file of readdirSync(catalogDir)) {
   if (!file.endsWith('.mdx')) continue;
   const raw = readFileSync(join(catalogDir, file), 'utf8');
+  const metaTag = raw.match(/<Meta[^>]*\/>/);
   const title = raw.match(/<Meta\s+title="([^"]+)"/)?.[1];
-  if (!title) continue;
+  if (!title || !metaTag) continue;
+  // Drop only the MDX preamble (imports + <Meta/>); a global import strip
+  // would also delete import lines inside fenced usage examples.
   const content = raw
-    .replace(/^import .*$/gm, '')
-    .replace(/<Meta[^>]*\/>/g, '')
+    .slice(raw.indexOf(metaTag[0]) + metaTag[0].length)
     .trim();
   // 'Inputs/Actions/Overview' → key 'Inputs/Actions'
   const key = title.replace(/\/Overview$/, '');
@@ -103,12 +105,44 @@ for (const file of files) {
   }
 }
 
+// --- Storybook docs metadata from src/**/*.stories.tsx -------------------
+// The `docs.description.component` blocks in the stories files are this
+// repo's canonical user-facing guidance (use/don't-use, limitations,
+// relationships) and the meta carries the title ↔ export mapping (e.g.
+// story 'ReconciliationPanel' → export `AIReconciliationPanel`).
+const stories = {};
+const srcDir = join(root, 'src');
+const storyFiles = readdirSync(srcDir, { recursive: true })
+  .filter((f) => f.endsWith('.stories.tsx'))
+  .map((f) => join(srcDir, f));
+
+for (const file of storyFiles) {
+  const src = readFileSync(file, 'utf8');
+  const title = src.match(/\btitle:\s*['"]([^'"]+)['"]/)?.[1];
+  if (!title) continue;
+  const componentName = src.match(/\bcomponent:\s*([A-Za-z0-9_]+)/)?.[1] ?? null;
+  const descMatch = src.match(
+    /description:\s*\{\s*component:\s*(?:`((?:[^`\\]|\\[\s\S])*)`|'((?:[^'\\]|\\.)*)')/
+  );
+  let description = descMatch ? (descMatch[1] ?? descMatch[2]) : null;
+  if (description) description = description.replace(/\\([`$'\\])/g, '$1').trim();
+  if (componentName || description) {
+    stories[title] = { component: componentName, description };
+  }
+}
+
 mkdirSync(dirname(out), { recursive: true });
 writeFileSync(
   out,
-  JSON.stringify({ generatedAt: new Date().toISOString(), categories, components })
+  JSON.stringify({
+    generatedAt: new Date().toISOString(),
+    categories,
+    components,
+    stories,
+  })
 );
 console.log(
   `ozwell docs: ${Object.keys(components).length} components, ` +
+    `${Object.keys(stories).length} story guides, ` +
     `${Object.keys(categories).length} category guides → ${out.replace(root + '/', '')}`
 );

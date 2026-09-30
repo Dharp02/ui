@@ -42,9 +42,13 @@
     - local dev:  localStorage.setItem('ozwellAgentKey', 'agnt_key-...') and reload
 
   The assistant is catalog-aware via page tools answered from Storybook's
-  static ./index.json (every section, component, and story in this build):
+  static ./index.json (every section, component, and story in this build)
+  and from ./ozwell/docs.json, a usage-docs corpus generated at build time
+  by scripts/build-ozwell-docs.mjs (stories docs metadata, component JSDoc,
+  and the src/catalog selection guidance):
     - list_components         -> all components grouped by section, with counts
     - get_component_stories   -> the stories (variants) of one component
+    - get_component_docs      -> usage docs: what it is, examples, when to use
     - open_story              -> navigate this Storybook to a story/docs page
 -->
 <script>
@@ -200,24 +204,33 @@
             loadDocs()
               .then(function (docs) {
                 var want = String(args.component || '').toLowerCase();
-                var compName = Object.keys(docs.components).filter(function (n) {
+                var byName = function (n) {
                   return n.toLowerCase() === want;
+                };
+                // Story titles carry the canonical name and the export
+                // mapping (e.g. 'ReconciliationPanel' -> AIReconciliationPanel).
+                var storyTitle = Object.keys(docs.stories).filter(function (t) {
+                  var entry = docs.stories[t];
+                  return (
+                    byName(t.split('/').pop()) ||
+                    (entry.component && byName(entry.component))
+                  );
                 })[0];
-                // Canonical title from the index, e.g. 'Inputs/Actions/Button',
-                // gives us the category guidance and a fallback name match.
-                var title = Object.keys(comps).filter(function (t) {
-                  return t.split('/').pop().toLowerCase() === want;
-                })[0];
-                if (!compName && title) {
-                  compName = title.split('/').pop();
-                  compName = Object.keys(docs.components).filter(function (n) {
-                    return n.toLowerCase() === compName.toLowerCase();
-                  })[0];
-                }
-                var doc = compName && docs.components[compName];
+                var storyDoc = storyTitle && docs.stories[storyTitle];
+                var compName =
+                  Object.keys(docs.components).filter(byName)[0] ||
+                  (storyDoc && storyDoc.component);
+                var jsdoc = compName && docs.components[compName];
+                // Canonical index title gives the docs page id + category.
+                var title =
+                  storyTitle && comps[storyTitle]
+                    ? storyTitle
+                    : Object.keys(comps).filter(function (t) {
+                        return byName(t.split('/').pop());
+                      })[0];
                 var category = title && title.split('/').slice(0, -1).join('/');
                 var guidance = category && docs.categories[category];
-                if (!doc && !guidance) {
+                if (!storyDoc && !jsdoc && !guidance) {
                   return respond({
                     isError: true,
                     error: 'No docs for "' + args.component + '"',
@@ -225,9 +238,12 @@
                 }
                 respond({
                   success: true,
-                  component: compName || args.component,
-                  description: doc ? doc.description : null,
-                  examples: doc ? doc.examples : [],
+                  component: (storyDoc && storyDoc.component) || compName || args.component,
+                  // Stories docs metadata is this repo's canonical usage
+                  // guidance; implementation JSDoc is the fallback.
+                  description:
+                    (storyDoc && storyDoc.description) || (jsdoc && jsdoc.description) || null,
+                  examples: jsdoc ? jsdoc.examples : [],
                   category: category || null,
                   categoryGuidance: guidance ? guidance.content : null,
                   docsPageId: title && comps[title] ? comps[title].docsId : null,

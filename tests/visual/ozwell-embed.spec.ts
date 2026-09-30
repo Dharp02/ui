@@ -121,12 +121,23 @@ test.describe('Ozwell embed - manager shell', () => {
     };
     expect(docs.success).toBe(true);
     expect(docs.component).toBe('Button');
-    expect(docs.description).toContain('button component');
+    // Stories docs metadata (docs.description.component) is the primary
+    // source; JSDoc supplies the code examples.
+    expect(docs.description).toContain("What it's for");
     expect(docs.examples.length).toBeGreaterThan(0);
     expect(docs.examples[0]).toContain('<Button');
     expect(docs.category).toBe('Inputs/Actions');
     expect(docs.categoryGuidance).toContain('Which one?');
     expect(docs.docsPageId).toBe('actions-button--docs');
+
+    // Story title → export mapping: the 'ReconciliationPanel' story
+    // documents the `AIReconciliationPanel` export.
+    const mapped = (await callTool(page, 'get_component_docs', {
+      component: 'ReconciliationPanel',
+    })) as { success: boolean; component: string; description: string };
+    expect(mapped.success).toBe(true);
+    expect(mapped.component).toBe('AIReconciliationPanel');
+    expect(mapped.description).toBeTruthy();
 
     const missing = (await callTool(page, 'get_component_docs', {
       component: 'NotARealThing',
