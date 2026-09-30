@@ -11,6 +11,7 @@
 
 import * as React from 'react';
 import { cn } from '../../utils/cn';
+import { Animated, AnimatedPresence } from '../../motion';
 import { sidebarItem, lastActivityOf, lastMessageByTime } from './parts';
 import type { SuperChatConversation } from './types';
 
@@ -113,12 +114,23 @@ export function SuperChatConversations({
                     </span>
                   )}
                 </span>
-                {!!c.unread && (
-                  <span className="bg-primary-600 ms-1 inline-flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-[10px] font-semibold text-white">
-                    {c.unread}
-                    <span className="sr-only"> unread messages</span>
-                  </span>
-                )}
+                {/* `initial={false}`: badges already present on mount are
+                    state, not news — only a badge that appears later pops. */}
+                <AnimatedPresence initial={false}>
+                  {!!c.unread && (
+                    <Animated
+                      key="unread"
+                      as="span"
+                      preset="pop"
+                      mode="presence"
+                      data-slot="superchat-unread-badge"
+                      className="bg-primary-600 ms-1 inline-flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-[10px] font-semibold text-white"
+                    >
+                      {c.unread}
+                      <span className="sr-only"> unread messages</span>
+                    </Animated>
+                  )}
+                </AnimatedPresence>
               </button>
             </div>
           );
