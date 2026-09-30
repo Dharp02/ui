@@ -14,13 +14,151 @@
     - production: set OZWELL_AGENT_KEY below to the site-approved agent key
       (agnt_key-..., created in Ozwell Manager; safe to embed client-side)
     - local dev:  localStorage.setItem('ozwellAgentKey', 'agnt_key-...') and reload
+
+  The assistant is catalog-aware via page tools answered from Storybook's
+  static ./index.json (every section, component, and story in this build):
+    - list_components         -> all components grouped by section, with counts
+    - get_component_stories   -> the stories (variants) of one component
+    - open_story              -> navigate this Storybook to a story/docs page
 -->
 <script>
   (function () {
     var OZWELL_AGENT_KEY = 'agnt_key-muncblarc362ef130f8eae23'; // site agent key for ui.mieweb.org
     var key = OZWELL_AGENT_KEY || window.localStorage.getItem('ozwellAgentKey');
     if (!key) return;
-    window.OzwellChatConfig = { apiKey: key };
+
+    // ---- Catalog lookups backed by Storybook's static index.json ----
+    var indexPromise = null;
+    function loadIndex() {
+      if (!indexPromise) {
+        indexPromise = fetch('./index.json').then(function (r) {
+          if (!r.ok) throw new Error('index.json HTTP ' + r.status);
+          return r.json();
+        });
+      }
+      return indexPromise;
+    }
+
+    // Group entries by title: { 'Actions/Button': { docsId, stories: [{id, name}] } }
+    function componentsFrom(entries) {
+      var byTitle = {};
+      Object.keys(entries).forEach(function (id) {
+        var e = entries[id];
+        var c = byTitle[e.title] || (byTitle[e.title] = { docsId: null, stories: [] });
+        if (e.type === 'docs') c.docsId = e.id;
+        else c.stories.push({ id: e.id, name: e.name });
+      });
+      return byTitle;
+    }
+
+    window.OzwellChatConfig = {
+      apiKey: key,
+      tools: [
+        {
+          type: 'function',
+          function: {
+            name: 'list_components',
+            description:
+              'List everything in this Storybook: every component and docs page grouped by section, each with its story (variant) count.',
+            parameters: { type: 'object', properties: {}, required: [] },
+          },
+        },
+        {
+          type: 'function',
+          function: {
+            name: 'get_component_stories',
+            description:
+              'Get the stories (variants) of one component by name, e.g. "Button" or "Actions/Button". Returns each story name and its id.',
+            parameters: {
+              type: 'object',
+              properties: {
+                component: { type: 'string', description: 'Component name or full section/title' },
+              },
+              required: ['component'],
+            },
+          },
+        },
+        {
+          type: 'function',
+          function: {
+            name: 'open_story',
+            description:
+              'Navigate this Storybook to a story or docs page by id from get_component_stories (e.g. "actions-button--danger"). Warn the user first: navigation reloads the page and ends this chat conversation.',
+            parameters: {
+              type: 'object',
+              properties: { id: { type: 'string', description: 'Story or docs id' } },
+              required: ['id'],
+            },
+          },
+        },
+      ],
+    };
+
+    document.addEventListener('ozwell-tool-call', function (e) {
+      var name = e.detail.name;
+      var args = e.detail.arguments || {};
+      var respond = e.detail.respond;
+      var fail = function (err) {
+        respond({ isError: true, error: String((err && err.message) || err) });
+      };
+
+      loadIndex()
+        .then(function (idx) {
+          var comps = componentsFrom(idx.entries);
+
+          if (name === 'list_components') {
+            var sections = {};
+            Object.keys(comps).forEach(function (title) {
+              var parts = title.split('/');
+              var section = parts.length > 1 ? parts[0] : 'Other';
+              var label = parts.slice(1).join('/') || parts[0];
+              (sections[section] = sections[section] || []).push(
+                label + ' (' + comps[title].stories.length + ' stories)'
+              );
+            });
+            respond({ success: true, sections: sections });
+          } else if (name === 'get_component_stories') {
+            var q = String(args.component || '').toLowerCase();
+            var matches = Object.keys(comps).filter(function (title) {
+              var t = title.toLowerCase();
+              return t === q || t.endsWith('/' + q) || t.split('/').pop() === q;
+            });
+            if (!matches.length) {
+              matches = Object.keys(comps).filter(function (title) {
+                return title.toLowerCase().indexOf(q) !== -1;
+              });
+            }
+            if (!matches.length) {
+              respond({ isError: true, error: 'No component matching "' + args.component + '"' });
+            } else if (matches.length > 1) {
+              respond({ success: true, multipleMatches: matches });
+            } else {
+              var c = comps[matches[0]];
+              respond({
+                success: true,
+                component: matches[0],
+                storyCount: c.stories.length,
+                stories: c.stories,
+                docsId: c.docsId,
+              });
+            }
+          } else if (name === 'open_story') {
+            var entry = idx.entries[String(args.id || '')];
+            if (!entry) return respond({ isError: true, error: 'No story with id "' + args.id + '"' });
+            var path = '/' + (entry.type === 'docs' ? 'docs' : 'story') + '/' + entry.id;
+            respond({ success: true, opening: entry.title + ' — ' + entry.name });
+            // Full navigation: the manager router is not reachable from a plain
+            // script, so this reloads the page (and restarts the chat).
+            setTimeout(function () {
+              window.location.href = './?path=' + path;
+            }, 400);
+          } else {
+            respond({ isError: true, error: 'Unknown tool: ' + name });
+          }
+        })
+        .catch(fail);
+    });
+
     var script = document.createElement('script');
     script.src = 'https://ozwellapi.os.mieweb.org/widget';
     script.async = true;
