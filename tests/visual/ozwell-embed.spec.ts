@@ -151,6 +151,16 @@ test.describe('Ozwell embed - manager shell', () => {
       expect(esheet.category).toBe('Inputs/Composite forms');
     }
 
+    // Generator must skip default exports inside fenced doc examples:
+    // LandingPage.stories.tsx has `export default function Page()` in an
+    // example before the real `export default meta` at the end of file.
+    const landing = (await callTool(page, 'get_component_docs', {
+      component: 'LandingPage',
+    })) as { success: boolean; component: string; category: string };
+    expect(landing.success).toBe(true);
+    expect(landing.component).toBe('LandingPage');
+    expect(landing.category).toBe('Templates/Pages');
+
     const missing = (await callTool(page, 'get_component_docs', {
       component: 'NotARealThing',
     })) as { isError: boolean };

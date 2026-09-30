@@ -168,20 +168,27 @@ function sliceObjectLiteral(src, start) {
  * Return the source of the CSF meta object — the object literal bound to
  * the default export. Sample data earlier in the file may contain its own
  * `title:`/`component:` fields, so field extraction must be scoped here.
+ * Fenced examples can contain their own default exports (e.g.
+ * `export default function Page()` in LandingPage.stories.tsx), so every
+ * candidate is tried and only one that resolves to an object literal with
+ * a `title:` string — the CSF meta contract — is accepted.
  */
 function metaObjectSource(src) {
-  let start = -1;
-  const named = src.match(/export default (\w+)/);
-  if (named) {
-    const decl = src.match(
-      new RegExp(`const ${named[1]}[^=]*=\\s*\\{`)
-    );
-    if (decl) start = decl.index + decl[0].length - 1;
-  } else {
-    const inline = src.match(/export default\s*\{/);
-    if (inline) start = inline.index + inline[0].length - 1;
+  for (const m of src.matchAll(/export default(?:\s+(\w+)\s*;?|\s*(\{))/g)) {
+    const ident = m[1];
+    if (ident === 'function' || ident === 'class' || ident === 'async') continue;
+    let start = -1;
+    if (ident) {
+      const decl = src.match(new RegExp(`const ${ident}[^=]*=\\s*\\{`));
+      if (decl) start = decl.index + decl[0].length - 1;
+    } else {
+      start = m.index + m[0].length - 1;
+    }
+    if (start === -1) continue;
+    const obj = sliceObjectLiteral(src, start);
+    if (obj && /\btitle:\s*['"]/.test(obj)) return obj;
   }
-  return start === -1 ? null : sliceObjectLiteral(src, start);
+  return null;
 }
 
 for (const file of storyFiles) {
