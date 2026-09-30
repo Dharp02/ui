@@ -201,6 +201,13 @@
       var img = document.querySelector('#ozwell-chat-button img');
       if (img && img.getAttribute('src') !== './ozwell/icon.svg') {
         img.src = './ozwell/icon.svg';
+        // Fill the 60px circle: the loader caps .ozwell-chat-icon at 32px
+        // and pads the button. Inline styles win and are re-applied with
+        // the src whenever the loader re-renders the button.
+        img.style.width = '100%';
+        img.style.height = '100%';
+        img.style.objectFit = 'contain';
+        img.parentElement.style.padding = '0';
       }
     }, 500);
   })();
