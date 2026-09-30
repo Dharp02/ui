@@ -5,6 +5,20 @@
   they follow the OS theme and clash with the in-app light/dark toggle.
 -->
 <!--
+  maximum-scale=1 suppresses iOS Safari's auto-zoom when focusing an input
+  with a font-size < 16px — including inputs inside the cross-origin Ozwell
+  widget iframe below, whose pinned @mieweb/ui (0.9.0) predates the composer
+  16px font floor. Without it the zoom shoves the chat panel off-screen on
+  phones. Interim shield until mieweb/ozwellai-api#298 ships; iOS has ignored
+  maximum-scale for user pinch-zoom since iOS 10, so accessibility zoom still
+  works. This tag is parsed after Storybook's default viewport meta, so it
+  wins.
+-->
+<meta
+  name="viewport"
+  content="width=device-width, initial-scale=1, maximum-scale=1"
+/>
+<!--
   Ozwell assistant embed (hosted CDN widget from mieweb/ozwellai-api).
   Lives in the manager shell so it floats over the whole Storybook without
   polluting story canvases, visual snapshots, or the test-runner (which load
