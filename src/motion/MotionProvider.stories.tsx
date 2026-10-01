@@ -22,7 +22,7 @@ Opting an application into real animations. Components ship with CSS transitions
 
 The opt-in is resolved in the module graph, not by a prop. \`motion\` is an optional peer dependency imported only by the \`@mieweb/ui/motion\` entry, so an app that never imports that entry never pays for it and its bundle is unchanged.
 
-This page documents the layer itself; the subject in every story below is a panel built from \`Animated\` rather than a library component. To see what motion does to a component, use the **Motion** story on that component's own page — [Modal](?path=/story/overlays-modal--motion) and [Sidebar](?path=/story/overlays-sidebar--motion) are the two wired up so far.
+This page documents the layer itself; the subject in every story below is a panel built from \`Animated\` rather than a library component. To see what motion does to a component, use the **Motion** story on that component's own page — [Modal](?path=/story/overlays-modal--motion) and [Sidebar](?path=/story/overlays-sidebar--motion), for example. The full list of supported components is under **Limitations** below.
 
 ### Use it when
 
