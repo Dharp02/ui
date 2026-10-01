@@ -81,7 +81,7 @@ async function send(text: string) {
   onCancel={() => abortRef.current?.abort()}
   onClear={() => setMessages([])}
   suggestions={[{ id: 'sched', label: t('chat.schedule'), prompt: 'Schedule a follow-up', icon: 'appointment' }]}
-  renderTextContent={(text, { streaming }) => <MarkdownRenderer content={text} streaming={streaming} />}
+  renderTextContent={(text, { streaming }) => <MarkdownRenderer text={text} streaming={streaming} />}
   userName={currentUser.displayName}
   height={560}
 />

@@ -183,7 +183,8 @@ export interface StreamingChatDemo {
  * Drives a fake token stream: seeds a short exchange, streams the long answer
  * in word-sized ticks shortly after mount, lands a trailing follow-up message
  * (for the "New messages" jump-to-bottom hint), and streams again on every
- * {@link StreamingChatDemo.sendMessage}.
+ * {@link StreamingChatDemo.sendMessage}. A send during an active stream
+ * finalizes the in-flight reply and starts a replacement.
  */
 export function useStreamingChatDemo(): StreamingChatDemo {
   const [messages, setMessages] = React.useState<AIMessage[]>([
@@ -217,10 +218,18 @@ export function useStreamingChatDemo(): StreamingChatDemo {
   const timeoutsRef = React.useRef<number[]>([]);
 
   const streamResponse = React.useCallback(() => {
+    // Replacement policy: a new stream cancels the one in flight — stop its
+    // ticker, drop any pending trailing follow-up, and finalize the partial
+    // bubble so it can't be orphaned in `status: 'streaming'`.
+    window.clearInterval(intervalRef.current);
+    timeoutsRef.current.forEach((t) => window.clearTimeout(t));
+    timeoutsRef.current.length = 0;
     const messageId = `stream-${Date.now()}`;
     setIsGenerating(true);
     setMessages((prev) => [
-      ...prev,
+      ...prev.map((m) =>
+        m.status === 'streaming' ? { ...m, status: 'complete' as const } : m
+      ),
       {
         id: messageId,
         role: 'assistant',
@@ -230,7 +239,6 @@ export function useStreamingChatDemo(): StreamingChatDemo {
       },
     ]);
     let cursor = 0;
-    window.clearInterval(intervalRef.current);
     intervalRef.current = window.setInterval(() => {
       // A few words per tick ≈ token streaming.
       cursor = Math.min(cursor + 4, streamChunks.length);

@@ -368,7 +368,7 @@ const [queued, setQueued] = useState<string | null>(null);
   models={{ options: adapter.models, value: adapter.model, onChange: adapter.setModel }}
   warning={adapter.fallbackWarning}
   onDismissWarning={adapter.clearWarning}
-  renderTextContent={(text, { streaming }) => <MarkdownRenderer content={text} streaming={streaming} />}
+  renderTextContent={(text, { streaming }) => <MarkdownRenderer text={text} streaming={streaming} />}
 />
 \`\`\`
 
@@ -670,9 +670,9 @@ export const StreamingResponse: Story = {
           'inherited from `AIChat` (see its Streaming Response story for the',
           'full policy):',
           '',
-          '- While the reader is at the bottom, the thread follows the stream;',
-          '  an incoming reply reveals its first line and fills below the fold',
-          '  under a ↓ arrow.',
+          '- An incoming reply reveals its first line, then the view **holds** —',
+          '  the rest of the stream fills below the fold under a ↓ arrow rather',
+          '  than chasing every chunk.',
           '- Scrolling up preserves the position exactly and shows the floating',
           '  **↓ jump-to-bottom** button (`data-slot="ai-chat-jump-to-bottom"`),',
           '  which gains a **“New messages”** hint when messages land while',
