@@ -216,7 +216,8 @@ Two different things share the "Ozwell" name — pick deliberately:
 To add the page-aware assistant to a `@mieweb/ui` app:
 
 - Install `@ozwell/react` alongside `@mieweb/ui`.
-- Render `OzwellChat` from `@ozwell/react` and declare the page actions in `tools`.
+- Render `OzwellChat` from `@ozwell/react` and declare one tool in `tools` for
+  each page action the user wants Ozwell to perform (click, read, fill, …).
 - Authenticate with a **site-approved agent key** (`agnt_key-…`) via
   `VITE_OZWELL_AGENT_KEY`. Vite inlines every `VITE_*` value into the browser
   bundle — this is **not** secret storage, so never expose a parent (`ozw_…`),
@@ -228,37 +229,42 @@ To add the page-aware assistant to a `@mieweb/ui` app:
 - Follow the canonical guide — a full **Vite + MIE UI "Click Hello World"**
   example — at <https://mieweb.github.io/ozwellai-api/frontend/react/>.
 
+Example — let Ozwell fill a field on the page (adapt the tool to your app's own actions):
+
 ```tsx
-import { useRef, useState } from 'react';
-import { Button } from '@mieweb/ui';
+import { useState } from 'react';
+import { Input } from '@mieweb/ui';
 import { OzwellChat, type OzwellTool } from '@ozwell/react';
 
 const tools: OzwellTool[] = [{
   type: 'function',
   function: {
-    name: 'click_hello_world',
-    description: 'Click the Hello World button when the user asks.',
-    parameters: { type: 'object', properties: {}, required: [] },
+    name: 'set_note',
+    description: 'Write text into the Note field when the user asks.',
+    parameters: {
+      type: 'object',
+      properties: { text: { type: 'string', description: 'Text to put in the Note field' } },
+      required: ['text'],
+    },
   },
 }];
 
 export default function App() {
-  const button = useRef<HTMLButtonElement>(null);
-  const [clicks, setClicks] = useState(0);
+  const [note, setNote] = useState('');
   return (
     <>
-      <Button ref={button} onClick={() => setClicks((n) => n + 1)}>Hello World</Button>
-      <output aria-live="polite">Clicked {clicks} times</output>
+      <Input label="Note" value={note} onChange={(e) => setNote(e.target.value)} />
+      <output aria-live="polite">Note: {note}</output>
       <OzwellChat
         apiKey={import.meta.env.VITE_OZWELL_AGENT_KEY}
         tools={tools}
-        onToolCall={(name, _args, respond) => {
-          if (name !== 'click_hello_world' || !button.current) {
+        onToolCall={(name, args, respond) => {
+          if (name !== 'set_note' || typeof args.text !== 'string') {
             respond({ isError: true, content: [{ type: 'text', text: 'Tool unavailable' }] });
             return;
           }
-          button.current.click();
-          respond({ content: [{ type: 'text', text: 'Clicked Hello World' }] });
+          setNote(args.text);
+          respond({ content: [{ type: 'text', text: `Note set to "${args.text}"` }] });
         }}
       />
     </>
