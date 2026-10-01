@@ -215,20 +215,30 @@ export function useStreamingChatDemo(): StreamingChatDemo {
   ]);
   const [isGenerating, setIsGenerating] = React.useState(false);
   const intervalRef = React.useRef<number | undefined>(undefined);
-  const timeoutsRef = React.useRef<number[]>([]);
+  /** Delayed stream starts queued by sendMessage — each runs in turn. */
+  const pendingStartsRef = React.useRef<number[]>([]);
+  /** Trailing follow-up timer — cancelled when a replacement stream starts. */
+  const followUpRef = React.useRef<number | undefined>(undefined);
+  /** Monotonic id source — Date.now() can collide when timers fire in one tick. */
+  const idRef = React.useRef(0);
 
   const streamResponse = React.useCallback(() => {
     // Replacement policy: a new stream cancels the one in flight — stop its
-    // ticker, drop any pending trailing follow-up, and finalize the partial
-    // bubble so it can't be orphaned in `status: 'streaming'`.
+    // ticker, drop its trailing follow-up, and finalize the partial bubble so
+    // it can't be orphaned in `status: 'streaming'`. Stream starts queued by
+    // sendMessage are left alone so every send still gets a reply.
     window.clearInterval(intervalRef.current);
-    timeoutsRef.current.forEach((t) => window.clearTimeout(t));
-    timeoutsRef.current.length = 0;
-    const messageId = `stream-${Date.now()}`;
+    window.clearTimeout(followUpRef.current);
+    const messageId = `stream-${++idRef.current}`;
     setIsGenerating(true);
     setMessages((prev) => [
-      ...prev.map((m) =>
-        m.status === 'streaming' ? { ...m, status: 'complete' as const } : m
+      // Finalize the interrupted reply, or drop it if it never got content.
+      ...prev.flatMap((m) =>
+        m.status === 'streaming'
+          ? m.content.length > 0
+            ? [{ ...m, status: 'complete' as const }]
+            : []
+          : [m]
       ),
       {
         id: messageId,
@@ -260,25 +270,23 @@ export function useStreamingChatDemo(): StreamingChatDemo {
         setIsGenerating(false);
         // A trailing message a beat later — scrolled-up users get the
         // "New messages" hint on the jump-to-bottom button.
-        timeoutsRef.current.push(
-          window.setTimeout(() => {
-            setMessages((prev) => [
-              ...prev,
-              {
-                id: `after-${Date.now()}`,
-                role: 'assistant',
-                status: 'complete',
-                timestamp: new Date(),
-                content: [
-                  {
-                    type: 'text',
-                    text: 'Anything else you’d like me to pull from the chart?',
-                  },
-                ],
-              },
-            ]);
-          }, 1200)
-        );
+        followUpRef.current = window.setTimeout(() => {
+          setMessages((prev) => [
+            ...prev,
+            {
+              id: `after-${++idRef.current}`,
+              role: 'assistant',
+              status: 'complete',
+              timestamp: new Date(),
+              content: [
+                {
+                  type: 'text',
+                  text: 'Anything else you’d like me to pull from the chart?',
+                },
+              ],
+            },
+          ]);
+        }, 1200);
       }
     }, 120);
   }, []);
@@ -286,11 +294,12 @@ export function useStreamingChatDemo(): StreamingChatDemo {
   // Kick off the demo stream shortly after mount; clean up on unmount.
   React.useEffect(() => {
     const kickoff = window.setTimeout(streamResponse, 800);
-    const timeouts = timeoutsRef.current;
+    const pendingStarts = pendingStartsRef.current;
     return () => {
       window.clearTimeout(kickoff);
       window.clearInterval(intervalRef.current);
-      timeouts.forEach((t) => window.clearTimeout(t));
+      window.clearTimeout(followUpRef.current);
+      pendingStarts.forEach((t) => window.clearTimeout(t));
     };
   }, [streamResponse]);
 
@@ -299,7 +308,7 @@ export function useStreamingChatDemo(): StreamingChatDemo {
       setMessages((prev) => [
         ...prev,
         {
-          id: `m-${Date.now()}`,
+          id: `m-${++idRef.current}`,
           role: 'user',
           status: 'complete',
           timestamp: new Date(),
@@ -307,7 +316,7 @@ export function useStreamingChatDemo(): StreamingChatDemo {
         },
       ]);
       // Every send triggers another long streamed answer.
-      timeoutsRef.current.push(window.setTimeout(streamResponse, 600));
+      pendingStartsRef.current.push(window.setTimeout(streamResponse, 600));
     },
     [streamResponse]
   );
