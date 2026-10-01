@@ -795,6 +795,68 @@ describe('SuperChat', () => {
     expect(screen.getByLabelText('Message')).toBeDisabled();
   });
 
+  describe('composerProps', () => {
+    it('overrides the placeholder and renders a leadingSlot button', () => {
+      render(
+        <SuperChat
+          conversation={conversation}
+          currentParticipantId="u1"
+          composerProps={{
+            placeholder: 'Post an update…',
+            leadingSlot: <button type="button">Pulse video</button>,
+          }}
+        />
+      );
+      expect(screen.getByLabelText('Message')).toHaveAttribute(
+        'placeholder',
+        'Post an update…'
+      );
+      expect(
+        screen.getByRole('button', { name: 'Pulse video' })
+      ).toBeInTheDocument();
+    });
+
+    it('keeps sending through onMessageSent', async () => {
+      const { default: userEvent } =
+        await import('@testing-library/user-event');
+      const user = userEvent.setup();
+      const onMessageSent = vi.fn();
+      render(
+        <SuperChat
+          conversation={conversation}
+          currentParticipantId="u1"
+          onMessageSent={onMessageSent}
+          composerProps={{ placeholder: 'Post an update…' }}
+        />
+      );
+      await user.type(screen.getByLabelText('Message'), 'hi there');
+      await user.click(screen.getByRole('button', { name: 'Send message' }));
+      await waitFor(() =>
+        expect(onMessageSent).toHaveBeenCalledWith(
+          'hi there',
+          expect.objectContaining({ conversation })
+        )
+      );
+    });
+
+    it('turns @mentions off with an empty mentionOptions', async () => {
+      const { default: userEvent } =
+        await import('@testing-library/user-event');
+      const user = userEvent.setup();
+      render(
+        <SuperChat
+          conversation={conversation}
+          currentParticipantId="u1"
+          composerProps={{ mentionOptions: [] }}
+        />
+      );
+      await user.type(screen.getByLabelText('Message'), 'hello @Tri');
+      expect(
+        screen.queryByRole('listbox', { name: 'Mention' })
+      ).not.toBeInTheDocument();
+    });
+  });
+
   it('opens an @-mention menu and inserts the chosen participant', async () => {
     const { default: userEvent } = await import('@testing-library/user-event');
     const user = userEvent.setup();

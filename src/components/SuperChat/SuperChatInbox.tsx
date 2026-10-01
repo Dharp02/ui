@@ -12,7 +12,7 @@
 
 import * as React from 'react';
 import { cn } from '../../utils/cn';
-import { SuperChat } from './SuperChat';
+import { SuperChat, type SuperChatComposerProps } from './SuperChat';
 import { SuperChatConversations } from './SuperChatConversations';
 import type {
   AIRenderTextContent,
@@ -46,6 +46,8 @@ export interface SuperChatInboxProps {
   trustedContent?: boolean;
   /** Disable the composer. */
   readOnly?: boolean;
+  /** Props for the active panel's message box (see {@link SuperChatProps.composerProps}). */
+  composerProps?: SuperChatComposerProps;
   /**
    * File categories the composer accepts for paste, drag-and-drop, and the
    * file picker in the `+` → “Attach files” menu.
@@ -105,6 +107,7 @@ export function SuperChatInbox({
   renderTextContent,
   trustedContent,
   readOnly,
+  composerProps,
   acceptedFileTypes,
   order,
   virtualized,
@@ -171,6 +174,7 @@ export function SuperChatInbox({
           renderTextContent={renderTextContent}
           trustedContent={trustedContent}
           readOnly={readOnly}
+          composerProps={composerProps}
           acceptedFileTypes={acceptedFileTypes}
           order={order}
           virtualized={virtualized}

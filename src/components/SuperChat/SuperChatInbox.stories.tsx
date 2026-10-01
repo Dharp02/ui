@@ -62,6 +62,7 @@ const meta: Meta<typeof SuperChatInbox> = {
     linkBuilder: { control: false, table: { category: 'Rendering' } },
     className: { control: false },
     onMessageSent: { control: false, table: { category: 'Callbacks' } },
+    composerProps: { control: false, table: { category: 'Composer' } },
     onConversationOpened: { control: false, table: { category: 'Callbacks' } },
     onConversationClosed: { control: false, table: { category: 'Callbacks' } },
     onNewConversation: { control: false, table: { category: 'Callbacks' } },
@@ -428,6 +429,50 @@ function SourcesAndGuardsDemo() {
     </div>
   );
 }
+
+// Host-supplied message box: `composerProps` reaches the panel's ChatComposer,
+// so an app can add its own labelled buttons beside `+` (here a video recorder
+// and a ticket picker, as TimeHuddle's Huddle does), keep the input on its own
+// row at every width, and word the placeholder for its own domain.
+export const CustomComposer: Story = {
+  args: {
+    currentParticipantId: 'u1',
+    showSidebar: true,
+    defaultActiveConversationId: 'c1',
+  },
+  decorators: [fullHeightChat],
+  parameters: { githubSourceFooter: false },
+  render: (args) => (
+    <InteractiveInbox
+      {...args}
+      className="w-full"
+      initial={[richConversation, secondConversation]}
+      composerProps={{
+        layout: 'stacked',
+        placeholder: 'Post an update to this thread…',
+        mentionOptions: [],
+        leadingSlot: (
+          <>
+            <button
+              type="button"
+              className="rounded-full border border-neutral-300 px-3 py-1 text-xs text-neutral-600 dark:border-neutral-600 dark:text-neutral-300"
+              onClick={() => console.log('record video')}
+            >
+              Video
+            </button>
+            <button
+              type="button"
+              className="rounded-full border border-neutral-300 px-3 py-1 text-xs text-neutral-600 dark:border-neutral-600 dark:text-neutral-300"
+              onClick={() => console.log('pick ticket')}
+            >
+              Ticket
+            </button>
+          </>
+        ),
+      }}
+    />
+  ),
+};
 
 export const SourcesAndGuards: Story = {
   name: 'Sources & Guards',

@@ -18,7 +18,10 @@ import {
   useStreamEndedBelowFold,
 } from '../../hooks/useStickToBottom';
 import { CloseIcon } from '../AI/icons';
-import { ChatComposer } from '../ChatComposer/ChatComposer';
+import {
+  ChatComposer,
+  type ChatComposerProps,
+} from '../ChatComposer/ChatComposer';
 import { notifyComposerMigrationOnce } from '../ChatComposer/migration-notice';
 import { JumpToBottomButton } from '../ChatComposer/JumpToBottomButton';
 import type { NewMessage } from '../Messaging/types';
@@ -62,6 +65,13 @@ export interface SuperChatProps {
   trustedContent?: boolean;
   /** Disable the composer. */
   readOnly?: boolean;
+  /**
+   * Props for the message box (`ChatComposer`), applied over SuperChat's own
+   * defaults: e.g. `placeholder`, `leadingSlot` for the host's own buttons
+   * beside `+`, `layout: 'stacked'`, `maxFileSize`, `canSendWhenEmpty`, or
+   * `mentionOptions: []` to turn @mentions off. `className` is merged.
+   */
+  composerProps?: SuperChatComposerProps;
   /**
    * File categories the composer accepts for paste, drag-and-drop, and the
    * file picker in the `+` → “Attach files” menu.
@@ -129,6 +139,15 @@ export interface SuperChatProps {
 }
 
 /**
+ * Message box props a host may set through `composerProps`. SuperChat owns the
+ * draft and the send path, so `value`, `onValueChange` and `onSend` stay its.
+ */
+export type SuperChatComposerProps = Omit<
+  ChatComposerProps,
+  'value' | 'onValueChange' | 'onSend'
+>;
+
+/**
  * Single-conversation chat panel. See the module `MAINTAINERS.md` for the
  * participant model and render-plugin architecture.
  */
@@ -139,6 +158,7 @@ export function SuperChat({
   renderTextContent,
   trustedContent,
   readOnly,
+  composerProps,
   acceptedFileTypes,
   order = 'asc',
   virtualized = false,
@@ -613,13 +633,7 @@ export function SuperChat({
       </div>
 
       <ChatComposer
-        value={draft}
-        onValueChange={handleDraftChange}
-        onSend={handleComposerSend}
         disabled={readOnly}
-        // Matches the thread's p-4 gutter so the composer card lines up with
-        // the messages instead of running flush against the panel edges.
-        className="px-4 pb-4"
         placeholder={
           readOnly
             ? 'Read-only conversation'
@@ -632,6 +646,13 @@ export function SuperChat({
         maxFileSize={25 * 1024 * 1024}
         maxLength={100000}
         inputLabel="Message"
+        {...composerProps}
+        // Matches the thread's p-4 gutter so the composer card lines up with
+        // the messages instead of running flush against the panel edges.
+        className={cn('px-4 pb-4', composerProps?.className)}
+        value={draft}
+        onValueChange={handleDraftChange}
+        onSend={handleComposerSend}
       />
     </section>
   );

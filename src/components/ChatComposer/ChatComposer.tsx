@@ -142,6 +142,16 @@ export interface ChatComposerProps {
    */
   submitOnEnter?: 'desktop' | 'always' | 'never';
   /**
+   * How the input and its controls are arranged.
+   * - `'responsive'`: below `md` the input sits on its own row with the `+`
+   *   and actions underneath; at `md+` everything shares one pill-shaped row.
+   * - `'stacked'`: the input always sits on its own full-width row with the
+   *   controls underneath, at every width — for hosts that put labelled
+   *   buttons in `leadingSlot`, which need the room.
+   * @default 'responsive'
+   */
+  layout?: 'responsive' | 'stacked';
+  /**
    * Maximum height of the auto-growing input: a pixel number or any CSS
    * length. Prefer small-viewport units (e.g. `'30svh'`) over `vh`: on iOS
    * `vh` is the full screen and ignores the on-screen keyboard.
@@ -362,6 +372,7 @@ export const ChatComposer = React.forwardRef<
     showCharacterCount = false,
     canSendWhenEmpty = false,
     submitOnEnter = 'desktop',
+    layout = 'responsive',
     maxHeight = MAX_INPUT_HEIGHT,
     textareaProps,
     leadingSlot,
@@ -739,17 +750,25 @@ export const ChatComposer = React.forwardRef<
   const selectedAgentOption =
     agents.find((agent) => agent.id === selectedAgent) ?? null;
 
-  // One responsive grid: below `md` the input sits on row 1 spanning all
-  // columns with the `+`/actions on row 2; at `md+` the `+`, input and
-  // actions sit side by side on row 1 as a single pill (actions pin to the
-  // bottom via self-end as the input grows).
+  // One grid: the input sits on row 1 spanning all columns with the `+`/
+  // actions on row 2. In the responsive layout, at `md+` the `+`, input and
+  // actions move side by side onto row 1 as a single pill (actions pin to the
+  // bottom via self-end as the input grows); the stacked layout keeps two rows.
+  const stacked = layout === 'stacked';
   const cells = {
-    input:
-      'col-span-3 col-start-1 row-start-1 px-1 pt-1 md:col-span-1 md:col-start-2 md:self-end md:px-0 md:py-1.5',
-    textarea: 'px-2 pt-2 pb-1 md:py-1.5',
-    add: 'col-start-1 row-start-2 pb-2 ps-2 md:row-start-1 md:self-end md:p-1.5 md:pe-0.5',
-    actions:
-      'col-start-3 row-start-2 flex items-center gap-1 pb-2 pe-2 md:row-start-1 md:self-end md:gap-0.5 md:p-1.5 md:ps-0.5',
+    input: cn(
+      'col-span-3 col-start-1 row-start-1 px-1 pt-1',
+      !stacked && 'md:col-span-1 md:col-start-2 md:self-end md:px-0 md:py-1.5'
+    ),
+    textarea: cn('px-2 pt-2 pb-1', !stacked && 'md:py-1.5'),
+    add: cn(
+      'col-start-1 row-start-2 pb-2 ps-2',
+      !stacked && 'md:row-start-1 md:self-end md:p-1.5 md:pe-0.5'
+    ),
+    actions: cn(
+      'col-start-3 row-start-2 flex items-center gap-1 pb-2 pe-2',
+      !stacked && 'md:row-start-1 md:self-end md:gap-0.5 md:p-1.5 md:ps-0.5'
+    ),
   };
 
   const composerCard = (

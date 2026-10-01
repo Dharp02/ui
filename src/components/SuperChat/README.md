@@ -335,6 +335,7 @@ uncontrolled).
 | `renderTextContent`           | `AIRenderTextContent`                         | Markdown core      | Replace the entire text renderer (advanced).                                                        |
 | `trustedContent`              | `boolean`                                     | `false`            | Skip sanitization — **only** for host-authored content.                                             |
 | `readOnly`                    | `boolean`                                     | `false`            | Disable the composer.                                                                               |
+| `composerProps`                    | `SuperChatComposerProps`                                     | —            | Props for the message box (`ChatComposer`) over SuperChat's defaults: `placeholder`, `leadingSlot`, `layout`, `maxFileSize`, `canSendWhenEmpty`, `mentionOptions`.                                                                               |
 | `order`                       | `'asc' \| 'desc'`                             | `'asc'`            | Thread ordering: `asc` (oldest→newest, messenger style) or `desc` (newest→oldest, feed style).      |
 | `virtualized`                 | `boolean`                                     | `false`            | Windowed thread rendering — only mount rows near the viewport. Enable for long histories.           |
 | `showSidebar`                 | `boolean`                                     | `true`             | Show the conversation list.                                                                         |
@@ -359,6 +360,7 @@ Renders exactly one conversation.
 | `renderTextContent`    | `AIRenderTextContent`                         | Markdown core | Replace the entire text renderer (advanced).                                                        |
 | `trustedContent`       | `boolean`                                     | `false`       | Skip sanitization — **only** for host-authored content.                                             |
 | `readOnly`             | `boolean`                                     | `false`       | Disable the composer.                                                                               |
+| `composerProps`             | `SuperChatComposerProps`                                     | —       | Props for the message box (`ChatComposer`) over SuperChat's defaults: `placeholder`, `leadingSlot`, `layout`, `maxFileSize`, `canSendWhenEmpty`, `mentionOptions`.                                                                               |
 | `order`                | `'asc' \| 'desc'`                             | `'asc'`       | Thread ordering: `asc` (oldest→newest, messenger style) or `desc` (newest→oldest, feed style).      |
 | `virtualized`          | `boolean`                                     | `false`       | Windowed thread rendering — only mount rows near the viewport. Enable for long histories.           |
 | `linkBuilder`          | `SuperChatLinkBuilder`                        | —             | Build hrefs for `ref` thread items.                                                                 |
