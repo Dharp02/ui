@@ -120,6 +120,32 @@
 }
 
 /*
+ * Kerebron leaves headings, lists, links and code to browser defaults, which
+ * Tailwind's preflight strips (headings `inherit`, lists `list-style: none`,
+ * links `color: inherit`) — so "# " and "- " produced real h1/ul nodes that
+ * rendered as plain text while editing. `revert` hands these back to the
+ * browser. (Adapted from mieweb/timehuddle#620.)
+ *
+ * Deliberately NOT in `@layer base`: @mieweb/q ships an *unlayered* preflight
+ * copy, and unlayered author rules beat any layered rule. Unlayered here with
+ * `:where()` keeps specificity at 0,1,0 — above preflight's bare element
+ * selectors (0,0,1) but below Kerebron's own `.kb-editor pre` / `.kb-editor
+ * ul` rules (0,1,1), so its pre-wrap and list padding stay in charge.
+ */
+.kb-editor :where(h1, h2, h3, h4, h5, h6, ol, ul, a, code, pre) {
+  all: revert;
+}
+/* The browser's default link blue is unreadable on the dark editor surface,
+   and the brand blue fails 4.5:1 on white, so each theme gets its own shade. */
+.kb-editor :where(a) {
+  color: var(--mieweb-primary-800, #0f749c);
+}
+[data-theme='dark'] .kb-editor :where(a),
+.dark .kb-editor :where(a) {
+  color: var(--kb-color-primary);
+}
+
+/*
  * Kerebron's base.css paints inline shortcode pills green without setting a
  * text color, so the inherited foreground fails WCAG AA contrast. Pin an
  * explicit white-on-green pairing (≈5.1:1) that holds in both themes.
