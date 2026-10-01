@@ -761,8 +761,11 @@ export const ChatComposer = React.forwardRef<
       !stacked && 'md:col-span-1 md:col-start-2 md:self-end md:px-0 md:py-1.5'
     ),
     textarea: cn('px-2 pt-2 pb-1', !stacked && 'md:py-1.5'),
+    // min-w-0 + flex-wrap: a `leadingSlot` with several buttons (e.g. Huddle's
+    // Pulse/Ticket chips) must wrap onto its own lines instead of forcing this
+    // auto-sized grid column — and the whole composer — wider than its container.
     add: cn(
-      'col-start-1 row-start-2 pb-2 ps-2',
+      'col-start-1 row-start-2 min-w-0 flex-wrap pb-2 ps-2',
       !stacked && 'md:row-start-1 md:self-end md:p-1.5 md:pe-0.5'
     ),
     actions: cn(
@@ -823,7 +826,7 @@ export const ChatComposer = React.forwardRef<
         </div>
       )}
 
-      <div className="grid grid-cols-[auto_minmax(0,1fr)_auto]">
+      <div className="grid grid-cols-[minmax(0,auto)_minmax(0,1fr)_auto]">
         {/* Inset cell: the textarea sits inside the card with a matching
             inner radius so focus outlines / a11y highlights render as a
             clean nested rounded rect instead of stacking on the card's
