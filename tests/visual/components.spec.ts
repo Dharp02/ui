@@ -52,9 +52,10 @@ async function gotoStory(
 // Warm up the server before running tests
 test.beforeAll(async ({ browser }) => {
   const page = await browser.newPage();
-  // Visit the index to ensure server is fully ready
+  // Visit the index to ensure server is fully ready. goto() already waits
+  // for 'load'; waiting for 'networkidle' here is brittle because the
+  // Storybook manager keeps the network busy and can exceed the hook timeout.
   await page.goto('/');
-  await page.waitForLoadState('networkidle');
   await page.close();
 });
 
@@ -910,6 +911,17 @@ test.describe('Visual Regression Tests - RichEditor (kerebron.css)', () => {
       .first()
       .waitFor({ state: 'visible' });
     await expect(page).toHaveScreenshot('richeditor-heading-dropdown.png');
+
+    // The regression being guarded is command dispatch (dnt-shim MouseEvent
+    // bug): activate an item via its wrapper label and assert the document
+    // actually changed.
+    await page
+      .locator('.kb-custom-menu__overflow-item', { hasText: 'Heading 2' })
+      .first()
+      .locator('.kb-custom-menu__overflow-item-label')
+      .click();
+    await expect(page.locator('.kb-editor h1')).toHaveCount(0);
+    await expect(page.locator('.kb-editor h2')).toHaveCount(2);
   });
 
   test('RichEditor - Lists dropdown opens with active state', async ({
@@ -927,5 +939,24 @@ test.describe('Visual Regression Tests - RichEditor (kerebron.css)', () => {
       .first()
       .waitFor({ state: 'visible' });
     await expect(page).toHaveScreenshot('richeditor-lists-dropdown.png');
+
+    // Activate "Bullet List" via its ICON with the cursor in a plain
+    // paragraph: the click lands inside the inner menu button, which must
+    // dispatch the command exactly once (guards the dom.contains() fix —
+    // a double dispatch would nest a second list).
+    await page.locator('.kb-editor p', { hasText: 'inline code' }).click();
+    await page
+      .locator('.kb-dropdown__label', { hasText: 'Lists' })
+      .first()
+      .click();
+    await page
+      .locator('.kb-custom-menu__overflow-item', { hasText: 'Bullet' })
+      .first()
+      .locator('.kb-icon')
+      .first()
+      .click();
+    await expect(page.locator('.kb-editor ul')).toHaveCount(2);
+    await expect(page.locator('.kb-editor ul ul')).toHaveCount(0);
+    await expect(page.locator('.kb-editor ol')).toHaveCount(1);
   });
 });

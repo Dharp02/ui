@@ -136,13 +136,15 @@
   all: revert;
 }
 /* The browser's default link blue is unreadable on the dark editor surface,
-   and the brand blue fails 4.5:1 on white, so each theme gets its own shade. */
+   and the brand blue fails 4.5:1 on white, so each theme gets its own shade.
+   Dark uses primary-400: primary-500 (#64748b) is only ~3.9:1 on the default
+   brand's #0f172a background, while primary-400 (#94a3b8) is ~7:1. */
 .kb-editor :where(a) {
   color: var(--mieweb-primary-800, #0f749c);
 }
 [data-theme='dark'] .kb-editor :where(a),
 .dark .kb-editor :where(a) {
-  color: var(--kb-color-primary);
+  color: var(--mieweb-primary-400, #94a3b8);
 }
 
 /*

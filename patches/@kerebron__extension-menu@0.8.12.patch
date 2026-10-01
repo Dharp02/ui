@@ -1,5 +1,5 @@
 diff --git a/esm/CustomMenuPlugin.js b/esm/CustomMenuPlugin.js
-index d630c6893dd77f148ca72cf2b137364bbce3830c..8d14fa7f07226b06a4519f5c88a5b34d7966e96a 100644
+index d630c6893dd77f148ca72cf2b137364bbce3830c..13e37e486e16288e7341bf97d52801bcfea34214 100644
 --- a/esm/CustomMenuPlugin.js
 +++ b/esm/CustomMenuPlugin.js
 @@ -595,7 +595,9 @@ export class CustomMenuView {
@@ -13,7 +13,16 @@ index d630c6893dd77f148ca72cf2b137364bbce3830c..8d14fa7f07226b06a4519f5c88a5b34d
                  // Hide button's internal label
                  const spans = dom.querySelectorAll('span');
                  spans.forEach((span) => {
-@@ -622,7 +624,7 @@ export class CustomMenuView {
+@@ -617,12 +619,15 @@ export class CustomMenuView {
+                 wrapper.appendChild(label);
+                 // Make wrapper clickable
+                 wrapper.addEventListener('mousedown', (e) => {
+-                    if (e.target !== dom) {
++                    // Forward only clicks outside the button subtree: a click on
++                    // the button or its icon already reaches the menu handler, so
++                    // redispatching would run toggle commands twice (no-op).
++                    if (!dom.contains(e.target)) {
+                         e.preventDefault();
                          const mousedownEvent = new MouseEvent('mousedown', {
                              bubbles: true,
                              cancelable: true,
@@ -22,7 +31,7 @@ index d630c6893dd77f148ca72cf2b137364bbce3830c..8d14fa7f07226b06a4519f5c88a5b34d
                          });
                          dom.dispatchEvent(mousedownEvent);
                      }
-@@ -740,6 +742,8 @@ export class CustomMenuView {
+@@ -740,6 +745,8 @@ export class CustomMenuView {
                  else {
                      // Regular menu item
                      const { dom, update } = tool.element.render(this.editorView);
@@ -31,7 +40,16 @@ index d630c6893dd77f148ca72cf2b137364bbce3830c..8d14fa7f07226b06a4519f5c88a5b34d
                      // Hide the button's internal label to avoid duplication
                      const internalLabel = dom.querySelector('span');
                      if (internalLabel) {
-@@ -759,7 +763,7 @@ export class CustomMenuView {
+@@ -754,12 +761,15 @@ export class CustomMenuView {
+                     wrapper.appendChild(label);
+                     // Make the entire wrapper clickable by dispatching mousedown to the button
+                     wrapper.addEventListener('mousedown', (e) => {
+-                        if (e.target !== dom) {
++                        // Forward only clicks outside the button subtree (see
++                        // renderPinnedDropdown): avoids double command dispatch
++                        // when the icon inside the button is clicked.
++                        if (!dom.contains(e.target)) {
+                             e.preventDefault();
                              const mousedownEvent = new MouseEvent('mousedown', {
                                  bubbles: true,
                                  cancelable: true,
@@ -40,7 +58,7 @@ index d630c6893dd77f148ca72cf2b137364bbce3830c..8d14fa7f07226b06a4519f5c88a5b34d
                              });
                              dom.dispatchEvent(mousedownEvent);
                          }
-@@ -771,7 +775,7 @@ export class CustomMenuView {
+@@ -771,7 +781,7 @@ export class CustomMenuView {
                              const mousedownEvent = new MouseEvent('mousedown', {
                                  bubbles: true,
                                  cancelable: true,
@@ -49,7 +67,7 @@ index d630c6893dd77f148ca72cf2b137364bbce3830c..8d14fa7f07226b06a4519f5c88a5b34d
                              });
                              dom.dispatchEvent(mousedownEvent);
                          }
-@@ -839,6 +843,8 @@ export class CustomMenuView {
+@@ -839,6 +849,8 @@ export class CustomMenuView {
                  else {
                      // Regular menu item - show icon only with tooltip
                      const { dom, update } = tool.element.render(this.editorView);
@@ -58,7 +76,7 @@ index d630c6893dd77f148ca72cf2b137364bbce3830c..8d14fa7f07226b06a4519f5c88a5b34d
                      // Hide any text labels, keep only icons
                      const spans = dom.querySelectorAll('span');
                      spans.forEach((span) => {
-@@ -905,16 +911,18 @@ export class CustomMenuView {
+@@ -905,16 +917,18 @@ export class CustomMenuView {
              wrapper.setAttribute('draggable', 'false');
              const isDropdown = tool.element.content !== undefined;
              if (isDropdown) {
@@ -79,7 +97,7 @@ index d630c6893dd77f148ca72cf2b137364bbce3830c..8d14fa7f07226b06a4519f5c88a5b34d
              }
              // Temporarily add to toolbar to measure
              this.toolbar.appendChild(wrapper);
-@@ -1514,11 +1522,7 @@ export class CustomMenuView {
+@@ -1514,11 +1528,7 @@ export class CustomMenuView {
          }
      }
      update(view, prevState) {
