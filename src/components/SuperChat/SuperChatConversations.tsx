@@ -48,6 +48,10 @@ export function SuperChatConversations({
   const [internalActive, setInternalActive] = React.useState(
     defaultActiveConversationId ?? conversations[0]?.id
   );
+  // Badges present on the list's first render are state, not news. Tracked
+  // here rather than per row so a row inserted later still pops its badge.
+  const [hasMounted, setHasMounted] = React.useState(false);
+  React.useEffect(() => setHasMounted(true), []);
   const requestedId = activeConversationId ?? internalActive;
   // Fall back to the first conversation when the requested id no longer exists
   // (e.g. the active conversation was removed) so an item stays highlighted.
@@ -114,9 +118,7 @@ export function SuperChatConversations({
                     </span>
                   )}
                 </span>
-                {/* `initial={false}`: badges already present on mount are
-                    state, not news — only a badge that appears later pops. */}
-                <AnimatedPresence initial={false}>
+                <AnimatedPresence initial={hasMounted}>
                   {!!c.unread && (
                     <Animated
                       key="unread"
