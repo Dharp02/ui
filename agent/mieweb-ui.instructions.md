@@ -229,7 +229,7 @@ To add the page-aware assistant to a `@mieweb/ui` app:
   example — at <https://mieweb.github.io/ozwellai-api/frontend/react/>.
 
 ```tsx
-import { useRef } from 'react';
+import { useRef, useState } from 'react';
 import { Button } from '@mieweb/ui';
 import { OzwellChat, type OzwellTool } from '@ozwell/react';
 
@@ -244,9 +244,11 @@ const tools: OzwellTool[] = [{
 
 export default function App() {
   const button = useRef<HTMLButtonElement>(null);
+  const [clicks, setClicks] = useState(0);
   return (
     <>
-      <Button ref={button}>Hello World</Button>
+      <Button ref={button} onClick={() => setClicks((n) => n + 1)}>Hello World</Button>
+      <output aria-live="polite">Clicked {clicks} times</output>
       <OzwellChat
         apiKey={import.meta.env.VITE_OZWELL_AGENT_KEY}
         tools={tools}
