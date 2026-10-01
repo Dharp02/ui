@@ -15,7 +15,7 @@ const meta: Meta<typeof RichEditor> = {
 
 **A Markdown document editor built on Kerebron's \`CoreEditor\` (ProseMirror), with optional live collaboration.** \`RichEditor\` loads \`value\` as Markdown (\`text/x-markdown\`), renders the Kerebron **AdvancedEditorKit** toolbar and surface, and reports Markdown back through \`onChange\` on every transaction. \`RichEditorHandle\` gives \`getContent()\` (awaits the initial load — read this on submit, \`onChange\` can lag a keystroke) and \`focus()\`. \`collab={{ room, wsUrl?, params?, user?, WebSocketPolyfill? }}\` switches to a Yjs CRDT document shared by every peer in the room (the Yjs kit is lazy-loaded; \`history\` is swapped for CRDT undo). \`disabled\` makes the surface read-only and dims it; \`id\`, \`aria-label\`, \`aria-labelledby\`, \`className\` land on the host; \`showPreview\` prints the Markdown under the editor; \`assetLoad\` redirects the tree-sitter WASM grammars. The same entry exports \`CodeEditor\` (\`value\`, \`onChange\`, \`lang\` default \`typescript\`) over Kerebron's **CodeEditorKit**, plus the \`CollabConfig\` type.
 
-Ships from the optional **\`@mieweb/ui/kerebron\`** entry, not the main barrel: install the peers \`@kerebron/editor\`, \`@kerebron/editor-kits\`, \`@kerebron/wasm\` (plus \`@kerebron/extension-yjs\`, \`yjs\`, \`y-protocols\` for \`collab\`), import \`@mieweb/ui/kerebron.css\` beside \`@mieweb/ui/styles.css\`, and serve \`@kerebron/wasm\`'s \`assets/\` directory at \`/kerebron-wasm\`.
+Ships from the optional **\`@mieweb/ui/kerebron\`** entry, not the main barrel: install the peers \`@kerebron/editor\`, \`@kerebron/editor-kits\`, \`@kerebron/wasm\` (plus \`@kerebron/extension-yjs\`, \`yjs\`, \`y-protocols\` for \`collab\`), import \`@mieweb/ui/kerebron.css\` beside \`@mieweb/ui/styles.css\`, and serve \`@kerebron/wasm\`'s \`assets/\` directory at \`/kerebron-wasm\`. Until the fixes land upstream, also apply the [\`patches/@kerebron__*\` fixes](https://github.com/mieweb/ui/tree/main/patches) in the host app (pnpm \`patchedDependencies\` or \`patch-package\`) — without the \`extension-menu\` patch the toolbar's Heading/List dropdowns do not fire in browsers.
 
 ### Use it when
 
@@ -132,6 +132,43 @@ function BasicExample() {
 
 export const Basic: Story = {
   render: () => <BasicExample />,
+};
+
+/**
+ * Preset Markdown covering the block/inline styles that `kerebron.css` must
+ * keep visible inside `.kb-editor` (headings, lists, links, inline/block
+ * code) even when the host's Tailwind preflight resets them. Exercised by
+ * the visual regression suite in light and dark themes.
+ */
+function FormattedExample() {
+  const [value, setValue] = useState(
+    [
+      '# Heading one',
+      '',
+      '## Heading two',
+      '',
+      '- Bullet one',
+      '- Bullet two',
+      '',
+      '1. Numbered item',
+      '',
+      'A [link](https://mieweb.com) and `inline code`.',
+      '',
+      '```javascript',
+      'const answer = 42;',
+      '```',
+      '',
+    ].join('\n')
+  );
+  return (
+    <div className="max-w-2xl">
+      <RichEditor value={value} onChange={setValue} />
+    </div>
+  );
+}
+
+export const FormattedContent: Story = {
+  render: () => <FormattedExample />,
 };
 
 /**

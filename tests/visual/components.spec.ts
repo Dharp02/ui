@@ -835,7 +835,10 @@ test.describe('Visual Regression Tests - Templates', () => {
     ['social-proof-statssection--cards', 'template-stats-cards.png'],
     ['social-proof-testimonialsection--cards', 'template-testimonials.png'],
     // Pinned at the first frame by `animations: 'disabled'`: track, mask and duplicate copy.
-    ['social-proof-logocloudsection--marquee', 'template-logocloud-marquee.png'],
+    [
+      'social-proof-logocloudsection--marquee',
+      'template-logocloud-marquee.png',
+    ],
   ];
 
   for (const [storyId, file, options] of sections) {
@@ -857,5 +860,72 @@ test.describe('Visual Regression Tests - Templates', () => {
       animations: 'disabled',
       fullPage: true,
     });
+  });
+});
+
+test.describe('Visual Regression Tests - RichEditor (kerebron.css)', () => {
+  // Guards the unlayered `.kb-editor` revert rules in src/styles/kerebron.css:
+  // Tailwind preflight (and @mieweb/q's unlayered copy of it) must not strip
+  // heading sizes, list markers, link color, or code styling inside the editor.
+  const formattedStory = 'editors-richeditor--formatted-content';
+
+  async function waitForFormatted(page: Page) {
+    // Content appears only after the tree-sitter WASM markdown parser loads.
+    await page
+      .locator('.kb-editor h1')
+      .waitFor({ state: 'visible', timeout: 30000 });
+    await page
+      .locator('.kb-editor ul li')
+      .first()
+      .waitFor({ state: 'visible' });
+  }
+
+  test('RichEditor - Formatted content (light)', async ({ page }) => {
+    await gotoStory(page, formattedStory);
+    await waitForFormatted(page);
+    await expect(page).toHaveScreenshot('richeditor-formatted-light.png');
+  });
+
+  test('RichEditor - Formatted content (dark)', async ({ page }) => {
+    await gotoStory(page, formattedStory, { globals: 'theme:dark' });
+    await waitForFormatted(page);
+    await expect(page).toHaveScreenshot('richeditor-formatted-dark.png');
+  });
+
+  test('RichEditor - Heading dropdown opens with active state', async ({
+    page,
+  }) => {
+    // Guards the extension-menu patch: without it the toolbar dropdowns
+    // never fire (dnt-shim MouseEvent bug) and freshly rendered items
+    // carry no active/disabled state.
+    await gotoStory(page, formattedStory);
+    await waitForFormatted(page);
+    await page.locator('.kb-editor h1').click();
+    await page
+      .locator('.kb-dropdown__label', { hasText: 'Heading' })
+      .first()
+      .click();
+    await page
+      .locator('.kb-custom-menu__overflow-item', { hasText: 'Heading 1' })
+      .first()
+      .waitFor({ state: 'visible' });
+    await expect(page).toHaveScreenshot('richeditor-heading-dropdown.png');
+  });
+
+  test('RichEditor - Lists dropdown opens with active state', async ({
+    page,
+  }) => {
+    await gotoStory(page, formattedStory);
+    await waitForFormatted(page);
+    await page.locator('.kb-editor ul li').first().click();
+    await page
+      .locator('.kb-dropdown__label', { hasText: 'Lists' })
+      .first()
+      .click();
+    await page
+      .locator('.kb-custom-menu__overflow-item', { hasText: 'Bullet' })
+      .first()
+      .waitFor({ state: 'visible' });
+    await expect(page).toHaveScreenshot('richeditor-lists-dropdown.png');
   });
 });
