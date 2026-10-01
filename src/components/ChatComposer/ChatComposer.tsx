@@ -756,8 +756,11 @@ export const ChatComposer = React.forwardRef<
   // bottom via self-end as the input grows); the stacked layout keeps two rows.
   const stacked = layout === 'stacked';
   const cells = {
+    // pb-1: the textarea's focus ring is painted on the textarea itself, right
+    // at this wrapper's bottom edge — with no bottom padding here that ring
+    // sits flush against row 2's buttons, reading as an overlap once focused.
     input: cn(
-      'col-span-3 col-start-1 row-start-1 px-1 pt-1',
+      'col-span-3 col-start-1 row-start-1 px-1 pt-1 pb-1',
       !stacked && 'md:col-span-1 md:col-start-2 md:self-end md:px-0 md:py-1.5'
     ),
     textarea: cn('px-2 pt-2 pb-1', !stacked && 'md:py-1.5'),
