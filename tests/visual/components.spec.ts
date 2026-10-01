@@ -910,6 +910,21 @@ test.describe('Visual Regression Tests - RichEditor (kerebron.css)', () => {
       .locator('.kb-custom-menu__overflow-item', { hasText: 'Heading 1' })
       .first()
       .waitFor({ state: 'visible' });
+    // DOM assertion first: the screenshot's global diff threshold could
+    // swallow one item's styling. Pre-patch, freshly rendered items never
+    // ran update(), so these attributes were absent entirely.
+    await expect(
+      page
+        .locator('.kb-custom-menu__overflow-item', { hasText: 'Heading 1' })
+        .first()
+        .locator('.kb-menu__button')
+    ).toHaveAttribute('aria-disabled', 'true'); // caret is in the h1
+    await expect(
+      page
+        .locator('.kb-custom-menu__overflow-item', { hasText: 'Heading 2' })
+        .first()
+        .locator('.kb-menu__button')
+    ).toHaveAttribute('aria-disabled', 'false');
     await expect(page).toHaveScreenshot('richeditor-heading-dropdown.png');
 
     // The regression being guarded is command dispatch (dnt-shim MouseEvent
@@ -938,6 +953,10 @@ test.describe('Visual Regression Tests - RichEditor (kerebron.css)', () => {
       .locator('.kb-custom-menu__overflow-item', { hasText: 'Bullet' })
       .first()
       .waitFor({ state: 'visible' });
+    // No state-attribute assertion here: list toggles are select-only cmdItems
+    // (no enable/active spec), so update() sets nothing observable on them —
+    // the heading test asserts aria state, and the dispatch below guards the
+    // command path.
     await expect(page).toHaveScreenshot('richeditor-lists-dropdown.png');
 
     // Activate "Bullet List" via its ICON with the cursor in a plain

@@ -1,8 +1,29 @@
 diff --git a/esm/CustomMenuPlugin.js b/esm/CustomMenuPlugin.js
-index d630c6893dd77f148ca72cf2b137364bbce3830c..13e37e486e16288e7341bf97d52801bcfea34214 100644
+index d630c6893dd77f148ca72cf2b137364bbce3830c..b9fe28cab191616d5a5972880486a194eb05b874 100644
 --- a/esm/CustomMenuPlugin.js
 +++ b/esm/CustomMenuPlugin.js
-@@ -595,7 +595,9 @@ export class CustomMenuView {
+@@ -38,6 +38,12 @@ export class CustomMenuView {
+     currentOverflowTools = [];
+     // Default order of tools (stored on initialization)
+     defaultOrder = [];
++    // Update callbacks of currently mounted items, so update() can refresh
++    // active/disabled state in place without a full render() (DOM rebuild +
++    // synchronous measurement) on every ProseMirror transaction.
++    toolUpdates = [];
++    overflowUpdates = [];
++    dropdownUpdates = [];
+     constructor(editorView, editor, content) {
+         this.editorView = editorView;
+         this.editor = editor;
+@@ -531,6 +537,7 @@ export class CustomMenuView {
+         if (this.pinnedDropdownMenu) {
+             this.pinnedDropdownMenu.remove();
+         }
++        this.dropdownUpdates = [];
+         const currentLevel = this.pinnedDropdownStack[this.pinnedDropdownStack.length - 1];
+         const isSubmenu = this.pinnedDropdownStack.length > 1;
+         // Create dropdown menu
+@@ -595,7 +602,10 @@ export class CustomMenuView {
              }
              else {
                  // Regular menu item
@@ -10,10 +31,11 @@ index d630c6893dd77f148ca72cf2b137364bbce3830c..13e37e486e16288e7341bf97d52801bc
 +                const { dom, update } = subTool.element.render(this.editorView);
 +                // Apply current editor state (active/disabled) to the fresh render
 +                update(this.editorView.state);
++                this.dropdownUpdates.push(update);
                  // Hide button's internal label
                  const spans = dom.querySelectorAll('span');
                  spans.forEach((span) => {
-@@ -617,12 +619,15 @@ export class CustomMenuView {
+@@ -617,12 +627,15 @@ export class CustomMenuView {
                  wrapper.appendChild(label);
                  // Make wrapper clickable
                  wrapper.addEventListener('mousedown', (e) => {
@@ -31,16 +53,25 @@ index d630c6893dd77f148ca72cf2b137364bbce3830c..13e37e486e16288e7341bf97d52801bc
                          });
                          dom.dispatchEvent(mousedownEvent);
                      }
-@@ -740,6 +745,8 @@ export class CustomMenuView {
+@@ -665,6 +678,7 @@ export class CustomMenuView {
+     renderOverflowMenu() {
+         // Clear overflow menu
+         this.overflowMenu.innerHTML = '';
++        this.overflowUpdates = [];
+         // Set ARIA attributes for overflow menu
+         this.overflowMenu.setAttribute('role', 'menu');
+         this.overflowMenu.setAttribute('aria-label', 'More tools');
+@@ -740,6 +754,9 @@ export class CustomMenuView {
                  else {
                      // Regular menu item
                      const { dom, update } = tool.element.render(this.editorView);
 +                    // Apply current editor state (active/disabled) to the fresh render
 +                    update(this.editorView.state);
++                    this.overflowUpdates.push(update);
                      // Hide the button's internal label to avoid duplication
                      const internalLabel = dom.querySelector('span');
                      if (internalLabel) {
-@@ -754,12 +761,15 @@ export class CustomMenuView {
+@@ -754,12 +771,15 @@ export class CustomMenuView {
                      wrapper.appendChild(label);
                      // Make the entire wrapper clickable by dispatching mousedown to the button
                      wrapper.addEventListener('mousedown', (e) => {
@@ -58,7 +89,7 @@ index d630c6893dd77f148ca72cf2b137364bbce3830c..13e37e486e16288e7341bf97d52801bc
                              });
                              dom.dispatchEvent(mousedownEvent);
                          }
-@@ -771,7 +781,7 @@ export class CustomMenuView {
+@@ -771,7 +791,7 @@ export class CustomMenuView {
                              const mousedownEvent = new MouseEvent('mousedown', {
                                  bubbles: true,
                                  cancelable: true,
@@ -67,18 +98,21 @@ index d630c6893dd77f148ca72cf2b137364bbce3830c..13e37e486e16288e7341bf97d52801bc
                              });
                              dom.dispatchEvent(mousedownEvent);
                          }
-@@ -839,6 +849,8 @@ export class CustomMenuView {
+@@ -839,6 +859,9 @@ export class CustomMenuView {
                  else {
                      // Regular menu item - show icon only with tooltip
                      const { dom, update } = tool.element.render(this.editorView);
 +                    // Apply current editor state (active/disabled) to the fresh render
 +                    update(this.editorView.state);
++                    this.overflowUpdates.push(update);
                      // Hide any text labels, keep only icons
                      const spans = dom.querySelectorAll('span');
                      spans.forEach((span) => {
-@@ -905,16 +917,18 @@ export class CustomMenuView {
+@@ -904,22 +927,27 @@ export class CustomMenuView {
+             wrapper.setAttribute('data-tool-id', tool.id);
              wrapper.setAttribute('draggable', 'false');
              const isDropdown = tool.element.content !== undefined;
++            let itemUpdate;
              if (isDropdown) {
 -                const { dom } = tool.element.render(this.editorView);
 +                const { dom, update } = tool.element.render(this.editorView);
@@ -88,16 +122,34 @@ index d630c6893dd77f148ca72cf2b137364bbce3830c..13e37e486e16288e7341bf97d52801bc
                  }
                  wrapper.appendChild(dom);
 +                update(this.editorView.state);
++                itemUpdate = update;
              }
              else {
 -                const { dom } = tool.element.render(this.editorView);
 +                const { dom, update } = tool.element.render(this.editorView);
                  wrapper.appendChild(dom);
 +                update(this.editorView.state);
++                itemUpdate = update;
              }
              // Temporarily add to toolbar to measure
              this.toolbar.appendChild(wrapper);
-@@ -1514,11 +1528,7 @@ export class CustomMenuView {
+             const width = wrapper.getBoundingClientRect().width;
+-            renderedItems.push({ tool, wrapper, width });
++            renderedItems.push({ tool, wrapper, width, update: itemUpdate });
+         });
+         // Second pass: determine which items fit
+         // Account for gaps between items (4px gap) and separators between groups
+@@ -949,6 +977,9 @@ export class CustomMenuView {
+                 overflowItems.push(item);
+             }
+         }
++        // Keep the visible items' update callbacks so update() can refresh
++        // their active/disabled state without a full re-render.
++        this.toolUpdates = visibleItems.map((item) => item.update);
+         // Clear toolbar again and re-render only visible items
+         this.toolbar.innerHTML = '';
+         // Track previous group index for inserting separators between groups
+@@ -1514,11 +1545,25 @@ export class CustomMenuView {
          }
      }
      update(view, prevState) {
@@ -106,7 +158,25 @@ index d630c6893dd77f148ca72cf2b137364bbce3830c..13e37e486e16288e7341bf97d52801bc
 -        this.tools.forEach((tool) => {
 -            tool.element.render(this.editorView);
 -        });
-+        this.render();
++        // Refresh mounted items' active/disabled state in place. Calling
++        // render() here would rebuild the toolbar DOM and synchronously
++        // measure every tool on each ProseMirror transaction (every
++        // keystroke/caret move). Geometry changes are already handled by
++        // the ResizeObserver in the constructor, and the overflow menu and
++        // pinned dropdowns re-render their content each time they open.
++        if (prevState &&
++            prevState.doc.eq(view.state.doc) &&
++            prevState.selection.eq(view.state.selection)) {
++            return;
++        }
++        const state = view.state;
++        this.toolUpdates.forEach((update) => update(state));
++        if (this.overflowMenu.style.display !== 'none') {
++            this.overflowUpdates.forEach((update) => update(state));
++        }
++        if (this.pinnedDropdownMenu) {
++            this.dropdownUpdates.forEach((update) => update(state));
++        }
      }
      destroy() {
          // Clean up event listeners
