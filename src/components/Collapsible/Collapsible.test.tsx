@@ -99,16 +99,25 @@ describe('Collapsible', () => {
     });
 
     it('swallows storage errors', () => {
-      const spy = vi
-        .spyOn(globalThis.Storage.prototype, 'getItem')
-        .mockImplementation(() => {
-          throw new Error('blocked');
-        });
-      const setSpy = vi
-        .spyOn(globalThis.Storage.prototype, 'setItem')
-        .mockImplementation(() => {
-          throw new Error('blocked');
-        });
+      // Only block this key: other effects (e.g. useTheme) read storage too.
+      const proto = globalThis.Storage.prototype;
+      const realGet = proto.getItem;
+      const realSet = proto.setItem;
+      const spy = vi.spyOn(proto, 'getItem').mockImplementation(function (
+        this: typeof proto,
+        key: string
+      ) {
+        if (key === 'advanced') throw new Error('blocked');
+        return realGet.call(this, key);
+      });
+      const setSpy = vi.spyOn(proto, 'setItem').mockImplementation(function (
+        this: typeof proto,
+        key,
+        value
+      ) {
+        if (key === 'advanced') throw new Error('blocked');
+        realSet.call(this, key, value);
+      });
       renderCollapsible({ storageKey: 'advanced' });
       fireEvent.click(screen.getByRole('button'));
       expect(screen.getByText('Hidden content')).toBeInTheDocument();

@@ -191,6 +191,7 @@ export const RecordLayout = React.forwardRef<HTMLDivElement, RecordLayoutProps>(
                 defaultValue={defaultTab ?? tabs[0].id}
                 onValueChange={onTabChange}
                 urlParam={tabsUrlParam}
+                urlValues={tabs.map((t) => t.id)}
               >
                 <TabsList aria-label={labels.tabs} className="overflow-x-auto">
                   {tabs.map((t) => (

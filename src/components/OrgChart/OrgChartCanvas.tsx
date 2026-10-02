@@ -6,6 +6,7 @@ import {
   BackgroundVariant,
   Handle,
   MiniMap,
+  Panel,
   Position,
   ReactFlow,
   ReactFlowProvider,
@@ -463,6 +464,8 @@ function CanvasInner({
           minZoom={0.1}
           maxZoom={2}
           style={flowStyle}
+          // Built-in attribution is #999 (fails contrast); credit is rendered below with tokens.
+          proOptions={{ hideAttribution: true }}
           ariaLabelConfig={{
             'node.a11yDescription.default': labels.canvasHint,
             'node.a11yDescription.keyboardDisabled': labels.canvasHint,
@@ -471,6 +474,16 @@ function CanvasInner({
           }}
         >
           <Background variant={BackgroundVariant.Dots} gap={20} size={1} />
+          <Panel position={rtl ? 'bottom-right' : 'bottom-left'}>
+            <a
+              href="https://reactflow.dev"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-muted-foreground hover:text-foreground focus-visible:ring-ring rounded-sm text-[10px] focus-visible:ring-2 focus-visible:outline-none"
+            >
+              React Flow
+            </a>
+          </Panel>
           {showMinimap && (
             <MiniMap
               pannable

@@ -92,5 +92,7 @@
 - Fullscreen is covered both ways: jsdom has no Fullscreen API (fallback
   overlay), and a stubbed `requestFullscreen`/`exitFullscreen` covers the
   native path.
-- No visual baseline: the canvas depends on async layout and React Flow's
-  transforms; cover behaviour through the tree view and the cards' buttons.
+- Visual baseline: `orgchart-default.png` in `tests/visual/components.spec.ts`
+  waits for the first `.react-flow__node` after the async layout. Review and
+  update it whenever layout, card styling or the toolbar changes; cover
+  behaviour through the tree view and the cards' buttons.

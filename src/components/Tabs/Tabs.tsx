@@ -44,6 +44,11 @@ export interface TabsProps {
    * `defaultValue`.
    */
   urlParam?: string;
+  /**
+   * Values `urlParam` may select. Anything else in the URL falls back to
+   * `defaultValue`; without it, any non-empty value is accepted.
+   */
+  urlValues?: readonly string[];
   /** Tab content */
   children: React.ReactNode;
   /** Additional class name */
@@ -71,6 +76,7 @@ function Tabs({
   onValueChange,
   variant = 'underline',
   urlParam,
+  urlValues,
   children,
   className,
 }: TabsProps) {
@@ -80,11 +86,10 @@ function Tabs({
 
   const isControlled = controlledValue !== undefined;
   const syncsUrl = !isControlled && Boolean(urlParam);
-  // Tabs can't see its triggers' values, so any non-empty param is accepted.
   const [urlValue, setUrlValue] = useUrlSearchParam(
     syncsUrl ? urlParam : undefined,
     defaultValue || '',
-    (v) => v !== ''
+    (v) => (urlValues ? urlValues.includes(v) : v !== '')
   );
   const value = isControlled
     ? controlledValue

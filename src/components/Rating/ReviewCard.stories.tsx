@@ -135,5 +135,11 @@ export const LongBodyWithReply: Story = {
 };
 
 export const AbsoluteDate: Story = {
-  args: { dateStyle: 'absolute', locale: 'fr-FR', source: undefined },
+  // A fixed date keeps the visual baseline stable.
+  args: {
+    date: '2026-03-09T15:00:00Z',
+    dateStyle: 'absolute',
+    locale: 'fr-FR',
+    source: undefined,
+  },
 };

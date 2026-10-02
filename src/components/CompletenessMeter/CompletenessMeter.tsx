@@ -176,7 +176,7 @@ export const CompletenessMeter = React.forwardRef<
                   <button
                     type="button"
                     onClick={() => onFieldClick(f.key)}
-                    className="text-primary-700 dark:text-primary-300 focus-visible:ring-ring rounded-sm text-start hover:underline focus-visible:ring-2 focus-visible:outline-none"
+                    className="text-foreground decoration-primary-500 focus-visible:ring-ring rounded-sm text-start underline underline-offset-2 hover:decoration-2 focus-visible:ring-2 focus-visible:outline-none"
                   >
                     {f.label}
                   </button>

@@ -212,6 +212,23 @@ describe('AlertDialog', () => {
       expect(onOpenChange).toHaveBeenCalledWith(false);
     });
 
+    it('stays open when onAction throws synchronously', () => {
+      const onOpenChange = vi.fn();
+      renderWithTheme(
+        <AlertDialog
+          open
+          onOpenChange={onOpenChange}
+          title="T"
+          onAction={() => {
+            throw new Error('nope');
+          }}
+        />
+      );
+      fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+      expect(onOpenChange).not.toHaveBeenCalled();
+      expect(screen.getByRole('button', { name: 'Continue' })).toBeEnabled();
+    });
+
     it('stays open and re-enables when the promise rejects', async () => {
       const { promise, reject } = deferred();
       const onOpenChange = vi.fn();

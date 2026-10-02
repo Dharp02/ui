@@ -34,8 +34,11 @@ export function mergeOrder(saved: string[] | null, ids: string[]): string[] {
 /**
  * Persist a user's item order (sections, widgets, list rows) through any
  * storage. Updates are optimistic, saves are debounced and a pending save is
- * flushed on unmount. `load` runs once after mount, so server and first client
- * render use `ids` order.
+ * flushed on unmount and on `pagehide` (navigation, refresh, tab close). On
+ * `pagehide` only work `save` starts synchronously is guaranteed — use
+ * localStorage or `navigator.sendBeacon` there; an async `fetch` may be cut
+ * off. `load` runs once after mount, so server and first client render use
+ * `ids` order.
  *
  * @example
  * ```tsx
@@ -94,6 +97,11 @@ export function useOrderPersistence(
       active = false;
       flush();
     };
+  }, [flush]);
+
+  React.useEffect(() => {
+    window.addEventListener('pagehide', flush);
+    return () => window.removeEventListener('pagehide', flush);
   }, [flush]);
 
   const setOrder = React.useCallback(

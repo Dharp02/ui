@@ -134,11 +134,14 @@ export const Accordion = React.forwardRef<HTMLDivElement, AccordionProps>(
     }, [persists, storageKey]);
     const rawOpen = controlledOpen ?? internalOpen;
     // Single mode keeps at most one panel open, even if defaultOpenIds or a
-    // controlled openIds array hands us several.
-    const open = React.useMemo(
-      () => (type === 'single' ? rawOpen.slice(0, 1) : rawOpen),
-      [type, rawOpen]
-    );
+    // controlled openIds array hands us several. Stored ids for removed items
+    // are dropped first so they can't crowd out a valid one.
+    const open = React.useMemo(() => {
+      const known = persists
+        ? rawOpen.filter((id) => items.some((item) => item.id === id))
+        : rawOpen;
+      return type === 'single' ? known.slice(0, 1) : known;
+    }, [type, rawOpen, persists, items]);
     const openSet = React.useMemo(() => new Set(open), [open]);
 
     const toggle = (id: string) => {

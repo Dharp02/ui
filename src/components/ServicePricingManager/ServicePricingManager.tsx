@@ -181,7 +181,7 @@ function ServiceNote({ service, onNoteChange, labels }: ServiceNoteProps) {
             'hover:text-primary-600 dark:hover:text-primary-400',
             'focus-visible:ring-ring focus-visible:ring-2 focus-visible:outline-none',
             'aria-disabled:opacity-60',
-            note ? 'text-muted-foreground' : 'text-muted-foreground/70 text-xs'
+            note ? 'text-muted-foreground' : 'text-muted-foreground text-xs'
           )}
         >
           {note || labels.addNote}

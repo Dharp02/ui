@@ -39,6 +39,7 @@ describe('LogoUploader', () => {
     await userEvent.upload(input, png());
     expect(onUpload).toHaveBeenCalledWith(expect.any(File));
     expect(screen.getByRole('status')).toHaveTextContent('Uploading…');
+    expect(input).toBeDisabled();
     expect(screen.getByRole('img')).toHaveAttribute('src', 'blob:preview');
     resolve('https://cdn.test/logo.png');
     await waitFor(() =>

@@ -134,6 +134,12 @@ describe('Accordion', () => {
     const expanded = (name: string) =>
       screen.getByRole('button', { name }).getAttribute('aria-expanded');
 
+    it('skips stored ids for removed items in single mode', () => {
+      window.localStorage.setItem('faq', JSON.stringify(['removed', 'b']));
+      renderWithTheme(<Accordion items={ITEMS} storageKey="faq" />);
+      expect(expanded('Question B')).toBe('true');
+    });
+
     it('restores and persists the open ids', () => {
       window.localStorage.setItem('faq', JSON.stringify(['b']));
       const { unmount } = renderWithTheme(

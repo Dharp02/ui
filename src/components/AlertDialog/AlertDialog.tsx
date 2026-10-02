@@ -171,7 +171,13 @@ function AlertDialog({
   };
 
   const handleAction = async () => {
-    const result = onAction?.();
+    let result: unknown;
+    try {
+      result = onAction?.();
+    } catch {
+      requestAnimationFrame(() => actionRef.current?.focus());
+      return;
+    }
     if (!isPromiseLike(result)) return;
     setBusy(true);
     try {

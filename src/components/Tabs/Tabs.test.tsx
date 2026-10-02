@@ -48,6 +48,12 @@ describe('Tabs', () => {
       expect(screen.getByText('Panel one')).toBeInTheDocument();
     });
 
+    it('falls back to the default for values outside urlValues', () => {
+      window.history.replaceState(null, '', '/?tab=deleted');
+      renderTabs({ urlParam: 'tab', urlValues: ['one', 'two'] });
+      expect(screen.getByText('Panel one')).toBeInTheDocument();
+    });
+
     it('follows back/forward navigation', () => {
       renderTabs({ urlParam: 'tab' });
       act(() => {

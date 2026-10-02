@@ -67,6 +67,16 @@ describe('useOrderPersistence', () => {
     expect(save).toHaveBeenCalledWith(['b', 'a']);
   });
 
+  it('flushes a pending save on pagehide', async () => {
+    const { result, save } = setup(['a', 'b'], {});
+    await act(async () => {});
+    act(() => result.current.setOrder(['b', 'a']));
+    act(() => {
+      window.dispatchEvent(new Event('pagehide'));
+    });
+    expect(save).toHaveBeenCalledWith(['b', 'a']);
+  });
+
   it('keeps a change made while loading over the loaded order', async () => {
     let resolve: (v: string[]) => void = () => {};
     const { result } = setup(['a', 'b', 'c'], {

@@ -159,6 +159,15 @@ export const LogoUploader = React.forwardRef<HTMLDivElement, LogoUploaderProps>(
     const shown = safeImageSrc(preview ?? value);
     const inactive = disabled || busy !== null;
 
+    // The input is disabled while busy, so focus it once it re-enables.
+    const refocusInput = React.useRef(false);
+    React.useEffect(() => {
+      if (busy === null && refocusInput.current) {
+        refocusInput.current = false;
+        inputRef.current?.focus();
+      }
+    }, [busy]);
+
     const handleFile = async (file: File | undefined) => {
       if (!file || inactive) return;
       if (!matchesAccept(file, accept)) return setError(labels.invalidType);
@@ -195,8 +204,8 @@ export const LogoUploader = React.forwardRef<HTMLDivElement, LogoUploaderProps>(
       } catch {
         setError(labels.removeFailed);
       } finally {
+        refocusInput.current = true;
         setBusy(null);
-        inputRef.current?.focus();
       }
     };
 
@@ -214,7 +223,7 @@ export const LogoUploader = React.forwardRef<HTMLDivElement, LogoUploaderProps>(
             id={inputId}
             type="file"
             accept={accept}
-            disabled={disabled}
+            disabled={inactive}
             aria-label={shown ? labels.replace : labels.upload}
             aria-describedby={error ? errorId : undefined}
             aria-invalid={error ? true : undefined}
