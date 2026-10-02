@@ -114,6 +114,30 @@ describe('UserPicker', () => {
     );
   });
 
+  it('ignores further selections while a save is pending', async () => {
+    let resolve!: () => void;
+    const onChange = vi.fn(() => new Promise<void>((r) => (resolve = r)));
+    render(
+      <UserPicker
+        label="Watchers"
+        users={users}
+        multiple
+        value={['u1']}
+        onChange={onChange}
+      />
+    );
+    await userEvent.click(screen.getByRole('button', { name: /Watchers/ }));
+    await userEvent.click(screen.getByRole('option', { name: /Grace/ }));
+    await userEvent.click(screen.getByRole('option', { name: /Alan/ }));
+    expect(onChange).toHaveBeenCalledTimes(1);
+    resolve();
+    await waitFor(() =>
+      expect(
+        screen.getByRole('button', { name: /Watchers/ })
+      ).not.toHaveAttribute('aria-busy')
+    );
+  });
+
   it('restores the previous value and shows an error on rejection', async () => {
     let reject!: (e: Error) => void;
     const onChange = vi.fn(() => new Promise<void>((_, r) => (reject = r)));

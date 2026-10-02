@@ -56,18 +56,28 @@ export function useOrderPersistence(
     undefined
   );
   const touched = React.useRef(false);
+  const saving = React.useRef(false);
 
-  const flush = React.useCallback(() => {
+  // One save at a time; changes made meanwhile coalesce into the next save.
+  const flush = React.useCallback(function flushPending() {
     clearTimeout(timer.current);
     const next = pending.current;
+    if (!next || saving.current) return;
     pending.current = null;
-    if (!next) return;
+    saving.current = true;
     const { save: run, onError: fail } = callbacks.current;
+    let result: void | Promise<void>;
     try {
-      void Promise.resolve(run(next)).catch((e: unknown) => fail?.(e));
+      result = run(next);
     } catch (e) {
-      fail?.(e);
+      result = Promise.reject(e);
     }
+    void Promise.resolve(result)
+      .catch((e: unknown) => fail?.(e))
+      .finally(() => {
+        saving.current = false;
+        flushPending();
+      });
   }, []);
 
   React.useEffect(() => {

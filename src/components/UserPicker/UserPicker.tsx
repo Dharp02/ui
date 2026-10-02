@@ -210,6 +210,7 @@ export const UserPicker = React.forwardRef<HTMLDivElement, UserPickerProps>(
     };
 
     const choose = (row: Row) => {
+      if (pendingIds) return;
       if (row.kind === 'none') {
         void emit([]);
         close(true);

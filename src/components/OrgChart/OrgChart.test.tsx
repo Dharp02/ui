@@ -311,6 +311,16 @@ describe('OrgChart list view', () => {
     expect(item('Jordan Patel')).toHaveClass('opacity-50');
   });
 
+  it('treats an unknown group as no filter', () => {
+    render(
+      <OrgChart nodes={orgPeople} defaultView="list" defaultGroup="Gone" />
+    );
+    expect(
+      screen.getByRole('combobox', { name: 'Filter by group' })
+    ).toHaveValue('');
+    expect(item('Jordan Patel')).not.toHaveClass('opacity-50');
+  });
+
   it('expands and collapses everything', async () => {
     const user = userEvent.setup();
     render(<OrgChart nodes={orgPeople} defaultView="list" />);

@@ -11,6 +11,19 @@ const data = [
 const range = { start: '2026-09-06', end: '2026-09-19', locale: 'en-US' };
 
 describe('CalendarHeatmap', () => {
+  it('survives an invalid or reversed range', () => {
+    const { rerender } = render(
+      <CalendarHeatmap data={data} start="not-a-date" end="2026-09-19" />
+    );
+    expect(screen.getByRole('table')).toBeInTheDocument();
+    rerender(
+      <CalendarHeatmap data={data} start="2026-09-19" end="2026-09-06" />
+    );
+    expect(screen.getByRole('table')).toHaveTextContent(
+      '4 total across 2 active days'
+    );
+  });
+
   it('renders a labelled table with a summary and named day cells', () => {
     render(<CalendarHeatmap data={data} {...range} />);
 

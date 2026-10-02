@@ -85,6 +85,26 @@ describe('useOrderPersistence', () => {
     expect(result.current.order).toEqual(['b', 'a', 'c']);
   });
 
+  it('runs one save at a time and saves the latest order next', async () => {
+    let finish!: () => void;
+    const save = vi
+      .fn()
+      .mockImplementationOnce(() => new Promise<void>((r) => (finish = r)))
+      .mockImplementation(() => undefined);
+    const { result } = setup(['a', 'b', 'c'], { save, debounceMs: 10 });
+    await act(async () => {});
+    act(() => result.current.setOrder(['b', 'a', 'c']));
+    act(() => vi.advanceTimersByTime(10));
+    act(() => result.current.setOrder(['c', 'b', 'a']));
+    act(() => vi.advanceTimersByTime(10));
+    act(() => result.current.setOrder(['a', 'c', 'b']));
+    act(() => vi.advanceTimersByTime(10));
+    expect(save).toHaveBeenCalledTimes(1);
+    await act(async () => finish());
+    expect(save).toHaveBeenCalledTimes(2);
+    expect(save).toHaveBeenLastCalledWith(['a', 'c', 'b']);
+  });
+
   it('reports rejected saves to onError', async () => {
     const onError = vi.fn();
     const failure = new Error('offline');

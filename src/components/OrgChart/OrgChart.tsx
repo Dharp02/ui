@@ -187,7 +187,9 @@ export const OrgChart = React.forwardRef<HTMLDivElement, OrgChartProps>(
     );
     const seeded = React.useRef(forest.byId.size > 0);
     const [query, setQuery] = React.useState(defaultQuery);
-    const [group, setGroup] = React.useState(defaultGroup);
+    const [groupState, setGroup] = React.useState(defaultGroup);
+    // A group that isn't in `nodes` (stale default, removed on refresh) means no filter.
+    const group = groupState && groups.includes(groupState) ? groupState : '';
     const [selectedId, setSelectedId] = React.useState<string | null>(null);
     const [viewState, setViewState] = React.useState<OrgChartView>(
       () => defaultView ?? (isNarrow() ? 'list' : 'chart')

@@ -21,6 +21,15 @@ describe('FieldHistory', () => {
     ]);
   });
 
+  it('falls back to all fields when the selected field is gone', () => {
+    const { container } = render(
+      <FieldHistory {...base} defaultField="No such field" />
+    );
+    expect(
+      container.querySelectorAll('[data-slot="field-history-entry"]')
+    ).toHaveLength(fieldChanges.length);
+  });
+
   it('shows the old value struck through and the new one', () => {
     render(<FieldHistory {...base} />);
     const entry = screen.getByText('Close date').closest('li')!;

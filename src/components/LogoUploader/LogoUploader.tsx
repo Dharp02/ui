@@ -43,6 +43,15 @@ function formatBytes(bytes: number): string {
   return `${Math.round((kb / 1024) * 10) / 10} MB`;
 }
 
+/** Relative URLs, http(s), blob: and data:image/ only — nothing else reaches `<img src>`. */
+function safeImageSrc(url: string | null | undefined): string | null {
+  const trimmed = url?.trim();
+  if (!trimmed) return null;
+  const scheme = /^([a-z][a-z\d+.-]*):/i.exec(trimmed)?.[1].toLowerCase();
+  if (!scheme || ['http', 'https', 'blob'].includes(scheme)) return trimmed;
+  return /^data:image\//i.test(trimmed) ? trimmed : null;
+}
+
 /** True when `file` matches an `accept` attribute value. */
 function matchesAccept(file: File, accept: string): boolean {
   return accept
@@ -147,7 +156,7 @@ export const LogoUploader = React.forwardRef<HTMLDivElement, LogoUploaderProps>(
     }, [value, releaseObjectUrl]);
     React.useEffect(() => releaseObjectUrl, [releaseObjectUrl]);
 
-    const shown = preview ?? value ?? null;
+    const shown = safeImageSrc(preview ?? value);
     const inactive = disabled || busy !== null;
 
     const handleFile = async (file: File | undefined) => {

@@ -133,13 +133,15 @@ function FieldHistoryInner<V = FieldHistoryValue>(
 ) {
   const text = { ...defaultFieldHistoryLabels, ...labels };
   const baseId = React.useId();
-  const [field, setField] = React.useState(defaultField ?? ALL);
+  const [fieldState, setField] = React.useState(defaultField ?? ALL);
   const reference = now ?? new Date();
 
   const fields = React.useMemo(
     () => [...new Set(items.map((e) => e.field))].sort(),
     [items]
   );
+  // A field no longer in `items` falls back to all, so the history can't go blank.
+  const field = fields.includes(fieldState) ? fieldState : ALL;
   const visible =
     field === ALL ? items : items.filter((e) => e.field === field);
 

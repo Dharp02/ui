@@ -28,6 +28,22 @@ describe('CollabStatus', () => {
     );
   });
 
+  it('counts a person as editing unless every window is viewing', () => {
+    render(
+      <CollabStatus
+        connected
+        peers={[
+          { name: 'Ann' },
+          { name: 'Ann', mode: 'viewing' },
+          { name: 'Bo', mode: 'viewing' },
+          { name: 'Bo', mode: 'viewing' },
+        ]}
+      />
+    );
+    expect(screen.getByRole('button')).toHaveTextContent('Ann (2) is editing');
+    expect(screen.getByRole('button')).not.toHaveTextContent('Bo');
+  });
+
   it('shows "Connecting…" before the initial sync', () => {
     render(<CollabStatus connected={false} />);
     expect(screen.getByRole('button')).toHaveTextContent('Connecting…');

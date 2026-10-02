@@ -93,10 +93,14 @@ export const CalendarHeatmap = React.forwardRef<
   const [active, setActive] = React.useState<string | null>(null);
 
   const grid = React.useMemo(() => {
-    const last = (end ? DateTime.fromISO(end) : DateTime.now()).startOf('day');
-    const first = start
-      ? DateTime.fromISO(start).startOf('day')
-      : last.minus({ weeks: 12 }).plus({ days: 1 });
+    const parse = (iso?: string) => {
+      const d = iso ? DateTime.fromISO(iso) : null;
+      return d?.isValid ? d.startOf('day') : null;
+    };
+    const end_ = parse(end) ?? DateTime.now().startOf('day');
+    const start_ = parse(start) ?? end_.minus({ weeks: 12 }).plus({ days: 1 });
+    // A reversed range is swapped so there is always at least one day.
+    const [first, last] = start_ <= end_ ? [start_, end_] : [end_, start_];
     const origin = first.minus({
       days: ((first.weekday % 7) - weekStartsOn + 7) % 7,
     });

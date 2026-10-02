@@ -18,6 +18,19 @@ describe('LogoUploader', () => {
   });
   afterEach(() => vi.unstubAllGlobals());
 
+  it('only renders safe image URLs', () => {
+    const { rerender } = render(
+      <LogoUploader value="javascript:alert(1)" onUpload={vi.fn()} />
+    );
+    expect(screen.queryByRole('img')).not.toBeInTheDocument();
+    rerender(
+      <LogoUploader value="data:image/png;base64,AAAA" onUpload={vi.fn()} />
+    );
+    expect(screen.getByRole('img')).toBeInTheDocument();
+    rerender(<LogoUploader value="/logos/acme.png" onUpload={vi.fn()} />);
+    expect(screen.getByRole('img')).toHaveAttribute('src', '/logos/acme.png');
+  });
+
   it('uploads a chosen file, shows pending, then previews the returned URL', async () => {
     let resolve!: (url: string) => void;
     const onUpload = vi.fn(() => new Promise<string>((r) => (resolve = r)));

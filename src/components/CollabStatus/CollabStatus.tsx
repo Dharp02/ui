@@ -144,7 +144,7 @@ interface Occupant extends CollabPeer {
 
 /**
  * Collapse multiple windows of the same person into `Name (N)`; they count as
- * editing if any window is.
+ * viewing only if every window is explicitly viewing.
  */
 function peerLabels(peers: CollabPeer[]): Occupant[] {
   const seen = new Map<string, CollabPeer & { count: number }>();
@@ -153,8 +153,7 @@ function peerLabels(peers: CollabPeer[]): Occupant[] {
     if (!entry) seen.set(p.name, { ...p, count: 1 });
     else {
       entry.count += 1;
-      if (p.mode === 'editing' || !entry.mode)
-        entry.mode = p.mode ?? entry.mode;
+      if (entry.mode === 'viewing' && p.mode !== 'viewing') entry.mode = p.mode;
       entry.avatarUrl ??= p.avatarUrl;
     }
   }
