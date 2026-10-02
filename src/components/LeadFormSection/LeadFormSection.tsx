@@ -2,12 +2,14 @@ import * as React from 'react';
 import { CircleCheck } from 'lucide-react';
 import { cn } from '../../utils/cn';
 import { buttonVariants } from '../Button/button-variants';
+import { RequiredMark, inputVariants } from '../Input';
 import {
   SectionHeading,
   accentTextClass,
   cardClass,
   containerClass,
   mutedTextClass,
+  safeHref,
   toneClass,
 } from '../../templates/Section';
 import type { SectionBaseProps } from '../../templates/types';
@@ -30,7 +32,11 @@ export interface LeadFormSectionProps extends Omit<
   'align' | 'onSubmit'
 > {
   title: string;
-  /** A URL, or a React form action such as a Next.js Server Action. */
+  /**
+   * A URL, or a React form action such as a Next.js Server Action. A URL is
+   * page data: if its scheme is not http(s), mailto or tel the section
+   * renders nothing, so an executable action never reaches the form.
+   */
   action: string | ((formData: FormData) => void | Promise<void>);
   /** Only used with a URL `action`. */
   method?: 'post' | 'get';
@@ -79,9 +85,10 @@ export const defaultLeadFormFields: LeadFormField[] = [
 ];
 
 const controlClass = cn(
-  'block w-full rounded-lg border border-input bg-background px-3 py-2.5 text-foreground',
-  'placeholder:text-muted-foreground',
-  'focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none'
+  // Input's field styling (single source of truth for form controls); h-auto
+  // and py-2.5 because this one class also sizes <textarea> and <select>.
+  inputVariants({ size: 'md' }),
+  'block h-auto py-2.5'
 );
 
 export const LeadFormSection = React.forwardRef<
@@ -113,6 +120,11 @@ export const LeadFormSection = React.forwardRef<
     const baseId = React.useId();
     const titleId = `${baseId}-title`;
     const split = layout === 'split';
+    // Same trust boundary as TemplateAnchor hrefs — and after the hooks, so
+    // the hook count stays stable if `action` changes.
+    const resolvedAction =
+      typeof action === 'string' ? safeHref(action) : action;
+    if (resolvedAction == null) return null;
     return (
       <section
         ref={ref}
@@ -161,8 +173,8 @@ export const LeadFormSection = React.forwardRef<
             )}
           </div>
           <form
-            action={action}
-            method={typeof action === 'string' ? method : undefined}
+            action={resolvedAction}
+            method={typeof resolvedAction === 'string' ? method : undefined}
             aria-labelledby={titleId}
             className={cn(
               'grid gap-5 rounded-2xl p-6 sm:grid-cols-2 sm:p-8',
@@ -194,12 +206,7 @@ export const LeadFormSection = React.forwardRef<
                     className="mb-1.5 block text-sm font-medium"
                   >
                     {field.label}
-                    {field.required && (
-                      <span aria-hidden="true" className="text-destructive">
-                        {' '}
-                        *
-                      </span>
-                    )}
+                    {field.required && <RequiredMark />}
                   </label>
                   {field.type === 'textarea' ? (
                     <textarea

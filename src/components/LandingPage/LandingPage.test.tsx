@@ -124,6 +124,76 @@ describe('LandingPage', () => {
     );
     expect(screen.getAllByTestId('crew-icon')).toHaveLength(2);
   });
+
+  it('skips unknown block types and strips props JSON must not control', () => {
+    const { container } = render(
+      <LandingPage
+        blocks={[
+          { type: 'faqs', items: [] } as unknown as LandingBlock,
+          {
+            type: 'cta',
+            title: 'Go',
+            dangerouslySetInnerHTML: { __html: '<b>owned</b>' },
+          } as unknown as LandingBlock,
+        ]}
+      />
+    );
+    expect(container.querySelectorAll('section')).toHaveLength(1);
+    expect(container.innerHTML).not.toContain('owned');
+  });
+
+  it('keeps the site adapters when a block tries to override them', () => {
+    const Link = ({ children, ...props }: React.ComponentProps<'a'>) => (
+      <a data-client-nav="" {...props}>
+        {children}
+      </a>
+    );
+    const { container } = render(
+      <LandingPage
+        components={{ Link }}
+        blocks={[
+          {
+            type: 'cta',
+            title: 'Go',
+            primaryCta: { label: 'Start', href: '/start' },
+            components: { Link: 'bogus' },
+          } as unknown as LandingBlock,
+        ]}
+      />
+    );
+    expect(container.querySelector('a')).toHaveAttribute('data-client-nav');
+  });
+
+  it('skips a lead-form block whose action URL is executable', () => {
+    const { container } = render(
+      <LandingPage
+        blocks={[
+          {
+            type: 'lead-form',
+            title: 'Lead',
+            action: 'javascript:alert(1)',
+          },
+        ]}
+      />
+    );
+    // No form at all — an action-less form would submit to the current URL.
+    expect(container.querySelector('form')).toBeNull();
+  });
+
+  it('treats prototype members as unknown blocks and components', () => {
+    const { container } = render(
+      <LandingPage
+        custom={{}}
+        blocks={[
+          { type: 'custom', component: 'toString' },
+          { type: 'constructor' } as unknown as LandingBlock,
+        ]}
+      />
+    );
+    expect(
+      container.querySelector('[data-slot="landing-page"]')
+    ).toBeEmptyDOMElement();
+  });
 });
 
 describe('validateLandingPage', () => {
@@ -148,12 +218,79 @@ describe('validateLandingPage', () => {
     ]);
   });
 
+  it('flags FAQ item ids that collide with page ids', () => {
+    const issues = validateLandingPage([
+      hero,
+      { type: 'cta', id: 'contact', title: 'Go' },
+      {
+        type: 'faq',
+        title: 'FAQ',
+        items: [
+          { id: 'contact', question: 'Q1', answer: 'A1' },
+          { id: 'q2', question: 'Q2', answer: 'A2' },
+          { id: 'q2', question: 'Q2 again', answer: 'A2' },
+        ],
+      },
+    ]);
+    expect(issues).toEqual([
+      expect.objectContaining({
+        severity: 'error',
+        index: 2,
+        message: expect.stringContaining('"contact"'),
+      }),
+      expect.objectContaining({
+        severity: 'error',
+        index: 2,
+        message: expect.stringContaining('"q2"'),
+      }),
+    ]);
+  });
+
   it('accepts an h2 hero after the page h1 but warns when there is no h1 hero', () => {
     const issues = validateLandingPage([{ ...hero, headingLevel: 'h2' }]);
     expect(issues).toEqual([
       expect.objectContaining({
         severity: 'warning',
         message: expect.stringContaining('No h1'),
+      }),
+    ]);
+  });
+
+  it('warns when an h2 hero precedes the h1 hero', () => {
+    const issues = validateLandingPage([{ ...hero, headingLevel: 'h2' }, hero]);
+    expect(issues).toEqual([
+      expect.objectContaining({
+        severity: 'warning',
+        index: 1,
+        message: expect.stringContaining('not the first hero'),
+      }),
+    ]);
+  });
+
+  it('flags unknown block types the renderer would skip', () => {
+    const issues = validateLandingPage([
+      hero,
+      { type: 'faqs', items: [] } as unknown as LandingBlock,
+    ]);
+    expect(issues).toEqual([
+      expect.objectContaining({
+        severity: 'error',
+        index: 1,
+        message: expect.stringContaining('faqs'),
+      }),
+    ]);
+  });
+
+  it('flags an unsafe lead-form action the renderer would skip', () => {
+    const issues = validateLandingPage([
+      hero,
+      { type: 'lead-form', title: 'Lead', action: 'javascript:alert(1)' },
+    ]);
+    expect(issues).toEqual([
+      expect.objectContaining({
+        severity: 'error',
+        index: 1,
+        message: expect.stringContaining('Unsafe lead-form action'),
       }),
     ]);
   });

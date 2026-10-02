@@ -1,6 +1,7 @@
 import * as React from 'react';
 import { Check } from 'lucide-react';
 import { cn } from '../../utils/cn';
+import { Badge } from '../Badge';
 import {
   SectionShell,
   TemplateAnchor,
@@ -73,9 +74,9 @@ export const PricingSection = React.forwardRef<
             )}
           >
             {plan.highlighted && plan.badge && (
-              <p className="bg-primary-800 absolute start-6 -top-3 rounded-full px-3 py-1 text-xs font-semibold text-white">
+              <Badge className="bg-primary-800 dark:bg-primary-800 absolute start-6 -top-3 px-3 py-1 text-xs font-semibold text-white dark:text-white">
                 {plan.badge}
-              </p>
+              </Badge>
             )}
             <h3 className={cn('text-lg font-semibold', headingTextClass(tone))}>
               {plan.name}

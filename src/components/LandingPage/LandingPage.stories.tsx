@@ -107,7 +107,7 @@ export default function Page() {
 
 - **Server-safe.** Import from \`@mieweb/ui/templates\` in a React Server Component; nothing on that entry uses client-only React APIs. (The root \`@mieweb/ui\` barrel re-exports the same components but also pulls in client modules.)
 - **The page's head is the app's.** Metadata, canonical URLs, JSON-LD (\`FAQPage\`, \`BreadcrumbList\`, \`Organization\`), sitemaps and analytics stay in the site — the blocks give you the data to build them from.
-- **Headings.** The hero renders the page's \`h1\`; every other section an \`h2\`. \`validateLandingPage\` reports a second \`h1\` hero, a hero that is not first, duplicate ids, and a preset's missing or out-of-order blocks. \`LandingPage\` itself renders whatever it is given.
+- **Headings.** The hero renders the page's \`h1\`; every other section an \`h2\`. \`validateLandingPage\` reports a second \`h1\` hero, a hero that is not first, an \`h1\` hero behind an \`h2\` hero, duplicate ids, and a preset's missing or out-of-order blocks. \`LandingPage\` itself renders whatever it is given.
 - **Custom blocks** name a component in the \`custom\` map; an unknown name renders nothing.
 - **Form actions.** A \`lead-form\` block's \`action\` is a string: a URL, or a key in \`actions={{ requestPlan }}\` for a Server Action (React 19), so the block itself stays JSON.
 - **Images and links.** Sections render \`<img>\` and \`<a>\` unless you pass \`components={{ Image, Link }}\`. \`Image\` receives \`{ src, alt, width?, height?, className, priority? }\` — \`priority\` is set on the hero image only — so a three-line adapter maps it onto \`next/image\`. \`next/link\` works as \`Link\` directly. Logos stay plain \`<img>\` because they carry no intrinsic size.

@@ -459,6 +459,11 @@ module.exports = {
     // Button `effect` variants (sheen/orbit) lift the button on hover; the
     // mie-fx-* classes themselves are plain CSS in styles/effects.css.
     'hover:-translate-y-0.5',
+    // Button outline variant — dark-mode hover/active fill with lightened
+    // label for WCAG AA contrast (issue #511).
+    'dark:hover:bg-primary-950',
+    'dark:active:bg-primary-900',
+    'dark:active:text-primary-100',
     // VideoCard hover-preview progress bar rounds its leading-fill edge.
     'rounded-e-full',
     'transition-colors',
@@ -570,6 +575,11 @@ module.exports = {
     'rounded-2xl',
     'dark:bg-[#1c1c1e]',
     'dark:border-[#2e2e30]',
+    // ChatComposer mobile keyboard: 16px input below sm (no iOS zoom) and
+    // tap-to-focus card cursor
+    'text-base',
+    'sm:text-sm',
+    'cursor-text',
     'md:col-span-1',
     'md:col-start-2',
     'md:row-start-1',
@@ -761,6 +771,7 @@ module.exports = {
     'bg-white/25',
     'border-white/70',
     'dark:border-white/70',
+    'dark:bg-primary-800',
     'dark:bg-primary-900/60',
     'dark:hover:bg-white/10',
     'group-open:rotate-180',

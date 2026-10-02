@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import * as React from 'react';
 import { render, screen, within } from '@testing-library/react';
 import { HeroSection } from '../components/HeroSection';
 import { CtaSection } from '../components/CtaSection';
@@ -13,7 +14,7 @@ import { SplitContentSection } from '../components/SplitContentSection';
 import { FeatureGridSection } from '../components/FeatureGridSection';
 import { PricingSection } from '../components/PricingSection';
 import { VideoSection } from '../components/VideoSection';
-import { SectionHeading, SectionShell } from './Section';
+import { SectionHeading, SectionShell, safeHref } from './Section';
 import { TemplateIcon } from './icons';
 import { dashboardImage } from './storyData';
 
@@ -177,6 +178,13 @@ describe('LeadFormSection', () => {
   it('defaults to name, email and company fields', () => {
     render(<LeadFormSection title="Talk to us" action="/lead" />);
     expect(screen.getAllByRole('textbox')).toHaveLength(4);
+  });
+
+  it('renders nothing when the action URL has an executable scheme', () => {
+    const { container } = render(
+      <LeadFormSection title="Lead" action="javascript:alert(1)" />
+    );
+    expect(container).toBeEmptyDOMElement();
   });
 });
 
@@ -459,6 +467,46 @@ describe('shared pieces', () => {
     expect(container).toBeEmptyDOMElement();
   });
 
+  it('safeHref keeps site URLs and drops executable schemes', () => {
+    expect(safeHref('/demo/')).toBe('/demo/');
+    expect(safeHref('#pricing')).toBe('#pricing');
+    expect(safeHref('https://mieweb.com')).toBe('https://mieweb.com');
+    expect(safeHref('mailto:hi@mieweb.com')).toBe('mailto:hi@mieweb.com');
+    expect(safeHref('tel:+12605550100')).toBe('tel:+12605550100');
+    expect(safeHref('javascript:alert(1)')).toBeUndefined();
+    expect(safeHref('\tjava\nscript:alert(1)')).toBeUndefined();
+    expect(safeHref('data:text/html,<script>x</script>')).toBeUndefined();
+    expect(safeHref('')).toBeUndefined();
+    expect(safeHref('  ')).toBeUndefined();
+    expect(safeHref(undefined)).toBeUndefined();
+  });
+
+  it('TemplateAnchor disarms an executable CMS href on both anchor paths', () => {
+    const Link = ({ children, ...props }: React.ComponentProps<'a'>) => (
+      <a data-client-nav="" {...props}>
+        {children}
+      </a>
+    );
+    render(
+      <>
+        <CtaSection
+          title="Raw"
+          primaryCta={{ label: 'Raw link', href: 'javascript:alert(1)' }}
+        />
+        <CtaSection
+          title="Adapter"
+          components={{ Link }}
+          primaryCta={{ label: 'Adapter link', href: 'javascript:alert(1)' }}
+        />
+      </>
+    );
+    for (const label of ['Raw link', 'Adapter link']) {
+      const anchor = screen.getByText(label).closest('a');
+      expect(anchor).not.toHaveAttribute('href');
+      expect(anchor).not.toHaveAttribute('data-client-nav');
+    }
+  });
+
   it('SectionShell labels the section only when it has a title', () => {
     const { rerender } = render(
       <SectionShell spacing="compact" width="narrow">
@@ -476,6 +524,9 @@ describe('shared pieces', () => {
     rerender(<TemplateIcon name="EHR" />);
     expect(container).toHaveTextContent('EHR');
     rerender(<TemplateIcon name="not-a-token" />);
+    expect(container).toBeEmptyDOMElement();
+    // Prototype members are not icons — CMS data must fall through, not crash.
+    rerender(<TemplateIcon name="constructor" icons={{}} />);
     expect(container).toBeEmptyDOMElement();
   });
 });

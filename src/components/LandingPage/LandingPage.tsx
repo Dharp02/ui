@@ -62,7 +62,9 @@ import {
   type TileCartogramSectionProps,
 } from '../TileCartogramSection';
 import type { TemplateIconRegistry } from '../../templates/icons';
+import { safeHref } from '../../templates/Section';
 import type { TemplateComponents } from '../../templates/types';
+import { ownProperty } from '../../utils/own';
 
 /** A section the site renders itself, looked up by name in `LandingPage`'s `custom` map. */
 export interface CustomBlock {
@@ -136,6 +138,12 @@ const sections = {
   'pdf-embed': PdfEmbedSection,
 } satisfies Record<Exclude<LandingBlockType, 'custom'>, unknown>;
 
+/** Every block type the renderer knows — `validateLandingPage` checks runtime data against it. */
+export const landingBlockTypes = [
+  ...Object.keys(sections),
+  'custom',
+] as LandingBlockType[];
+
 /** Block types whose section resolves icon tokens. */
 const takesIcons = new Set<LandingBlockType>(['features', 'process']);
 
@@ -158,26 +166,44 @@ export const LandingPage = React.forwardRef<HTMLDivElement, LandingPageProps>(
     <div ref={ref} data-slot="landing-page" {...rest}>
       {blocks.map((block, i) => {
         const key = block.id ?? `${block.type}-${i}`;
+        // Own-property lookups throughout: block data is runtime JSON, so
+        // `"toString"` must mean "unknown", not `Object.prototype.toString`.
         if (block.type === 'custom') {
-          const Custom = custom?.[block.component];
+          const Custom = ownProperty(custom, block.component);
           return Custom ? (
             <Custom key={key} id={block.id} {...block.props} />
           ) : null;
         }
         const { type, ...props } = block;
         // `type` narrowed `props` to this section's props; TS can't correlate the lookup.
-        const Section = sections[type] as unknown as React.ComponentType<
-          Record<string, unknown>
-        >;
+        const Section = ownProperty(
+          sections as Record<string, unknown>,
+          type
+        ) as React.ComponentType<Record<string, unknown>> | undefined;
+        // Runtime page data bypasses `BlockData`, so guard what TypeScript
+        // cannot: skip unknown types the way unknown `custom` components are
+        // skipped (`validateLandingPage` reports them), drop the props JSON
+        // must not control, and inject the framework-owned props after the
+        // spread so a block cannot override the site's adapters.
+        if (!Section) return null;
+        // A non-named lead-form action is a form URL — same trust boundary as
+        // hrefs. No safe action means no form: an action-less form would
+        // submit the lead to the current document URL instead of going inert.
+        const action =
+          block.type === 'lead-form'
+            ? (ownProperty(actions, block.action) ?? safeHref(block.action))
+            : undefined;
+        if (block.type === 'lead-form' && action == null) return null;
+        const data = { ...props } as Record<string, unknown>;
+        delete data.children;
+        delete data.dangerouslySetInnerHTML;
         return (
           <Section
             key={key}
+            {...data}
             components={components}
             {...(takesIcons.has(type) ? { icons } : {})}
-            {...props}
-            {...(block.type === 'lead-form'
-              ? { action: actions?.[block.action] ?? block.action }
-              : {})}
+            {...(block.type === 'lead-form' ? { action } : {})}
           />
         );
       })}

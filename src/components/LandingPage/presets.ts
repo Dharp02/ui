@@ -1,4 +1,9 @@
-import type { LandingBlock, LandingBlockType } from './LandingPage';
+import { safeHref } from '../../templates/Section';
+import {
+  landingBlockTypes,
+  type LandingBlock,
+  type LandingBlockType,
+} from './LandingPage';
 
 export interface LandingPreset {
   label: string;
@@ -154,6 +159,23 @@ export function validateLandingPage(
   const issues: LandingPageIssue[] = [];
   const types = blocks.map((b) => b.type);
 
+  const knownTypes = new Set<string>(landingBlockTypes);
+  blocks.forEach((b, index) => {
+    if (!knownTypes.has(b.type))
+      issues.push({
+        severity: 'error',
+        index,
+        message: `Unknown block type "${b.type}": the renderer skips this block.`,
+      });
+    // A named action resolves like a relative URL; unsafe schemes never do.
+    if (b.type === 'lead-form' && safeHref(b.action) == null)
+      issues.push({
+        severity: 'error',
+        index,
+        message: `Unsafe lead-form action "${b.action}": the renderer skips this block.`,
+      });
+  });
+
   const h1Heroes = blocks.flatMap((b, i) =>
     b.type === 'hero' && (b.headingLevel ?? 'h1') === 'h1' ? [i] : []
   );
@@ -179,17 +201,32 @@ export function validateLandingPage(
       index: firstHero,
       message: 'The hero is not the first block.',
     });
+  if (h1Heroes.length > 0 && h1Heroes[0] !== firstHero)
+    issues.push({
+      severity: 'warning',
+      index: h1Heroes[0],
+      message:
+        'The h1 hero is not the first hero: an h2 hero precedes the page h1.',
+    });
 
   const seen = new Map<string, number>();
   blocks.forEach((b, index) => {
-    if (!b.id) return;
-    if (seen.has(b.id))
-      issues.push({
-        severity: 'error',
-        index,
-        message: `Duplicate id "${b.id}" (also block ${seen.get(b.id)}).`,
-      });
-    else seen.set(b.id, index);
+    // FAQ item ids become DOM ids too, so they share the page-wide namespace.
+    const ids = [
+      ...(b.id ? [b.id] : []),
+      ...(b.type === 'faq'
+        ? b.items.flatMap((item) => (item.id ? [item.id] : []))
+        : []),
+    ];
+    ids.forEach((id) => {
+      if (seen.has(id))
+        issues.push({
+          severity: 'error',
+          index,
+          message: `Duplicate id "${id}" (also block ${seen.get(id)}).`,
+        });
+      else seen.set(id, index);
+    });
   });
 
   blocks.forEach((b, index) => {
