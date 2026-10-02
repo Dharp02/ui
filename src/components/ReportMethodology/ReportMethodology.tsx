@@ -7,6 +7,7 @@ import {
   cardClass,
   headingTextClass,
   mutedTextClass,
+  safeHref,
 } from '../../templates/Section';
 import type { SectionBaseProps, TemplateLink } from '../../templates/types';
 
@@ -77,11 +78,12 @@ export const ReportMethodology = React.forwardRef<
               </dt>
               <dd className={cn('mt-2 text-sm', mutedTextClass(tone))}>
                 {source.description}
-                {source.href && (
+                {/* Source URLs are page data; executable schemes drop the link. */}
+                {safeHref(source.href) && (
                   <>
                     {' '}
                     <a
-                      href={source.href}
+                      href={safeHref(source.href)}
                       rel="noopener noreferrer"
                       className={cn(
                         'font-medium underline underline-offset-2',

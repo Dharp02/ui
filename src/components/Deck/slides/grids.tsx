@@ -1,7 +1,7 @@
 import * as React from 'react';
 import { ChevronRight, ExternalLink, Play } from 'lucide-react';
 import { cn } from '../../../utils/cn';
-import { TemplateImg } from '../../../templates/Section';
+import { TemplateImg, safeHref } from '../../../templates/Section';
 import { useDeck, useTone } from '../DeckContext';
 import {
   Card,
@@ -214,6 +214,8 @@ export function ShowcaseRenderer({
   const tone = toneOf(slide, 'deep');
   const a = accent('accent', tone.isLight);
   const video = slide.video;
+  // Slide JSON is content data; a video link with an executable scheme is dropped.
+  const videoHref = video ? safeHref(video.href) : undefined;
   return (
     <SlideFrame slide={slide} index={index} tone="deep">
       <div className="mb-6 flex flex-col items-start gap-4 sm:flex-row sm:items-end sm:justify-between">
@@ -240,15 +242,17 @@ export function ShowcaseRenderer({
           </div>
         )}
       </div>
-      <div className={cn('grid gap-6', video && 'lg:grid-cols-[1fr_300px]')}>
+      <div
+        className={cn('grid gap-6', videoHref && 'lg:grid-cols-[1fr_300px]')}
+      >
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {slide.categories.map((cat, i) => (
             <ShowcaseCategory key={cat.title} category={cat} i={3 + i} />
           ))}
         </div>
-        {video && (
+        {video && videoHref && (
           <a
-            href={video.href}
+            href={videoHref}
             target="_blank"
             rel="noopener noreferrer"
             {...reveal(5)}

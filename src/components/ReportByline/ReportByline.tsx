@@ -6,6 +6,7 @@ import {
   containerClass,
   headingTextClass,
   mutedTextClass,
+  safeHref,
   toneClass,
 } from '../../templates/Section';
 import type {
@@ -126,19 +127,24 @@ export const ReportByline = React.forwardRef<HTMLElement, ReportBylineProps>(
                 </div>
                 {author.profiles && author.profiles.length > 0 && (
                   <div className="ms-auto flex flex-wrap gap-2">
-                    {author.profiles.map((profile) => (
-                      <a
-                        key={profile.href}
-                        href={profile.href}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        data-track={profile.trackingId}
-                        className="border-border hover:border-primary-600 hover:text-primary-800 dark:hover:text-primary-300 inline-flex items-center rounded-full border px-3 py-1.5 text-sm font-medium"
-                      >
-                        <span className="sr-only">{author.name} on </span>
-                        {profile.label}
-                      </a>
-                    ))}
+                    {author.profiles.map((profile) => {
+                      // Profile URLs are page data; executable schemes are dropped.
+                      const href = safeHref(profile.href);
+                      if (!href) return null;
+                      return (
+                        <a
+                          key={profile.href}
+                          href={href}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          data-track={profile.trackingId}
+                          className="border-border hover:border-primary-600 hover:text-primary-800 dark:hover:text-primary-300 inline-flex items-center rounded-full border px-3 py-1.5 text-sm font-medium"
+                        >
+                          <span className="sr-only">{author.name} on </span>
+                          {profile.label}
+                        </a>
+                      );
+                    })}
                   </div>
                 )}
               </li>

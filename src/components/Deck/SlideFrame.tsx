@@ -59,8 +59,8 @@ export function SlideFrame({
             aria-hidden="true"
             className="pointer-events-none absolute inset-0 -z-10 overflow-hidden print:hidden"
           >
-            <div className="bg-accent/15 absolute -top-24 -right-24 size-[28rem] rounded-full blur-3xl" />
-            <div className="bg-primary-500/15 absolute -bottom-32 -left-24 size-[32rem] rounded-full blur-3xl" />
+            <div className="bg-accent/15 absolute -end-24 -top-24 size-[28rem] rounded-full blur-3xl" />
+            <div className="bg-primary-500/15 absolute -start-24 -bottom-32 size-[32rem] rounded-full blur-3xl" />
           </div>
         )}
         <div className={cn('relative w-full', widthClass[width])}>

@@ -1,6 +1,7 @@
 import * as React from 'react';
 import { ExternalLink } from 'lucide-react';
 import { cn } from '../../utils/cn';
+import { safeHref } from '../../templates/Section';
 import { TemplateIcon } from '../../templates/icons';
 import { useDeck, useTone } from './DeckContext';
 import { accent as accentSpec } from './tones';
@@ -119,7 +120,17 @@ export function SlideHeader({
   );
 }
 
-const numberPattern = /^([^0-9]*?)(\d[\d,.]*)(.*)$/;
+/**
+ * Splits a figure such as `$1.2M` into prefix, number and suffix by scanning
+ * for the first digit run (a regex here is flagged for polynomial backtracking).
+ */
+function splitFigure(value: string): [string, string, string] | null {
+  const start = value.search(/\d/);
+  if (start === -1) return null;
+  let end = start;
+  while (end < value.length && /[\d,.]/.test(value[end])) end += 1;
+  return [value.slice(0, start), value.slice(start, end), value.slice(end)];
+}
 
 /** Counts a figure such as `$1.2M` or `94%` up from zero when it scrolls into view. */
 export function CountUp({
@@ -130,13 +141,13 @@ export function CountUp({
   duration?: number;
 }) {
   const ref = React.useRef<HTMLSpanElement>(null);
-  const match = value.match(numberPattern);
+  const match = splitFigure(value);
 
   React.useEffect(() => {
     const el = ref.current;
     if (!el || !match) return;
     if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return;
-    const [, prefix, digits, suffix] = match;
+    const [prefix, digits, suffix] = match;
     const target = parseFloat(digits.replace(/,/g, ''));
     if (Number.isNaN(target)) return;
     const decimals = digits.split('.')[1]?.length ?? 0;
@@ -281,9 +292,17 @@ export function SourceLink({
   className?: string;
 }) {
   const tone = useTone();
+  // Slide JSON is content data; an executable scheme renders as plain text.
+  const href = safeHref(source.url);
+  if (!href)
+    return (
+      <span className={cn('text-xs', tone.muted, className)}>
+        {source.label}
+      </span>
+    );
   return (
     <a
-      href={source.url}
+      href={href}
       target="_blank"
       rel="noopener noreferrer"
       className={cn(
