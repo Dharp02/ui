@@ -230,25 +230,26 @@ export function useStreamingChatDemo(): StreamingChatDemo {
     window.clearInterval(intervalRef.current);
     window.clearTimeout(followUpRef.current);
     const messageId = `stream-${++idRef.current}`;
+    // Seed the first chunk synchronously so a reply is never empty: a
+    // replacement arriving before the first tick finalizes a visible
+    // partial instead of leaving nothing behind for that send.
+    let cursor = Math.min(4, streamChunks.length);
     setIsGenerating(true);
     setMessages((prev) => [
-      // Finalize the interrupted reply, or drop it if it never got content.
-      ...prev.flatMap((m) =>
-        m.status === 'streaming'
-          ? m.content.length > 0
-            ? [{ ...m, status: 'complete' as const }]
-            : []
-          : [m]
+      // Finalize the interrupted reply.
+      ...prev.map((m) =>
+        m.status === 'streaming' ? { ...m, status: 'complete' as const } : m
       ),
       {
         id: messageId,
         role: 'assistant',
         status: 'streaming',
         timestamp: new Date(),
-        content: [],
+        content: [
+          { type: 'text', text: streamChunks.slice(0, cursor).join('') },
+        ],
       },
     ]);
-    let cursor = 0;
     intervalRef.current = window.setInterval(() => {
       // A few words per tick ≈ token streaming.
       cursor = Math.min(cursor + 4, streamChunks.length);
