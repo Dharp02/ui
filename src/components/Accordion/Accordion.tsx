@@ -65,6 +65,12 @@ export interface AccordionProps
   collapsible?: boolean;
   /** Heading level wrapping each trigger for document outline (default h3). */
   headingLevel?: 'h2' | 'h3' | 'h4';
+  /**
+   * Persists the open ids in `localStorage` under this key (uncontrolled
+   * only). Restored after mount, so server and hydration renders use
+   * `defaultOpenIds`.
+   */
+  storageKey?: string;
 }
 
 // =============================================================================
@@ -98,6 +104,7 @@ export const Accordion = React.forwardRef<HTMLDivElement, AccordionProps>(
       onOpenChange,
       collapsible = true,
       headingLevel: Heading = 'h3',
+      storageKey,
       variant,
       className,
       ...props
@@ -108,6 +115,23 @@ export const Accordion = React.forwardRef<HTMLDivElement, AccordionProps>(
     const [internalOpen, setInternalOpen] = React.useState<string[]>(
       () => defaultOpenIds ?? []
     );
+    const persists = Boolean(storageKey) && controlledOpen === undefined;
+
+    React.useEffect(() => {
+      if (!persists || !storageKey) return;
+      try {
+        const stored: unknown = JSON.parse(
+          window.localStorage.getItem(storageKey) ?? 'null'
+        );
+        if (Array.isArray(stored)) {
+          setInternalOpen(
+            stored.filter((id): id is string => typeof id === 'string')
+          );
+        }
+      } catch {
+        // Storage blocked or value corrupt: keep defaultOpenIds.
+      }
+    }, [persists, storageKey]);
     const rawOpen = controlledOpen ?? internalOpen;
     // Single mode keeps at most one panel open, even if defaultOpenIds or a
     // controlled openIds array hands us several.
@@ -126,6 +150,13 @@ export const Accordion = React.forwardRef<HTMLDivElement, AccordionProps>(
         next = type === 'single' ? [id] : [...open, id];
       }
       if (controlledOpen === undefined) setInternalOpen(next);
+      if (persists && storageKey) {
+        try {
+          window.localStorage.setItem(storageKey, JSON.stringify(next));
+        } catch {
+          // Storage blocked or full; state still updates in memory.
+        }
+      }
       onOpenChange?.(next);
     };
 

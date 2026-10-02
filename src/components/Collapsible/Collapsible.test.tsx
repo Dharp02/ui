@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { screen, fireEvent } from '@testing-library/react';
 import { renderWithTheme } from '../../test/test-utils';
 import {
@@ -70,5 +70,50 @@ describe('Collapsible', () => {
     const region = screen.getByText('Always mounted');
     expect(region).toBeInTheDocument();
     expect(region).toHaveAttribute('hidden');
+  });
+
+  describe('storageKey', () => {
+    beforeEach(() => window.localStorage.clear());
+
+    it('restores and persists the open state', () => {
+      window.localStorage.setItem('advanced', 'true');
+      const { unmount } = renderCollapsible({ storageKey: 'advanced' });
+      expect(screen.getByText('Hidden content')).toBeInTheDocument();
+      fireEvent.click(screen.getByRole('button'));
+      expect(window.localStorage.getItem('advanced')).toBe('false');
+      unmount();
+      renderCollapsible({ storageKey: 'advanced', defaultOpen: true });
+      expect(screen.queryByText('Hidden content')).not.toBeInTheDocument();
+    });
+
+    it('ignores storage when controlled', () => {
+      window.localStorage.setItem('advanced', 'true');
+      renderCollapsible({
+        storageKey: 'advanced',
+        open: false,
+        onOpenChange: vi.fn(),
+      });
+      expect(screen.queryByText('Hidden content')).not.toBeInTheDocument();
+      fireEvent.click(screen.getByRole('button'));
+      expect(window.localStorage.getItem('advanced')).toBe('true');
+    });
+
+    it('swallows storage errors', () => {
+      const spy = vi
+        .spyOn(globalThis.Storage.prototype, 'getItem')
+        .mockImplementation(() => {
+          throw new Error('blocked');
+        });
+      const setSpy = vi
+        .spyOn(globalThis.Storage.prototype, 'setItem')
+        .mockImplementation(() => {
+          throw new Error('blocked');
+        });
+      renderCollapsible({ storageKey: 'advanced' });
+      fireEvent.click(screen.getByRole('button'));
+      expect(screen.getByText('Hidden content')).toBeInTheDocument();
+      spy.mockRestore();
+      setSpy.mockRestore();
+    });
   });
 });

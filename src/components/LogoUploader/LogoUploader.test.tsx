@@ -1,0 +1,133 @@
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import { LogoUploader } from './LogoUploader';
+
+const png = (bytes = 10) =>
+  new File(['x'.repeat(bytes)], 'logo.png', { type: 'image/png' });
+
+describe('LogoUploader', () => {
+  beforeEach(() => {
+    vi.stubGlobal(
+      'URL',
+      Object.assign(URL, {
+        createObjectURL: vi.fn(() => 'blob:preview'),
+        revokeObjectURL: vi.fn(),
+      })
+    );
+  });
+  afterEach(() => vi.unstubAllGlobals());
+
+  it('uploads a chosen file, shows pending, then previews the returned URL', async () => {
+    let resolve!: (url: string) => void;
+    const onUpload = vi.fn(() => new Promise<string>((r) => (resolve = r)));
+    render(<LogoUploader onUpload={onUpload} />);
+    const input = screen.getByLabelText('Upload logo');
+    await userEvent.upload(input, png());
+    expect(onUpload).toHaveBeenCalledWith(expect.any(File));
+    expect(screen.getByRole('status')).toHaveTextContent('Uploading…');
+    expect(screen.getByRole('img')).toHaveAttribute('src', 'blob:preview');
+    resolve('https://cdn.test/logo.png');
+    await waitFor(() =>
+      expect(screen.getByRole('img')).toHaveAttribute(
+        'src',
+        'https://cdn.test/logo.png'
+      )
+    );
+    expect(URL.revokeObjectURL).toHaveBeenCalledWith('blob:preview');
+  });
+
+  it('rejects files over maxSizeBytes and of the wrong type', async () => {
+    const onUpload = vi.fn();
+    render(<LogoUploader onUpload={onUpload} maxSizeBytes={1024 * 1024} />);
+    const input = screen.getByLabelText('Upload logo');
+    fireEvent.change(input, { target: { files: [png(2 * 1024 * 1024)] } });
+    expect(screen.getByRole('alert')).toHaveTextContent('1 MB or smaller');
+    fireEvent.change(input, {
+      target: {
+        files: [new File(['x'], 'a.pdf', { type: 'application/pdf' })],
+      },
+    });
+    expect(screen.getByRole('alert')).toHaveTextContent('not supported');
+    expect(onUpload).not.toHaveBeenCalled();
+    expect(input).toHaveAttribute('aria-invalid', 'true');
+  });
+
+  it('accepts extension tokens in accept', () => {
+    const onUpload = vi.fn().mockResolvedValue(undefined);
+    render(<LogoUploader onUpload={onUpload} accept=".svg, image/png" />);
+    fireEvent.change(screen.getByLabelText('Upload logo'), {
+      target: {
+        files: [new File(['<svg/>'], 'mark.SVG', { type: '' })],
+      },
+    });
+    expect(onUpload).toHaveBeenCalled();
+  });
+
+  it('restores the previous logo and shows an error when upload fails', async () => {
+    const onUpload = vi.fn().mockRejectedValue(new Error('boom'));
+    render(
+      <LogoUploader value="https://cdn.test/old.png" onUpload={onUpload} />
+    );
+    await userEvent.upload(screen.getByLabelText('Replace logo'), png());
+    expect(await screen.findByRole('alert')).toHaveTextContent('Upload failed');
+    expect(screen.getByRole('img')).toHaveAttribute(
+      'src',
+      'https://cdn.test/old.png'
+    );
+  });
+
+  it('accepts a dropped file', async () => {
+    const onUpload = vi.fn().mockResolvedValue(undefined);
+    const { container } = render(<LogoUploader onUpload={onUpload} />);
+    const target = container.querySelector(
+      '[data-slot="logo-uploader-target"]'
+    )!;
+    fireEvent.dragOver(target);
+    expect(target.className).toContain('border-primary-500');
+    fireEvent.drop(target, { dataTransfer: { files: [png()] } });
+    await waitFor(() => expect(onUpload).toHaveBeenCalled());
+  });
+
+  it('removes the logo and reports a failed removal', async () => {
+    const onRemove = vi
+      .fn()
+      .mockResolvedValueOnce(undefined)
+      .mockRejectedValueOnce(new Error('nope'));
+    const { rerender } = render(
+      <LogoUploader
+        value="https://cdn.test/a.png"
+        onUpload={vi.fn()}
+        onRemove={onRemove}
+        shape="circle"
+      />
+    );
+    await userEvent.click(screen.getByRole('button', { name: 'Remove logo' }));
+    expect(onRemove).toHaveBeenCalledTimes(1);
+    expect(screen.getByLabelText('Replace logo')).toHaveFocus();
+
+    rerender(
+      <LogoUploader
+        value="https://cdn.test/b.png"
+        onUpload={vi.fn()}
+        onRemove={onRemove}
+      />
+    );
+    await userEvent.click(screen.getByRole('button', { name: 'Remove logo' }));
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      'Could not remove'
+    );
+  });
+
+  it('hides the remove button without onRemove and respects disabled', () => {
+    render(
+      <LogoUploader
+        value="https://cdn.test/a.png"
+        onUpload={vi.fn()}
+        disabled
+      />
+    );
+    expect(screen.queryByRole('button')).not.toBeInTheDocument();
+    expect(screen.getByLabelText('Replace logo')).toBeDisabled();
+  });
+});
