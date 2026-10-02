@@ -362,40 +362,44 @@ export function DefinitionListRenderer({
           const initial = term.term.charAt(0);
           const r = reveal(3 + i);
           return (
+            // A <dl> group div may contain only <dt>/<dd> (axe dlitem).
             <div
               key={term.term}
               className={cn(
                 r.className,
-                'flex items-start gap-4 rounded-xl border p-3',
+                'rounded-xl border p-3',
                 tone.card,
                 tone.hairline
               )}
               style={r.style}
             >
-              <span
-                aria-hidden="true"
+              <dt className="flex items-center gap-4 text-base font-bold sm:text-lg">
+                <span
+                  aria-hidden="true"
+                  className={cn(
+                    'flex size-10 flex-none items-center justify-center rounded-lg border text-xl font-extrabold',
+                    a.soft,
+                    a.border,
+                    a.text
+                  )}
+                >
+                  {initial}
+                </span>
+                {term.term}
+              </dt>
+              <dd
                 className={cn(
-                  'flex size-10 flex-none items-center justify-center rounded-lg border text-xl font-extrabold',
-                  a.soft,
-                  a.border,
-                  a.text
+                  'ms-14 mt-0.5 text-sm leading-relaxed',
+                  tone.muted
                 )}
               >
-                {initial}
-              </span>
-              <div>
-                <dt className="text-base font-bold sm:text-lg">{term.term}</dt>
-                <dd
-                  className={cn('mt-0.5 text-sm leading-relaxed', tone.muted)}
-                >
-                  {term.lead && (
-                    <span className={cn('font-semibold', tone.text)}>
-                      {term.lead}{' '}
-                    </span>
-                  )}
-                  {term.definition}
-                </dd>
-              </div>
+                {term.lead && (
+                  <span className={cn('font-semibold', tone.text)}>
+                    {term.lead}{' '}
+                  </span>
+                )}
+                {term.definition}
+              </dd>
             </div>
           );
         })}

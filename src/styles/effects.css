@@ -249,8 +249,12 @@
     print-color-adjust: exact;
     -webkit-print-color-adjust: exact;
   }
+  /* Match the data-ready hide rules' specificity so never-seen slides
+     still print their reveal/grow content (equal specificity, later wins). */
   .mie-deck .mie-deck-slide .mie-deck-reveal,
-  .mie-deck .mie-deck-slide .mie-deck-grow {
+  .mie-deck .mie-deck-slide .mie-deck-grow,
+  .mie-deck[data-ready] .mie-deck-slide:not([data-seen]) .mie-deck-reveal,
+  .mie-deck[data-ready] .mie-deck-slide:not([data-seen]) .mie-deck-grow {
     opacity: 1;
     transform: none;
   }

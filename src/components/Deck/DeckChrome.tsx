@@ -56,7 +56,7 @@ export function SlideCounter({
     >
       <div className="text-sm font-semibold text-white/80 tabular-nums">
         {String(active + 1).padStart(2, '0')}
-        <span className="text-white/40">
+        <span className="text-white/70">
           {' '}
           / {String(total).padStart(2, '0')}
         </span>

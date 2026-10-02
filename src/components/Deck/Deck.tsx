@@ -60,6 +60,11 @@ const typingTarget = (el: globalThis.EventTarget | null) =>
     el.isContentEditable ||
     el.getAttribute('role') === 'tab');
 
+/** Space must activate a focused button, not advance the deck. */
+const spaceActivates = (el: globalThis.EventTarget | null) =>
+  el instanceof HTMLElement &&
+  (el.tagName === 'BUTTON' || el.getAttribute('role') === 'button');
+
 /**
  * A full-viewport, scroll-snapping slide deck built from plain JSON slides:
  * keyboard, swipe, dot and outline navigation, deep links, fullscreen and
@@ -129,12 +134,20 @@ export const Deck = React.forwardRef<HTMLDivElement, DeckProps>(
         (entries) => {
           for (const entry of entries) {
             if (!entry.isIntersecting) continue;
+            // A slide taller than twice the viewport never reaches ratio
+            // 0.5; covering half the viewport also counts as visible.
+            const rootHeight = root.clientHeight || window.innerHeight;
+            if (
+              entry.intersectionRatio < 0.5 &&
+              entry.intersectionRect.height < rootHeight / 2
+            )
+              continue;
             const el = entry.target as HTMLElement;
             el.dataset.seen = '';
             setActive(Number(el.dataset.index));
           }
         },
-        { root, threshold: 0.5 }
+        { root, threshold: [0.1, 0.25, 0.5] }
       );
       root
         .querySelectorAll('[data-slot="deck-slide"]')
@@ -145,7 +158,13 @@ export const Deck = React.forwardRef<HTMLDivElement, DeckProps>(
 
     // Open at the slide named in the URL hash.
     React.useEffect(() => {
-      const hash = decodeURIComponent(window.location.hash.slice(1));
+      const raw = window.location.hash.slice(1);
+      let hash = raw;
+      try {
+        hash = decodeURIComponent(raw);
+      } catch {
+        // Malformed percent-encoding: match against the raw hash.
+      }
       if (!hash) return;
       const i = slides.findIndex((s, n) => slideAnchor(s, n) === hash);
       if (i > 0) requestAnimationFrame(() => slideEl(i)?.scrollIntoView());
@@ -153,6 +172,7 @@ export const Deck = React.forwardRef<HTMLDivElement, DeckProps>(
       // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
+    const reportedSlide = React.useRef(-1);
     React.useEffect(() => {
       const slide = slides[active];
       if (!slide) return;
@@ -161,7 +181,11 @@ export const Deck = React.forwardRef<HTMLDivElement, DeckProps>(
         if (window.location.hash !== hash)
           window.history.replaceState(window.history.state, '', hash);
       }
-      onSlideChange?.(slide, active);
+      // The effect reruns when `ready` flips; report each slide once.
+      if (reportedSlide.current !== active) {
+        reportedSlide.current = active;
+        onSlideChange?.(slide, active);
+      }
       // Report changes of slide, not of callback identity.
       // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [active, slides, syncHash, ready]);
@@ -184,6 +208,7 @@ export const Deck = React.forwardRef<HTMLDivElement, DeckProps>(
           return;
         if (typingTarget(e.target)) return;
         const key = e.key;
+        if (key === ' ' && spaceActivates(e.target)) return;
         if (['ArrowDown', 'ArrowRight', 'PageDown', ' '].includes(key)) {
           e.preventDefault();
           goTo(active + 1);

@@ -28,11 +28,16 @@ function ChartTable({
       <caption>{caption}</caption>
       <thead>
         <tr>
-          {headers.map((h) => (
-            <th key={h} scope="col">
-              {h}
-            </th>
-          ))}
+          {headers.map((h, i) =>
+            h ? (
+              <th key={i} scope="col">
+                {h}
+              </th>
+            ) : (
+              // The row-label corner cell has no caption of its own.
+              <td key={i} />
+            )
+          )}
         </tr>
       </thead>
       <tbody>
