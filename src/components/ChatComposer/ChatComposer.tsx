@@ -915,7 +915,9 @@ export const ChatComposer = React.forwardRef<
             {leadingSlot != null && (
               <div
                 data-slot="chat-composer-leading-slot"
-                className="flex h-8 shrink-0 items-center"
+                // min-w-0 + min-h (not a fixed h/shrink-0) so a crowded slot wraps
+                // onto more lines instead of running under the send button.
+                className="flex min-h-8 min-w-0 flex-wrap items-center"
               >
                 {leadingSlot}
               </div>
