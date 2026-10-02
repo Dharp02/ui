@@ -498,6 +498,47 @@ test.describe('Visual Regression Tests - Core Components', () => {
     await expect(page).toHaveScreenshot('ai-chat-playground-condensed.png');
   });
 
+  test('OzwellChat - Streaming Response settles with jump button', async ({
+    page,
+  }) => {
+    // The story streams its long answer on real timers; install a fake clock
+    // and pause it so time only advances via runFor() — the run is fully
+    // deterministic: the demo's kickoff (800ms), 120ms stream ticks, and the
+    // trailing follow-up fire exactly when told to.
+    await page.clock.install({ time: new Date('2026-01-15T12:00:00') });
+    await page.clock.pauseAt(new Date('2026-01-15T12:00:01'));
+    await gotoStory(page, 'chat-ozwellchat--streaming-response');
+
+    await page.clock.runFor(800); // kickoff fires, stream begins
+    // Advance until the final sentence lands. Stepping 1s at a time (less
+    // than the 1.2s follow-up delay) guarantees we stop after the stream
+    // completes but before the follow-up message fires.
+    const endText = page.getByText(/documented in the encounter note/);
+    for (let i = 0; i < 30 && (await endText.count()) === 0; i++) {
+      await page.clock.runFor(1000);
+    }
+    // Reveal-then-hold: the view held at the reply's first line, so the
+    // completed answer sits below the fold behind the jump button, which
+    // already carries its "New messages" hint (chunks landed while holding).
+    const jumpButton = page.locator("[data-slot='ai-chat-jump-to-bottom']");
+    await expect(jumpButton).toBeVisible();
+    await expect(page).toHaveScreenshot('ozwell-chat-streaming-settled.png');
+
+    // Land the trailing follow-up, then jump to the bottom via the button —
+    // the hook rejects programmatic scrolls, and its spring animation runs
+    // on rAF, which the fake clock drives: advance until it settles.
+    await page.clock.runFor(1300);
+    await jumpButton.click();
+    for (let i = 0; i < 30 && (await jumpButton.isVisible()); i++) {
+      await page.clock.runFor(500);
+    }
+    await expect(
+      page.getByText('Anything else you’d like me to pull from the chart?')
+    ).toBeInViewport();
+    await expect(jumpButton).toBeHidden();
+    await expect(page).toHaveScreenshot('ozwell-chat-streaming-bottom.png');
+  });
+
   test('AIMessage - Thinking active (streaming)', async ({ page }) => {
     // Expanded violet "Thinking" pill with the reasoning text visible.
     await gotoStory(page, 'chat-aimessage--thinking-active');
