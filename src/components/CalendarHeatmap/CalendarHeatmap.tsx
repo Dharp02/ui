@@ -145,7 +145,12 @@ export const CalendarHeatmap = React.forwardRef<
     return { days, first, last, max, total, activeDays, months };
   }, [data, start, end, weekStartsOn]);
 
-  const focusable = active ?? grid.last.toISODate();
+  const activeDate = active ? DateTime.fromISO(active) : null;
+  // Keep one tab stop even when the range changes and drops the active day.
+  const focusable =
+    activeDate && activeDate >= grid.first && activeDate <= grid.last
+      ? active
+      : grid.last.toISODate();
 
   const onKeyDown = (e: React.KeyboardEvent<HTMLButtonElement>) => {
     if (!focusable) return;

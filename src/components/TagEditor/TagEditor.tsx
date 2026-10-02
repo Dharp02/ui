@@ -119,23 +119,28 @@ export const TagEditor = React.forwardRef<HTMLDivElement, TagEditorProps>(
     const matches = (suggestions ?? []).filter(
       (s) => !has(s) && (!query || s.toLowerCase().includes(query))
     );
-    const isOpen = open && matches.length > 0;
+    const isOpen = open && matches.length > 0 && !pending;
     const interactive = !readOnly && !disabled && !pending;
     const atMax = maxTags !== undefined && value.length >= maxTags;
+    // State lags a render behind; the ref blocks a second save from the same tick.
+    const inFlight = React.useRef(false);
 
     const commit = async (next: string[], refocus = true) => {
+      inFlight.current = true;
       setPending(true);
       try {
         await onChange(next);
       } catch {
         setError(labels.saveFailed);
       } finally {
+        inFlight.current = false;
         setPending(false);
         if (refocus) inputRef.current?.focus();
       }
     };
 
     const add = (raw: string[], refocus = true) => {
+      if (inFlight.current) return;
       const next = [...value];
       for (const piece of raw) {
         const tag = piece.trim();
@@ -162,6 +167,7 @@ export const TagEditor = React.forwardRef<HTMLDivElement, TagEditorProps>(
     };
 
     const remove = (index: number) => {
+      if (inFlight.current) return;
       setError(null);
       void commit(value.filter((_, i) => i !== index));
     };

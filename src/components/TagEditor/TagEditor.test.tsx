@@ -105,6 +105,29 @@ describe('TagEditor', () => {
     expect(onChange).toHaveBeenLastCalledWith(['Beta']);
   });
 
+  it('ignores edits while a save is pending', async () => {
+    let resolve!: () => void;
+    const onChange = vi.fn(() => new Promise<void>((r) => (resolve = r)));
+    render(
+      <TagEditor
+        label="Tags"
+        value={['vip', 'renewal']}
+        suggestions={['pilot', 'beta']}
+        onChange={onChange}
+      />
+    );
+    const input = screen.getByRole('combobox', { name: 'Tags' });
+    await userEvent.type(input, 'new{Enter}');
+    expect(onChange).toHaveBeenCalledTimes(1);
+    await userEvent.keyboard('{Backspace}');
+    expect(onChange).toHaveBeenCalledTimes(1);
+    expect(screen.queryByRole('option')).not.toBeInTheDocument();
+    resolve();
+    await waitFor(() =>
+      expect(input.closest('[aria-busy]')).not.toBeInTheDocument()
+    );
+  });
+
   it('shows pending and an error when onChange rejects', async () => {
     let reject!: (e: Error) => void;
     const onChange = vi.fn(() => new Promise<void>((_, r) => (reject = r)));

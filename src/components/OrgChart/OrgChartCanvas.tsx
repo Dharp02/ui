@@ -333,7 +333,11 @@ function CanvasInner({
     return out;
   }, [visible, forest]);
 
-  const layoutKey = `${direction}|${variant}|${visible.map((v) => v.node.id).join(',')}`;
+  const layoutKey = JSON.stringify([
+    direction,
+    variant,
+    visible.map((v) => v.node.id),
+  ]);
   React.useEffect(() => {
     let cancelled = false;
     void layoutOrgChart({

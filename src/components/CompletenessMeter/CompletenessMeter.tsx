@@ -38,7 +38,12 @@ export function getCompleteness(fields: CompletenessField[]) {
   let total = 0;
   let done = 0;
   for (const f of fields) {
-    const w = f.weight ?? 1;
+    const w =
+      f.weight === undefined
+        ? 1
+        : Number.isFinite(f.weight)
+          ? Math.max(0, f.weight)
+          : 0;
     total += w;
     if (f.complete) done += w;
   }

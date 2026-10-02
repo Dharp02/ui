@@ -10,6 +10,21 @@ const fields = [
 ];
 
 describe('getCompleteness', () => {
+  it('ignores negative and non-finite weights', () => {
+    const { percent } = getCompleteness([
+      { key: 'a', label: 'A', complete: true, weight: 2 },
+      { key: 'b', label: 'B', complete: false, weight: -1 },
+      { key: 'c', label: 'C', complete: true, weight: Number.NaN },
+    ]);
+    expect(percent).toBe(100);
+    expect(
+      getCompleteness([
+        { key: 'a', label: 'A', complete: true, weight: 1 },
+        { key: 'b', label: 'B', complete: false, weight: Infinity },
+      ]).percent
+    ).toBe(100);
+  });
+
   it('weights fields and lists the missing ones', () => {
     const { percent, missing } = getCompleteness(fields);
     expect(percent).toBe(50);

@@ -50,6 +50,20 @@ describe('CalendarHeatmap', () => {
     );
   });
 
+  it('keeps a tab stop when the range drops the active day', () => {
+    const props = { data, locale: 'en-US', onDayClick: vi.fn() };
+    const { rerender } = render(
+      <CalendarHeatmap {...props} start="2026-09-06" end="2026-09-19" />
+    );
+    act(() => screen.getByRole('button', { name: /Sep 8,/ }).focus());
+    rerender(
+      <CalendarHeatmap {...props} start="2026-09-13" end="2026-09-19" />
+    );
+    expect(
+      screen.getByRole('button', { name: 'Sat, Sep 19, 2026: 0' })
+    ).toHaveAttribute('tabindex', '0');
+  });
+
   it('is an arrow-key navigable grid when interactive', () => {
     const onDayClick = vi.fn();
     render(<CalendarHeatmap data={data} {...range} onDayClick={onDayClick} />);

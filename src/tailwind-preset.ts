@@ -1303,9 +1303,13 @@ export const miewebUISafelist = [
   'text-pretty',
   // Record pages (RecordLayout, PropertyList, CalendarHeatmap, OrgChart, AvatarGroup, inputs):
   '[&>svg]:h-2',
+  '[&>svg]:h-2.5',
   '[&>svg]:h-3',
+  '[&>svg]:h-3.5',
   '[&>svg]:w-2',
+  '[&>svg]:w-2.5',
   '[&>svg]:w-3',
+  '[&>svg]:w-3.5',
   'aria-disabled:opacity-60',
   'border-spacing-[3px]',
   'empty:hidden',
