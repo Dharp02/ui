@@ -183,6 +183,22 @@ describe('ActivityFeed', () => {
     expect(screen.getByText('a1-call')).toBeInTheDocument();
   });
 
+  it('keeps each pin button described by its item with renderItem', () => {
+    render(
+      <ActivityFeed
+        {...base}
+        onTogglePin={vi.fn()}
+        renderItem={(a) => <span>{a.id}</span>}
+      />
+    );
+    const pins = screen.getAllByRole('button', { name: 'Pin' });
+    const descriptions = pins.map((p) => p.getAttribute('aria-describedby'));
+    expect(new Set(descriptions).size).toBe(pins.length);
+    for (const id of descriptions) {
+      expect(document.getElementById(id!)?.textContent).toBeTruthy();
+    }
+  });
+
   it('renders the load states', async () => {
     const onRetry = vi.fn();
     const { rerender } = render(<ActivityFeed {...base} items={[]} loading />);

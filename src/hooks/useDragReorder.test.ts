@@ -81,7 +81,11 @@ describe('useDragReorder', () => {
     expect(result.current.moveButtonProps('a', 'up').disabled).toBe(true);
     expect(result.current.moveButtonProps('d', 'down').disabled).toBe(true);
     const down = result.current.moveButtonProps('a', 'down');
-    expect(down).toMatchObject({ disabled: false, 'aria-label': 'Move down' });
+    expect(down).toMatchObject({
+      type: 'button',
+      disabled: false,
+      'aria-label': 'Move down',
+    });
     expect(
       result.current.moveButtonProps('a', 'down', 'Lower A')
     ).toMatchObject({ 'aria-label': 'Lower A' });

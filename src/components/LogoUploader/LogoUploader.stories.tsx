@@ -109,10 +109,11 @@ function Stateful({
     <LogoUploader
       {...rest}
       value={value}
-      onUpload={async (file) => {
+      onUpload={async () => {
         await wait(1000);
         if (fail) throw new Error('rejected');
-        setValue(URL.createObjectURL(file));
+        // A real app stores the file and returns its hosted URL.
+        setValue(sampleLogo);
       }}
       onRemove={async () => {
         await wait(400);

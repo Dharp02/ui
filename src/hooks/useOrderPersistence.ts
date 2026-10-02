@@ -62,10 +62,11 @@ export function useOrderPersistence(
   const saving = React.useRef(false);
 
   // One save at a time; changes made meanwhile coalesce into the next save.
-  const flush = React.useCallback(function flushPending() {
+  // `force` skips the queue for page unloads, where a queued save never runs.
+  const flush = React.useCallback(function flushPending(force = false) {
     clearTimeout(timer.current);
     const next = pending.current;
-    if (!next || saving.current) return;
+    if (!next || (saving.current && !force)) return;
     pending.current = null;
     saving.current = true;
     const { save: run, onError: fail } = callbacks.current;
@@ -100,8 +101,9 @@ export function useOrderPersistence(
   }, [flush]);
 
   React.useEffect(() => {
-    window.addEventListener('pagehide', flush);
-    return () => window.removeEventListener('pagehide', flush);
+    const onPageHide = () => flush(true);
+    window.addEventListener('pagehide', onPageHide);
+    return () => window.removeEventListener('pagehide', onPageHide);
   }, [flush]);
 
   const setOrder = React.useCallback(

@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { LogoUploader } from './LogoUploader';
@@ -7,17 +7,6 @@ const png = (bytes = 10) =>
   new File(['x'.repeat(bytes)], 'logo.png', { type: 'image/png' });
 
 describe('LogoUploader', () => {
-  beforeEach(() => {
-    vi.stubGlobal(
-      'URL',
-      Object.assign(URL, {
-        createObjectURL: vi.fn(() => 'blob:preview'),
-        revokeObjectURL: vi.fn(),
-      })
-    );
-  });
-  afterEach(() => vi.unstubAllGlobals());
-
   it('only renders safe image URLs', () => {
     const { rerender } = render(
       <LogoUploader value="javascript:alert(1)" onUpload={vi.fn()} />
@@ -40,7 +29,8 @@ describe('LogoUploader', () => {
     expect(onUpload).toHaveBeenCalledWith(expect.any(File));
     expect(screen.getByRole('status')).toHaveTextContent('Uploading…');
     expect(input).toBeDisabled();
-    expect(screen.getByRole('img')).toHaveAttribute('src', 'blob:preview');
+    // The picked file is previewed on a canvas, never as an <img src>.
+    expect(screen.getByRole('img').tagName).toBe('CANVAS');
     resolve('https://cdn.test/logo.png');
     await waitFor(() =>
       expect(screen.getByRole('img')).toHaveAttribute(
@@ -48,7 +38,19 @@ describe('LogoUploader', () => {
         'https://cdn.test/logo.png'
       )
     );
-    expect(URL.revokeObjectURL).toHaveBeenCalledWith('blob:preview');
+  });
+
+  it('ignores an upload result once a newer value arrives', async () => {
+    let resolve!: (url: string) => void;
+    const onUpload = vi.fn(() => new Promise<string>((r) => (resolve = r)));
+    const { rerender } = render(<LogoUploader onUpload={onUpload} />);
+    await userEvent.upload(screen.getByLabelText('Upload logo'), png());
+    rerender(<LogoUploader value="/logos/newer.png" onUpload={onUpload} />);
+    resolve('https://cdn.test/stale.png');
+    await waitFor(() =>
+      expect(screen.queryByRole('status')).not.toBeInTheDocument()
+    );
+    expect(screen.getByRole('img')).toHaveAttribute('src', '/logos/newer.png');
   });
 
   it('rejects files over maxSizeBytes and of the wrong type', async () => {

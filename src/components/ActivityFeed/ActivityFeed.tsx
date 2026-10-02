@@ -433,12 +433,17 @@ function ActivityFeedInner<T>(
         )}
       >
         {main}
+        {onTogglePin && renderItem && (
+          <span id={titleId} hidden>
+            {getTitle?.(item) ?? category?.label ?? id}
+          </span>
+        )}
         {onTogglePin && (
           <button
             type="button"
             aria-pressed={pinned}
             aria-label={text.pin}
-            aria-describedby={renderItem ? undefined : titleId}
+            aria-describedby={titleId}
             disabled={pending}
             title={text.pin}
             onClick={() =>

@@ -85,6 +85,7 @@ export interface UseDragReorderReturn {
     direction: 'up' | 'down',
     label?: string
   ) => {
+    type: 'button';
     onClick: (e: React.MouseEvent) => void;
     disabled: boolean;
     'aria-label': string;
@@ -166,6 +167,7 @@ export function useDragReorder({
   ) => {
     const delta = direction === 'up' ? -1 : 1;
     return {
+      type: 'button',
       onClick: (e) => {
         e.stopPropagation();
         moveBy(id, delta);

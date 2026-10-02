@@ -65,6 +65,42 @@ function matchesAccept(file: File, accept: string): boolean {
     });
 }
 
+/**
+ * Local preview of a picked file. Drawn to a canvas so the file never becomes
+ * an `<img src>` string (no object URL to sanitize or revoke).
+ */
+function FilePreview({ file, alt }: { file: File; alt: string }) {
+  const canvasRef = React.useRef<HTMLCanvasElement>(null);
+  React.useEffect(() => {
+    let cancelled = false;
+    globalThis
+      .createImageBitmap?.(file)
+      .then((bitmap) => {
+        const canvas = canvasRef.current;
+        if (!cancelled && canvas) {
+          canvas.width = bitmap.width;
+          canvas.height = bitmap.height;
+          canvas.getContext('2d')?.drawImage(bitmap, 0, 0);
+        }
+        bitmap.close();
+      })
+      .catch(() => {
+        // Undecodable image: the target keeps its border and spinner.
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [file]);
+  return (
+    <canvas
+      ref={canvasRef}
+      role="img"
+      aria-label={alt}
+      className="h-full w-full object-contain"
+    />
+  );
+}
+
 const targetVariants = cva(
   [
     'relative flex cursor-pointer items-center justify-center overflow-hidden border-2 border-dashed bg-muted/40 text-muted-foreground',
@@ -136,27 +172,25 @@ export const LogoUploader = React.forwardRef<HTMLDivElement, LogoUploaderProps>(
       null
     );
     const [preview, setPreview] = React.useState<string | null>(null);
+    const [localFile, setLocalFile] = React.useState<File | null>(null);
     const [error, setError] = React.useState<string | null>(null);
     const [dragging, setDragging] = React.useState(false);
     const inputRef = React.useRef<HTMLInputElement>(null);
-    const objectUrl = React.useRef<string | null>(null);
+    // Bumped by each upload and each new `value`; stale uploads check it.
+    const generation = React.useRef(0);
     const id = React.useId();
     const inputId = `${id}-input`;
     const errorId = `${id}-error`;
 
-    const releaseObjectUrl = React.useCallback(() => {
-      if (objectUrl.current) URL.revokeObjectURL?.(objectUrl.current);
-      objectUrl.current = null;
-    }, []);
-
     // A fresh `value` from the caller supersedes any local preview.
     React.useEffect(() => {
+      generation.current += 1;
       setPreview(null);
-      releaseObjectUrl();
-    }, [value, releaseObjectUrl]);
-    React.useEffect(() => releaseObjectUrl, [releaseObjectUrl]);
+      setLocalFile(null);
+    }, [value]);
 
-    const shown = safeImageSrc(preview ?? value);
+    const shown = localFile ? null : safeImageSrc(preview ?? value);
+    const filled = !!localFile || !!shown;
     const inactive = disabled || busy !== null;
 
     // The input is disabled while busy, so focus it once it re-enables.
@@ -175,20 +209,21 @@ export const LogoUploader = React.forwardRef<HTMLDivElement, LogoUploaderProps>(
         return setError(labels.tooLarge(maxSizeBytes));
       }
       setError(null);
-      releaseObjectUrl();
-      objectUrl.current = URL.createObjectURL?.(file) ?? null;
-      setPreview(objectUrl.current);
+      const request = ++generation.current;
+      setPreview(null);
+      setLocalFile(file);
       setBusy('uploading');
       try {
         const url = await onUpload(file);
-        if (url) {
-          releaseObjectUrl();
+        if (url && request === generation.current) {
+          setLocalFile(null);
           setPreview(url);
         }
       } catch {
-        releaseObjectUrl();
-        setPreview(null);
-        setError(labels.uploadFailed);
+        if (request === generation.current) {
+          setLocalFile(null);
+          setError(labels.uploadFailed);
+        }
       } finally {
         setBusy(null);
       }
@@ -201,6 +236,7 @@ export const LogoUploader = React.forwardRef<HTMLDivElement, LogoUploaderProps>(
       try {
         await onRemove();
         setPreview(null);
+        setLocalFile(null);
       } catch {
         setError(labels.removeFailed);
       } finally {
@@ -224,7 +260,7 @@ export const LogoUploader = React.forwardRef<HTMLDivElement, LogoUploaderProps>(
             type="file"
             accept={accept}
             disabled={inactive}
-            aria-label={shown ? labels.replace : labels.upload}
+            aria-label={filled ? labels.replace : labels.upload}
             aria-describedby={error ? errorId : undefined}
             aria-invalid={error ? true : undefined}
             onChange={(e) => {
@@ -250,10 +286,12 @@ export const LogoUploader = React.forwardRef<HTMLDivElement, LogoUploaderProps>(
               shape,
               size,
               dragging,
-              filled: !!shown,
+              filled,
             })}
           >
-            {shown ? (
+            {localFile ? (
+              <FilePreview file={localFile} alt={labels.previewAlt} />
+            ) : shown ? (
               <img
                 src={shown}
                 alt={labels.previewAlt}
@@ -280,7 +318,7 @@ export const LogoUploader = React.forwardRef<HTMLDivElement, LogoUploaderProps>(
               </span>
             )}
           </label>
-          {shown && onRemove && (
+          {filled && onRemove && (
             <button
               type="button"
               aria-label={labels.remove}

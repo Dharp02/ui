@@ -399,7 +399,7 @@ function CanvasInner({
 
   // Fit once the layout contains every target; layout is async, so the
   // request waits for positions rather than firing against stale ones.
-  const fitKey = fitTargets ? fitTargets.join(',') : '*';
+  const fitKey = JSON.stringify(fitTargets);
   const pendingFit = React.useRef(true);
   React.useEffect(() => {
     pendingFit.current = true;

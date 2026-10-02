@@ -77,6 +77,23 @@ describe('useOrderPersistence', () => {
     expect(save).toHaveBeenCalledWith(['b', 'a']);
   });
 
+  it('starts the latest save on pagehide even while one is in flight', async () => {
+    const save = vi
+      .fn()
+      .mockImplementationOnce(() => new Promise<void>(() => {}))
+      .mockImplementation(() => undefined);
+    const { result } = setup(['a', 'b', 'c'], { save, debounceMs: 10 });
+    await act(async () => {});
+    act(() => result.current.setOrder(['b', 'a', 'c']));
+    act(() => vi.advanceTimersByTime(10));
+    act(() => result.current.setOrder(['c', 'b', 'a']));
+    act(() => {
+      window.dispatchEvent(new Event('pagehide'));
+    });
+    expect(save).toHaveBeenCalledTimes(2);
+    expect(save).toHaveBeenLastCalledWith(['c', 'b', 'a']);
+  });
+
   it('keeps a change made while loading over the loaded order', async () => {
     let resolve: (v: string[]) => void = () => {};
     const { result } = setup(['a', 'b', 'c'], {

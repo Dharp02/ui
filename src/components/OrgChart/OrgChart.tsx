@@ -234,7 +234,7 @@ export const OrgChart = React.forwardRef<HTMLDivElement, OrgChartProps>(
       return out;
     }, [forest, group]);
 
-    const revealKey = `${matches?.join(',') ?? ''}|${groupMembers?.join(',') ?? ''}`;
+    const revealKey = JSON.stringify([matches, groupMembers]);
     React.useEffect(() => {
       const ids = [...(matches ?? []), ...(groupMembers ?? [])];
       if (ids.length)
