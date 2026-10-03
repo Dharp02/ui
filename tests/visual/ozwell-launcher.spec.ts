@@ -155,6 +155,13 @@ test.describe('Ozwell movable launcher', () => {
     await expect.poll(() => position(page)).toEqual({ x: 248, y: 168 });
     await page.reload();
     await expect.poll(() => position(page)).toEqual({ x: 248, y: 168 });
+
+    // Shrinking only clamps the rendered spot; the chosen position survives,
+    // so expanding again — before or after a reload — restores it.
+    await page.setViewportSize({ width: 900, height: 700 });
+    await expect.poll(() => position(page)).toEqual({ x: 828, y: 628 });
+    await page.reload();
+    await expect.poll(() => position(page)).toEqual({ x: 828, y: 628 });
   });
 
   test('ignores secondary mouse dragging', async ({ page }) => {

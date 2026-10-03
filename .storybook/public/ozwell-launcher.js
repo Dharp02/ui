@@ -21,6 +21,9 @@
     } catch (_) {}
   }
 
+  // Renders `next` clamped to the viewport and returns the clamped point.
+  // Callers assign the result to `position` only for user-chosen moves, so a
+  // resize renders a temporary clamp without discarding the desired position.
   function place(next) {
     // The loader hides the button while chat is open. Retain its 60px size
     // when hidden so a resize cannot strand it outside the viewport.
@@ -28,14 +31,15 @@
     var maxY = Math.max(0, window.innerHeight - (button.offsetHeight || 60));
     var marginX = Math.min(12, maxX / 2);
     var marginY = Math.min(12, maxY / 2);
-    position = {
+    var clamped = {
       x: Math.max(marginX, Math.min(maxX - marginX, next.x)),
       y: Math.max(marginY, Math.min(maxY - marginY, next.y)),
     };
-    button.style.left = position.x + 'px';
-    button.style.top = position.y + 'px';
+    button.style.left = clamped.x + 'px';
+    button.style.top = clamped.y + 'px';
     button.style.right = 'auto';
     button.style.bottom = 'auto';
+    return clamped;
   }
 
   function endDrag(event) {
@@ -105,7 +109,7 @@
       drag.moved = true;
       button.style.cursor = 'grabbing';
       event.preventDefault();
-      place({ x: drag.x + dx, y: drag.y + dy });
+      position = place({ x: drag.x + dx, y: drag.y + dy });
     });
     button.addEventListener('pointerup', endDrag);
     button.addEventListener('pointercancel', endDrag);
@@ -122,7 +126,7 @@
       if (!direction) return;
       event.preventDefault();
       var step = event.shiftKey ? 100 : 20;
-      place({
+      position = place({
         x: button.offsetLeft + direction[0] * step,
         y: button.offsetTop + direction[1] * step,
       });
