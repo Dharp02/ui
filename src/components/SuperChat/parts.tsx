@@ -21,6 +21,7 @@ import { Dropdown, DropdownItem, DropdownSubmenu } from '../Dropdown';
 import { MCPToolCallDisplay } from '../AI/MCPToolCall';
 import { ChatBubble, AITypingIndicator } from '../AI/AIMessage';
 import { SparklesIcon } from '../AI/icons';
+import { MessageMedia } from './MessageMedia';
 import type {
   AIRenderTextContent,
   AttachmentKind,
@@ -641,6 +642,9 @@ interface MessageRowProps {
   /** Format for the default copy action — Ctrl/Cmd-click on the footer copy
    * button (defaults to `'rich'`). */
   defaultCopyFormat?: SuperChatCopyFormat;
+  /** Open an explicit attachment in the conversation media view. */
+  onOpenMedia?: (messageId: string, attachmentId: string) => void;
+  openMediaLabel?: string;
 }
 
 /**
@@ -662,9 +666,14 @@ export const MessageRow = React.memo(function MessageRow({
   editable,
   onMessageEdited,
   defaultCopyFormat = 'rich',
+  onOpenMedia,
+  openMediaLabel = 'Open in media feed',
 }: MessageRowProps) {
   const streaming = message.status === 'streaming';
-  const hasBody = !!message.text || (message.content?.length ?? 0) > 0;
+  const hasBody =
+    !!message.text ||
+    (message.content?.length ?? 0) > 0 ||
+    (message.media?.length ?? 0) > 0;
   const [isEditing, setIsEditing] = React.useState(false);
   const [draft, setDraft] = React.useState(message.text ?? '');
   // Keeps the bubble from shrinking when it flips into edit mode: the rendered
@@ -1113,6 +1122,19 @@ export const MessageRow = React.memo(function MessageRow({
                     })}
                   </div>
                 )}
+
+                {message.media?.map((attachment) => (
+                  <MessageMedia
+                    key={attachment.id}
+                    attachment={attachment}
+                    openLabel={openMediaLabel}
+                    onOpen={
+                      onOpenMedia
+                        ? () => onOpenMedia(message.id, attachment.id)
+                        : undefined
+                    }
+                  />
+                ))}
 
                 {/* Animated typing indicator while a reply streams in with no
                     body yet — matches the AI chat's streaming affordance. */}

@@ -62,6 +62,7 @@ export const entries = {
   'components/Markdown/index': 'src/components/Markdown/index.ts',
   'components/MediaEditor/index': 'src/components/MediaEditor/index.ts',
   'components/MediaPlayer/index': 'src/components/MediaPlayer/index.ts',
+  'components/MediaFeed/index': 'src/components/MediaFeed/index.ts',
   'components/MegaMenu/index': 'src/components/MegaMenu/index.ts',
   'components/Modal/index': 'src/components/Modal/index.ts',
   'components/OrbitRing/index': 'src/components/OrbitRing/index.ts',

@@ -43,6 +43,8 @@ export interface VirtualThreadProps {
   onMessageEdited?: (messageId: string, text: string) => void;
   /** Format for a message's default copy action (Ctrl/Cmd-click on copy). */
   defaultCopyFormat?: SuperChatCopyFormat;
+  onOpenMedia?: (messageId: string, attachmentId: string) => void;
+  openMediaLabel?: string;
   /**
    * Host-owned ref for the scroll container. {@link SuperChat} owns all
    * scroll anchoring (bottom-pinning, jump-to-bottom) through this ref.
@@ -66,6 +68,8 @@ export function VirtualThread({
   editable,
   onMessageEdited,
   defaultCopyFormat,
+  onOpenMedia,
+  openMediaLabel,
   scrollRef,
   contentRef,
   containerProps,
@@ -123,6 +127,8 @@ export function VirtualThread({
                   editable={editable}
                   onMessageEdited={onMessageEdited}
                   defaultCopyFormat={defaultCopyFormat}
+                  onOpenMedia={onOpenMedia}
+                  openMediaLabel={openMediaLabel}
                 />
               </div>
             </div>
