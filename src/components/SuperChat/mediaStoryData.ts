@@ -39,7 +39,7 @@ export function createMediaConversations(
           id: 'follow-up',
           participantId: 'me',
           time: '2026-10-03T09:05:00Z',
-          text: 'Thanks, Luis. Here is my follow-up. Switch to Conversation to read or reply, or attach another clip below.',
+          text: 'Thanks, Luis. Here is my follow-up. Press Play to browse the recordings, or attach another clip below.',
           media: [
             {
               id: 'recording',

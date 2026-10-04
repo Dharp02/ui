@@ -12,6 +12,7 @@
 
 import * as React from 'react';
 import { cn } from '../../utils/cn';
+import { ArrowLeft } from 'lucide-react';
 import { Animated, AnimatedPresence } from '../../motion';
 import { usePrefersReducedMotion } from '../../hooks/usePrefersReducedMotion';
 import {
@@ -72,7 +73,7 @@ export interface SuperChatProps {
   ) => void;
   /** MediaFeed behavior, labels and action/render slots for explicit attachments. */
   mediaFeedProps?: SuperChatMediaFeedProps;
-  /** Labels for the view switch and attachment previews. */
+  /** Labels for media launches and returning to the conversation. */
   mediaLabels?: Partial<SuperChatMediaLabels>;
   /** The participant id representing the local user (alignment + compose). */
   currentParticipantId?: string;
@@ -179,13 +180,21 @@ export function SuperChat({
   onBack,
 }: SuperChatProps) {
   const headingId = React.useId();
-  const [internalView, setInternalView] = React.useState(defaultView);
-  const activeView = view ?? internalView;
+  const [internalView, setInternalView] = React.useState({
+    conversationId: conversation.id,
+    view: defaultView,
+  });
+  // A different uncontrolled conversation begins on its thread immediately,
+  // before child effects can start a player from a previous media selection.
+  const activeView =
+    view ??
+    (internalView.conversationId === conversation.id
+      ? internalView.view
+      : 'thread');
   const labels: SuperChatMediaLabels = {
-    viewGroup: 'Conversation view',
-    threadView: 'Conversation',
-    mediaView: 'Media',
+    backToConversation: 'Back to conversation',
     openMedia: 'Open in media feed',
+    playMedia: 'Play',
     unknownAuthor: 'Unknown',
     ...mediaLabels,
   };
@@ -197,9 +206,24 @@ export function SuperChat({
     conversationId: string;
     itemId: string;
   }>();
+  const [manualPlaybackRequest, setManualPlaybackRequest] = React.useState<{
+    conversationId: string;
+    itemId: string;
+    requestId: number;
+  }>();
+  const playbackRequestCounter = React.useRef(0);
   const mediaFeedRef = React.useRef<HTMLDivElement>(null);
-  const mediaViewButtonRef = React.useRef<HTMLButtonElement>(null);
+  const backToConversationRef = React.useRef<HTMLButtonElement>(null);
   const focusMediaOnOpenRef = React.useRef(false);
+  const focusThreadOnBackRef = React.useRef(false);
+  const mediaReturnTargetRef = React.useRef<
+    | {
+        conversationId: string;
+        messageId: string;
+        attachmentId: string;
+      }
+    | undefined
+  >(undefined);
   // Stable callbacks keep existing memoized thread rows from re-rendering on
   // every streamed update just because the feed's conversation changed.
   const mediaContextRef = React.useRef({
@@ -218,7 +242,8 @@ export function SuperChat({
   };
   const setView = React.useCallback((next: SuperChatView) => {
     const context = mediaContextRef.current;
-    if (context.view === undefined) setInternalView(next);
+    if (context.view === undefined)
+      setInternalView({ conversationId: context.conversation.id, view: next });
     context.onViewChange?.(next, { conversation: context.conversation });
   }, []);
   const handleMediaSelection = React.useCallback((item: SuperChatMediaItem) => {
@@ -226,34 +251,68 @@ export function SuperChat({
     mediaContextRef.current.mediaFeedProps?.onActiveItemChange?.(item);
   }, []);
   const handleOpenMedia = React.useCallback(
-    (messageId: string, attachmentId: string) => {
+    (messageId: string, attachmentId: string, play = false) => {
       const item = mediaContextRef.current.mediaItems.find(
         (candidate) =>
           candidate.message.id === messageId &&
           candidate.attachment.id === attachmentId
       );
-      if (item) {
-        handleMediaSelection(item);
-        focusMediaOnOpenRef.current = true;
-      }
+      if (!item) return;
+      handleMediaSelection(item);
+      mediaReturnTargetRef.current = {
+        conversationId: item.conversationId,
+        messageId,
+        attachmentId,
+      };
+      focusMediaOnOpenRef.current = true;
+      setManualPlaybackRequest(
+        play
+          ? {
+              conversationId: item.conversationId,
+              itemId: item.id,
+              requestId: ++playbackRequestCounter.current,
+            }
+          : undefined
+      );
       setView('media');
     },
     [handleMediaSelection, setView]
   );
+  const handleBackToConversation = React.useCallback(() => {
+    focusMediaOnOpenRef.current = false;
+    focusThreadOnBackRef.current = true;
+    setManualPlaybackRequest(undefined);
+    setView('thread');
+  }, [setView]);
+
+  React.useEffect(() => {
+    if (internalView.conversationId !== conversation.id) {
+      setInternalView({ conversationId: conversation.id, view: 'thread' });
+    }
+    if (mediaReturnTargetRef.current?.conversationId !== conversation.id) {
+      mediaReturnTargetRef.current = undefined;
+      focusMediaOnOpenRef.current = false;
+      focusThreadOnBackRef.current = false;
+      setManualPlaybackRequest(undefined);
+    }
+  }, [conversation.id, internalView.conversationId]);
 
   React.useEffect(() => {
     if (activeView !== 'media' || !focusMediaOnOpenRef.current) return;
-    focusMediaOnOpenRef.current = false;
     // The inline action is unmounted by the view switch. Move its focus to the
-    // selected media item, or the persistent switch while data is unavailable.
+    // selected media item, or the Back control while data is unavailable.
     const target =
       mediaFeedRef.current?.querySelector<HTMLElement>(
         'article[tabindex="0"]'
-      ) ??
-      mediaFeedRef.current?.querySelector<HTMLElement>('[role="feed"]') ??
-      mediaViewButtonRef.current;
-    target?.focus({ preventScroll: true });
-  }, [activeView]);
+      ) ?? mediaFeedRef.current?.querySelector<HTMLElement>('[role="feed"]');
+    if (target) focusMediaOnOpenRef.current = false;
+    (target ?? backToConversationRef.current)?.focus({ preventScroll: true });
+  }, [
+    activeView,
+    mediaFeedProps?.loading,
+    mediaFeedProps?.error,
+    mediaItems.length,
+  ]);
 
   React.useEffect(() => {
     notifyComposerMigrationOnce('SuperChat');
@@ -287,6 +346,25 @@ export function SuperChat({
   } = useStickToBottom({
     disabled: order === 'desc' || activeView === 'media',
   });
+  React.useEffect(() => {
+    if (activeView !== 'thread') return;
+    setManualPlaybackRequest(undefined);
+    if (!focusThreadOnBackRef.current) return;
+    focusThreadOnBackRef.current = false;
+    const source = mediaReturnTargetRef.current;
+    const launchId = source
+      ? JSON.stringify([source.messageId, source.attachmentId])
+      : undefined;
+    const launcher =
+      source?.conversationId === conversation.id
+        ? Array.from(
+            threadRef.current?.querySelectorAll<HTMLButtonElement>(
+              '[data-media-launch-id]'
+            ) ?? []
+          ).find((button) => button.dataset.mediaLaunchId === launchId)
+        : undefined;
+    (launcher ?? threadRef.current)?.focus({ preventScroll: true });
+  }, [activeView, conversation.id, threadRef]);
   const [hasNewBelow, setHasNewBelow] = React.useState(false);
   // Own-send turn anchoring (ChatGPT/Claude-style): the freshly sent message
   // opens a "turn" that reserves a viewport of space, anchored so the bubble
@@ -564,6 +642,7 @@ export function SuperChat({
       defaultCopyFormat={defaultCopyFormat}
       onOpenMedia={handleOpenMedia}
       openMediaLabel={labels.openMedia}
+      playMediaLabel={labels.playMedia}
     />
   );
 
@@ -702,68 +781,69 @@ export function SuperChat({
             </div>
           </div>
         </div>
-        <div className="flex shrink-0 items-center gap-2">
-          {(mediaItems.length > 0 || activeView === 'media') && (
-            <ButtonGroup
-              orientation="horizontal"
-              role="group"
-              aria-label={labels.viewGroup}
-            >
-              <Button
-                variant={activeView === 'thread' ? 'secondary' : 'ghost'}
-                size="sm"
-                aria-pressed={activeView === 'thread'}
-                onClick={() => setView('thread')}
-              >
-                {labels.threadView}
-              </Button>
-              <Button
-                ref={mediaViewButtonRef}
-                variant={activeView === 'media' ? 'secondary' : 'ghost'}
-                size="sm"
-                aria-pressed={activeView === 'media'}
-                onClick={() => setView('media')}
-              >
-                {labels.mediaView}
-              </Button>
-            </ButtonGroup>
-          )}
-          {onConversationClosed && (
-            <button
-              type="button"
-              onClick={() => onConversationClosed(conversation)}
-              aria-label="Close conversation"
-              className="rounded-md p-1 text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800"
-            >
-              <CloseIcon />
-            </button>
-          )}
-        </div>
+        {onConversationClosed && (
+          <button
+            type="button"
+            onClick={() => onConversationClosed(conversation)}
+            aria-label="Close conversation"
+            className="rounded-md p-1 text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800"
+          >
+            <CloseIcon />
+          </button>
+        )}
       </header>
 
       {activeView === 'media' ? (
-        <MediaFeed
-          {...mediaFeedProps}
-          ref={mediaFeedRef}
-          key={conversation.id}
-          items={mediaItems}
-          getId={(item) => item.id}
-          getMedia={(item) => item.attachment}
-          getTitle={(item) => item.attachment.title ?? ''}
-          getCaption={(item) => item.attachment.caption ?? item.message.text}
-          getAuthor={(item) => ({
-            name: item.participant?.name ?? labels.unknownAuthor,
-            avatar: item.participant?.avatar,
-          })}
-          activeItemId={
-            mediaFeedProps?.activeItemId ??
-            (mediaSelection?.conversationId === conversation.id
-              ? mediaSelection.itemId
-              : undefined)
-          }
-          onActiveItemChange={handleMediaSelection}
-          className={cn('min-h-0 flex-1', mediaFeedProps?.className)}
-        />
+        <div
+          data-slot="superchat-media-view"
+          className="flex min-h-0 flex-1 flex-col"
+        >
+          <div className="px-4 pt-2">
+            <ButtonGroup className="justify-start">
+              <Button
+                ref={backToConversationRef}
+                variant="ghost"
+                size="sm"
+                leftIcon={
+                  <ArrowLeft
+                    className="size-4 rtl:rotate-180"
+                    aria-hidden="true"
+                  />
+                }
+                onClick={handleBackToConversation}
+              >
+                {labels.backToConversation}
+              </Button>
+            </ButtonGroup>
+          </div>
+          <MediaFeed
+            {...mediaFeedProps}
+            ref={mediaFeedRef}
+            key={conversation.id}
+            items={mediaItems}
+            getId={(item) => item.id}
+            getMedia={(item) => item.attachment}
+            getTitle={(item) => item.attachment.title ?? ''}
+            getCaption={(item) => item.attachment.caption ?? item.message.text}
+            getAuthor={(item) => ({
+              name: item.participant?.name ?? labels.unknownAuthor,
+              avatar: item.participant?.avatar,
+            })}
+            activeItemId={
+              mediaFeedProps?.activeItemId ??
+              (mediaSelection?.conversationId === conversation.id
+                ? mediaSelection.itemId
+                : undefined)
+            }
+            onActiveItemChange={handleMediaSelection}
+            playbackRequest={
+              manualPlaybackRequest?.conversationId === conversation.id
+                ? manualPlaybackRequest
+                : mediaFeedProps?.playbackRequest
+            }
+            className={cn('min-h-0 flex-1', mediaFeedProps?.className)}
+          />
+        </div>
       ) : (
         <div
           data-slot="superchat-thread-viewport"
@@ -782,6 +862,7 @@ export function SuperChat({
               defaultCopyFormat={defaultCopyFormat}
               onOpenMedia={handleOpenMedia}
               openMediaLabel={labels.openMedia}
+              playMediaLabel={labels.playMedia}
               scrollRef={threadRef}
               contentRef={threadContentRef}
               containerProps={{

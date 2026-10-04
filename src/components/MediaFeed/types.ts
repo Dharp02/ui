@@ -13,6 +13,13 @@ export interface MediaFeedAuthor {
   avatar?: string;
 }
 
+/** An explicit Play gesture, separate from item selection and automatic playback. */
+export interface MediaFeedPlaybackRequest {
+  itemId: string;
+  /** Use a fresh token for each gesture, including repeated Play on the same item. */
+  requestId: string | number;
+}
+
 /** Custom players must stop playback whenever `active` is false. */
 export interface MediaFeedRenderContext<T> {
   item: T;
@@ -20,6 +27,8 @@ export interface MediaFeedRenderContext<T> {
   autoPlay: boolean;
   muted: boolean;
   loop: boolean;
+  /** A pending manual Play token for this active item. Handle each token once. */
+  playbackRequestId?: string | number;
 }
 
 /** Every string authored by the feed can be localized by its host. */
@@ -84,6 +93,12 @@ export interface MediaFeedProps<T> extends Omit<
   defaultActiveItemId?: string;
   /** Fires for user navigation and visibility changes, with the original item. */
   onActiveItemChange?: (item: T) => void;
+  /**
+   * Attempt explicit playback once the requested item is selected and visible.
+   * This bypasses reduced-motion/autoplay suppression for that gesture only;
+   * it does not change selection. Browsers can still require another gesture.
+   */
+  playbackRequest?: MediaFeedPlaybackRequest;
   loading?: boolean;
   error?: string | null;
   onRetry?: () => void | Promise<void>;

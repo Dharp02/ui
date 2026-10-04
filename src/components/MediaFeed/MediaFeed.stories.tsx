@@ -166,7 +166,7 @@ A vertical media feed for a collection owned by the host. \`MediaFeed<T>\` uses 
 
 - There is one clip: use \`MediaPlayer\` for direct media or \`VideoCard\` for a linked video and hover preview.
 - The user is editing a recording: use \`MediaEditor\`.
-- Text discussion is the primary task: use the standard \`SuperChat\` thread and let people switch to the media view when useful.
+- Text discussion is the primary task: use the standard \`SuperChat\` thread; playing an attachment opens its media view, with a return control for the conversation.
 
 ### Example
 
@@ -261,6 +261,12 @@ Import \`@mieweb/ui/styles.css\` once. Tailwind 4 consumers who generate their o
       control: 'text',
       description: 'Initial selection for an uncontrolled feed.',
       table: { category: 'Selection' },
+    },
+    playbackRequest: {
+      control: false,
+      description:
+        'Explicit user playback intent for an item: { itemId, requestId }. Select the item separately and supply a fresh requestId for each Play action. Manual requests work with autoplay off or reduced motion enabled.',
+      table: { category: 'Behavior' },
     },
     onRetry: {
       control: false,

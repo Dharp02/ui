@@ -37,7 +37,7 @@ const meta: Meta<typeof SuperChatInbox> = {
       control: 'inline-radio',
       options: ['thread', 'media'],
       description:
-        'Controlled conversation view. Omit to let the panel switch between thread and media.',
+        'Controlled conversation view. Omit to let attachment playback open the media feed and Back return to the thread.',
       table: { category: 'Behavior' },
     },
     onViewChange: {
@@ -54,7 +54,7 @@ const meta: Meta<typeof SuperChatInbox> = {
     mediaLabels: {
       control: false,
       description:
-        'Localized view controls, attachment action and unknown author labels.',
+        'Localized return control, attachment actions and unknown author labels.',
       table: { category: 'Rendering' },
     },
     mediaFeedProps: {
@@ -111,7 +111,7 @@ const meta: Meta<typeof SuperChatInbox> = {
 
 **The complete multi-participant inbox: \`SuperChatConversations\` on the left, the active \`SuperChat\` panel on the right, with selection and the small-screen master/detail switch handled for you.** \`SuperChatInbox\` takes the full \`conversations: SuperChatConversation[]\`, resolves the active one from \`activeConversationId\` (controlled) or \`defaultActiveConversationId\` (uncontrolled; first conversation by default), and forwards every panel prop — \`currentParticipantId\`, \`renderPlugins\`, \`renderTextContent\`, \`trustedContent\`, \`readOnly\`, \`acceptedFileTypes\`, \`order\`, \`virtualized\`, \`linkBuilder\`, \`onMessageSent\`, \`onMessageEdited\`, \`onConversationClosed\`, \`onReferenceClick\` — plus the list's \`onConversationOpened\` and \`onNewConversation\`. \`showSidebar={false}\` hides the list. Below the \`sm\` breakpoint only one pane is visible: opening a conversation shows the panel, whose Back button (\`onBack\`) returns to the list. Root is \`div role="group" aria-label="Chat: <title>"\` (\`data-slot="superchat-inbox"\`), rounded and bordered, filling its container's height. It is the drop-in for the standalone \`mieweb/chat-component\` (same conversation/thread/\`linkBuilder\`/callback shape; \`senderId\` → \`participantId\`).
 
-Messages can also carry explicit \`media: SuperChatMediaAttachment[]\` records (stable attachment ID, kind and source, with optional title/caption/poster). The panel offers conversation and media views; \`view\` / \`onViewChange\` let the host control that choice, and \`defaultView\` supplies the initial choice. The media view composes [MediaFeed](?path=/docs/media-mediafeed--docs), derives items through \`getConversationMediaItems\`, and retains the conversation header and composer. Both views address the same messages and participants. \`mediaFeedProps\` supplies feed playback configuration, labels, custom media and action slots; \`mediaLabels\` localizes the new view controls. Attachment upload and persistence still belong to the host. Open the **Media Conversation** story for a local video/image example.
+Messages can also carry explicit \`media: SuperChatMediaAttachment[]\` records (stable attachment ID, kind and source, with optional title/caption/poster). The thread opens by default. Press **Play** on an attachment to open that clip in the media feed; **Back to conversation** returns to the same reading position and draft. There is no header view toggle. \`view\` / \`onViewChange\` let the host control this navigation, and \`defaultView\` supplies the initial choice. The media view composes [MediaFeed](?path=/docs/media-mediafeed--docs), derives items through \`getConversationMediaItems\`, and retains the conversation header and composer. Both views address the same messages and participants. \`mediaFeedProps\` supplies feed playback configuration, labels, custom media and action slots; \`mediaLabels\` localizes the return control and attachment actions. Attachment upload and persistence still belong to the host. Open the **Media Conversation** story for a local video/image example.
 
 ### Use it when
 
@@ -493,7 +493,7 @@ function MediaConversationDemo() {
   const [conversations, setConversations] = React.useState(() =>
     createMediaConversations('')
   );
-  const [view, setView] = React.useState<SuperChatView>('media');
+  const [view, setView] = React.useState<SuperChatView>('thread');
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<string>();
   const [likedMessages, setLikedMessages] = React.useState<string[]>([]);
@@ -535,6 +535,7 @@ function MediaConversationDemo() {
       currentParticipantId="me"
       view={view}
       onViewChange={setView}
+      onConversationOpened={() => setView('thread')}
       acceptedFileTypes={['image', 'video', 'audio']}
       onMessageSent={(text, { conversation, attachments }) => {
         // In an app, upload files here and persist the resulting source URLs.
@@ -627,7 +628,7 @@ export const MediaConversation: Story = {
     docs: {
       description: {
         story:
-          'A conversation can switch between its ordinary thread and an Instagram-style MediaFeed. Both views use the same explicit message.media attachments, participants and source message ids. Reactions apply to the original message, and the shared composer still sends through host-owned conversation state. Videos are generated locally; select Planning to see the empty feed for another conversation.',
+          'Start in the conversation and press Play on a video to open that clip in an Instagram-style MediaFeed. Back to conversation restores the thread, its reading position and the draft. Both views use the same explicit message.media attachments, participants and source message ids. Reactions apply to the original message, and the shared composer still sends through host-owned conversation state. Videos are generated locally; select Planning to see a conversation without media.',
       },
     },
   },

@@ -63,6 +63,19 @@ metadata is ready, so inline/fullscreen switches continue from the same time.
 Provider iframe playback has no time-capture API here and restarts when its
 surface remounts. Custom renderers own any provider-specific continuity.
 
+Selection and explicit Play gestures are separate. A host launching a clip from
+a conversation passes the selected ID plus
+`playbackRequest={{ itemId, requestId }}`, with a fresh token for each gesture.
+The request waits for its matching item to become selected, visible, and ready
+for presentation, then attempts playback once even when reduced motion or
+`autoPlay={false}` suppresses automatic playback. It never changes selection or
+plays another item. Clearing the request does not stop an already playing clip.
+The feed consumes tokens across surface/source remounts; a fresh token is needed
+to replay a paused item. Native manual-play intent and position transfer between
+inline/fullscreen surfaces until the user pauses. Custom players receive the
+pending token as `playbackRequestId` only on its active target and must handle
+each token once while respecting `active`.
+
 Use the actual playback state and errors when showing playback controls. A
 requested autoplay is not proof that a browser or external provider started
 playing. Do not silently substitute another video when a source fails.

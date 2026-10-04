@@ -122,10 +122,9 @@ export type SuperChatMediaFeedProps = Omit<
 
 /** Labels introduced by the conversation's media view. */
 export interface SuperChatMediaLabels {
-  viewGroup: string;
-  threadView: string;
-  mediaView: string;
+  backToConversation: string;
   openMedia: string;
+  playMedia: string;
   unknownAuthor: string;
 }
 

@@ -1,6 +1,7 @@
 import { Button } from '../Button';
 import { ButtonGroup } from '../ButtonGroup';
 import { MediaPlayer } from '../MediaPlayer';
+import { Play } from 'lucide-react';
 import type { SuperChatMediaAttachment } from './types';
 
 /** Thread previews reuse the same native transport as the full media feed. */
@@ -8,11 +9,17 @@ export function MessageMedia({
   attachment,
   onOpen,
   openLabel,
+  playLabel,
+  launchId,
 }: {
   attachment: SuperChatMediaAttachment;
-  onOpen?: () => void;
+  onOpen?: (play?: boolean) => void;
   openLabel: string;
+  playLabel: string;
+  launchId: string;
 }) {
+  const playable = attachment.kind !== 'image';
+  const actionLabel = playable ? playLabel : openLabel;
   return (
     <div
       data-slot="superchat-message-media"
@@ -34,6 +41,8 @@ export function MessageMedia({
           kind={attachment.kind}
           poster={attachment.poster}
           aria-label={attachment.alt ?? attachment.title ?? openLabel}
+          controls={!onOpen}
+          preload="metadata"
           className="max-h-72"
         />
       ) : attachment.poster ? (
@@ -47,8 +56,23 @@ export function MessageMedia({
       {attachment.caption && <p className="text-sm">{attachment.caption}</p>}
       {onOpen && (
         <ButtonGroup>
-          <Button variant="outline" size="sm" onClick={onOpen}>
-            {openLabel}
+          <Button
+            data-media-launch-id={launchId}
+            variant="secondary"
+            size="sm"
+            leftIcon={
+              playable ? (
+                <Play className="size-4" aria-hidden="true" />
+              ) : undefined
+            }
+            aria-label={
+              playable && attachment.title
+                ? `${playLabel} ${attachment.title}`
+                : actionLabel
+            }
+            onClick={() => onOpen(playable)}
+          >
+            {actionLabel}
           </Button>
         </ButtonGroup>
       )}

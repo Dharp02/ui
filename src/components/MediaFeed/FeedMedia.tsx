@@ -13,7 +13,8 @@ interface FeedMediaProps {
   loop: boolean;
   labels: MediaFeedLabels;
   onActivate: () => void;
-  playbackPosition: { timeMs: number };
+  playbackPosition: { timeMs: number; playRequested?: boolean };
+  playbackRequestId?: string | number;
 }
 
 /** Only ordinary web URLs become links; media resources may use other schemes. */
@@ -50,6 +51,7 @@ function NativeFeedMedia({
   labels,
   onActivate,
   playbackPosition,
+  playbackRequestId,
 }: FeedMediaProps) {
   const mediaElementRef = React.useRef<
     HTMLVideoElement | HTMLAudioElement | null
@@ -57,7 +59,13 @@ function NativeFeedMedia({
   const [state, setState] = React.useState<MediaPlayerState>('idle');
   const [blocked, setBlocked] = React.useState(false);
   const [retryVersion, setRetryVersion] = React.useState(0);
-  const wantsPlayback = React.useRef(false);
+  const wantsPlayback = React.useRef(playbackPosition.playRequested ?? false);
+  const latestPlaybackRequest = React.useRef(playbackRequestId);
+  latestPlaybackRequest.current = playbackRequestId;
+  const handledPlaybackRequest = React.useRef<string | number | undefined>(
+    undefined
+  );
+  const ownershipPause = React.useRef(false);
   const attemptId = React.useRef(0);
   const activeRef = React.useRef(active);
   const canSavePosition = React.useRef(false);
@@ -83,6 +91,15 @@ function NativeFeedMedia({
     }
   }, []);
 
+  const pauseForOwnership = React.useCallback(
+    (element: HTMLMediaElement | null) => {
+      if (element && element === mediaElementRef.current && !element.paused)
+        ownershipPause.current = true;
+      element?.pause();
+    },
+    []
+  );
+
   React.useEffect(() => {
     const element = mediaElementRef.current;
     const attempts = attemptId;
@@ -94,14 +111,22 @@ function NativeFeedMedia({
       canSavePosition.current = true;
     };
     if (active && element) {
+      // Another surface can clear shared manual intent while this inline copy
+      // is paused (for example, the user pauses inside fullscreen).
+      wantsPlayback.current = playbackPosition.playRequested ?? false;
       if (element.readyState >= 1) restorePosition();
       else element.addEventListener('loadedmetadata', restorePosition);
     }
-    if (active && (autoPlay || wantsPlayback.current)) {
+    if (
+      active &&
+      (latestPlaybackRequest.current === undefined ||
+        latestPlaybackRequest.current === handledPlaybackRequest.current) &&
+      (autoPlay || wantsPlayback.current)
+    ) {
       void tryPlay();
     } else if (!active) {
       attemptId.current++;
-      mediaElementRef.current?.pause();
+      pauseForOwnership(element);
       setBlocked(false);
     }
     return () => {
@@ -109,16 +134,38 @@ function NativeFeedMedia({
       element?.removeEventListener('loadedmetadata', restorePosition);
       if (element && canSavePosition.current)
         playbackPosition.timeMs = element.currentTime * 1000;
-      element?.pause();
+      pauseForOwnership(element);
     };
-  }, [active, autoPlay, playbackPosition, retryVersion, tryPlay]);
+  }, [
+    active,
+    autoPlay,
+    pauseForOwnership,
+    playbackPosition,
+    retryVersion,
+    tryPlay,
+  ]);
+
+  React.useEffect(() => {
+    if (
+      !active ||
+      playbackRequestId === undefined ||
+      playbackRequestId === handledPlaybackRequest.current
+    )
+      return;
+    handledPlaybackRequest.current = playbackRequestId;
+    wantsPlayback.current = true;
+    playbackPosition.playRequested = true;
+    void tryPlay();
+  }, [active, playbackRequestId, playbackPosition, tryPlay]);
 
   const togglePlayback = () => {
     if (state === 'playing') {
       wantsPlayback.current = false;
+      playbackPosition.playRequested = false;
       mediaElementRef.current?.pause();
     } else {
       wantsPlayback.current = true;
+      playbackPosition.playRequested = true;
       onActivate();
       if (active) void tryPlay();
     }
@@ -136,11 +183,22 @@ function NativeFeedMedia({
         preload={active ? 'metadata' : 'none'}
         controls={active}
         aria-label={title}
-        onStateChange={setState}
+        onStateChange={(next) => {
+          setState(next);
+          if (next === 'playing') ownershipPause.current = false;
+          if (next === 'paused') {
+            if (activeRef.current && !ownershipPause.current) {
+              wantsPlayback.current = false;
+              playbackPosition.playRequested = false;
+            }
+            ownershipPause.current = false;
+          }
+        }}
         onTimeUpdate={(timeMs) => {
           if (canSavePosition.current) playbackPosition.timeMs = timeMs;
         }}
         onRetry={() => {
+          ownershipPause.current = false;
           canSavePosition.current = false;
           setState('idle');
           setBlocked(false);
@@ -234,13 +292,32 @@ function YouTubeFeedMedia({
   loop,
   labels,
   onActivate,
+  playbackRequestId,
 }: FeedMediaProps) {
   const id = youtubeId(media.src);
+  const [requestedPlayback, setRequestedPlayback] = React.useState(false);
+  const handledPlaybackRequest = React.useRef<string | number | undefined>(
+    undefined
+  );
+  const pendingPlayback =
+    active &&
+    playbackRequestId !== undefined &&
+    playbackRequestId !== handledPlaybackRequest.current;
+  React.useEffect(() => {
+    if (!active) setRequestedPlayback(false);
+    else if (
+      playbackRequestId !== undefined &&
+      playbackRequestId !== handledPlaybackRequest.current
+    ) {
+      handledPlaybackRequest.current = playbackRequestId;
+      setRequestedPlayback(true);
+    }
+  }, [active, playbackRequestId]);
   const embedUrl = new URL(
     `https://www.youtube-nocookie.com/embed/${id ?? ''}`
   );
   for (const [key, value] of Object.entries({
-    autoplay: autoPlay ? '1' : '0',
+    autoplay: autoPlay || requestedPlayback || pendingPlayback ? '1' : '0',
     mute: muted ? '1' : '0',
     controls: '1',
     playsinline: '1',
@@ -276,7 +353,10 @@ function YouTubeFeedMedia({
             <Button
               variant="secondary"
               leftIcon={<Play className="h-4 w-4" aria-hidden="true" />}
-              onClick={onActivate}
+              onClick={() => {
+                setRequestedPlayback(true);
+                onActivate();
+              }}
             >
               {labels.play}
             </Button>

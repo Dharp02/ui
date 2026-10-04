@@ -1,6 +1,12 @@
 import * as React from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import {
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { SuperChat } from './SuperChat';
 import { SuperChatInbox } from './SuperChatInbox';
@@ -37,7 +43,62 @@ const conversation: SuperChatConversation = {
   ],
 };
 
-afterEach(() => vi.restoreAllMocks());
+const videoConversation: SuperChatConversation = {
+  ...conversation,
+  thread: [
+    {
+      ...conversation.thread[0],
+      media: [
+        {
+          id: 'video-1',
+          kind: 'video',
+          src: '/clip-one.webm',
+          title: 'First clip',
+        },
+        {
+          id: 'video-2',
+          kind: 'video',
+          src: '/clip-two.webm',
+          title: 'Second clip',
+        },
+      ],
+    },
+  ],
+};
+
+function mockNativePlayback() {
+  vi.spyOn(window, 'matchMedia').mockImplementation((query) => ({
+    matches: query === '(prefers-reduced-motion: reduce)',
+    media: query,
+    onchange: null,
+    addListener: vi.fn(),
+    removeListener: vi.fn(),
+    addEventListener: vi.fn(),
+    removeEventListener: vi.fn(),
+    dispatchEvent: vi.fn(),
+  }));
+  vi.spyOn(HTMLMediaElement.prototype, 'pause').mockImplementation(function (
+    this: HTMLMediaElement
+  ) {
+    Object.defineProperty(this, 'paused', { configurable: true, value: true });
+    this.dispatchEvent(new Event('pause'));
+  });
+  return vi
+    .spyOn(HTMLMediaElement.prototype, 'play')
+    .mockImplementation(function (this: HTMLMediaElement) {
+      Object.defineProperty(this, 'paused', {
+        configurable: true,
+        value: false,
+      });
+      this.dispatchEvent(new Event('play'));
+      return Promise.resolve();
+    });
+}
+
+afterEach(() => {
+  cleanup();
+  vi.restoreAllMocks();
+});
 
 describe('getConversationMediaItems', () => {
   it('preserves source message, attachment and participant identity in chronological order', () => {
@@ -116,10 +177,8 @@ describe('SuperChat media view', () => {
       screen.getAllByRole('button', { name: 'Open in media feed' })[1]
     );
     expect(screen.queryByRole('log', { name: 'Messages' })).toBeNull();
-    expect(screen.getByRole('button', { name: 'Media' })).toHaveAttribute(
-      'aria-pressed',
-      'true'
-    );
+    expect(screen.queryByRole('button', { name: 'Media' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Conversation' })).toBeNull();
     expect(onActiveItemChange).toHaveBeenCalledWith(
       expect.objectContaining({
         id: JSON.stringify(['c1', 'm1', 'a2']),
@@ -131,8 +190,13 @@ describe('SuperChat media view', () => {
     ).toHaveAttribute('tabindex', '0');
     expect(screen.getByRole('article', { name: 'Second image' })).toHaveFocus();
     expect(screen.getByLabelText('Message')).toBeInTheDocument();
-    await user.click(screen.getByRole('button', { name: 'Conversation' }));
+    await user.click(
+      screen.getByRole('button', { name: 'Back to conversation' })
+    );
     expect(screen.getByRole('log', { name: 'Messages' })).toBeInTheDocument();
+    expect(
+      screen.getAllByRole('button', { name: 'Open in media feed' })[1]
+    ).toHaveFocus();
   });
 
   it('leaves a text-only conversation on its existing thread surface', () => {
@@ -160,7 +224,9 @@ describe('SuperChat media view', () => {
         onViewChange={onViewChange}
       />
     );
-    await user.click(screen.getByRole('button', { name: 'Media' }));
+    await user.click(
+      screen.getAllByRole('button', { name: 'Open in media feed' })[0]
+    );
     expect(onViewChange).toHaveBeenCalledWith('media', { conversation });
     expect(screen.getByRole('log', { name: 'Messages' })).toBeInTheDocument();
     rerender(
@@ -171,6 +237,115 @@ describe('SuperChat media view', () => {
       />
     );
     expect(screen.queryByRole('log', { name: 'Messages' })).toBeNull();
+    await user.click(
+      screen.getByRole('button', { name: 'Back to conversation' })
+    );
+    expect(onViewChange).toHaveBeenLastCalledWith('thread', { conversation });
+    expect(screen.queryByRole('log', { name: 'Messages' })).toBeNull();
+    rerender(
+      <SuperChat
+        conversation={conversation}
+        view="thread"
+        onViewChange={onViewChange}
+      />
+    );
+    expect(
+      screen.getAllByRole('button', { name: 'Open in media feed' })[0]
+    ).toHaveFocus();
+  });
+
+  it('Play opens only the chosen clip despite reduced motion and restores the draft and launcher on Back', async () => {
+    const play = mockNativePlayback();
+    const user = userEvent.setup();
+    const { container } = render(
+      <SuperChat
+        conversation={videoConversation}
+        mediaFeedProps={{ autoPlay: false }}
+      />
+    );
+    const previews = container.querySelectorAll('video');
+    expect(Array.from(previews).every((video) => !video.controls)).toBe(true);
+    expect(play).not.toHaveBeenCalled();
+    expect(
+      screen.queryByRole('button', { name: 'Open in media feed' })
+    ).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Media' })).toBeNull();
+    await user.type(screen.getByLabelText('Message'), 'Keep my reply');
+    await user.click(screen.getByRole('button', { name: 'Play Second clip' }));
+    await waitFor(() => expect(play).toHaveBeenCalledTimes(1));
+    expect(
+      (play.mock.contexts[0] as HTMLMediaElement).getAttribute('src')
+    ).toBe('/clip-two.webm');
+    expect(screen.getByRole('article', { name: 'Second clip' })).toHaveFocus();
+    expect(screen.getByLabelText('Message')).toHaveValue('Keep my reply');
+    await user.click(
+      screen.getByRole('button', { name: 'Back to conversation' })
+    );
+    expect(
+      screen.getByRole('button', { name: 'Play Second clip' })
+    ).toHaveFocus();
+    expect(screen.getByLabelText('Message')).toHaveValue('Keep my reply');
+    await user.click(screen.getByRole('button', { name: 'Play Second clip' }));
+    await waitFor(() => expect(play).toHaveBeenCalledTimes(2));
+    expect(
+      (play.mock.contexts[1] as HTMLMediaElement).getAttribute('src')
+    ).toBe('/clip-two.webm');
+  });
+
+  it('changing an uncontrolled conversation returns to its thread without playing a new feed', async () => {
+    const play = mockNativePlayback();
+    const user = userEvent.setup();
+    const { rerender } = render(
+      <SuperChat
+        conversation={videoConversation}
+        mediaFeedProps={{ autoPlay: false }}
+      />
+    );
+    await user.click(screen.getByRole('button', { name: 'Play Second clip' }));
+    await waitFor(() => expect(play).toHaveBeenCalledTimes(1));
+    const second = {
+      ...videoConversation,
+      id: 'c2',
+      title: 'Other conversation',
+    };
+    rerender(
+      <SuperChat conversation={second} mediaFeedProps={{ autoPlay: false }} />
+    );
+    expect(screen.getByRole('log', { name: 'Messages' })).toBeInTheDocument();
+    expect(screen.queryByRole('feed')).toBeNull();
+    expect(play).toHaveBeenCalledTimes(1);
+    rerender(
+      <SuperChat
+        conversation={videoConversation}
+        mediaFeedProps={{ autoPlay: false }}
+      />
+    );
+    expect(screen.getByRole('log', { name: 'Messages' })).toBeInTheDocument();
+    expect(screen.queryByRole('feed')).toBeNull();
+    expect(play).toHaveBeenCalledTimes(1);
+  });
+
+  it('moves pending launch focus from Back to the selected item when loading finishes', async () => {
+    const user = userEvent.setup();
+    const { rerender } = render(
+      <SuperChat
+        conversation={conversation}
+        mediaFeedProps={{ loading: true }}
+      />
+    );
+    await user.click(
+      screen.getAllByRole('button', { name: 'Open in media feed' })[1]
+    );
+    expect(
+      screen.getByRole('button', { name: 'Back to conversation' })
+    ).toHaveFocus();
+    rerender(
+      <SuperChat
+        conversation={conversation}
+        mediaFeedProps={{ loading: false }}
+      />
+    );
+    expect(screen.getByRole('article', { name: 'Second image' })).toHaveFocus();
   });
 
   it('scopes the feed and composer callback to the selected inbox conversation', async () => {
@@ -200,7 +375,7 @@ describe('SuperChat media view', () => {
     render(
       <SuperChatInbox
         conversations={[conversation, second]}
-        defaultView="media"
+        view="media"
         onMessageSent={onMessageSent}
         mediaFeedProps={{
           renderActions: (item) => (
@@ -333,7 +508,6 @@ describe('SuperChat media view', () => {
           view="thread"
         />
       );
-      expect(thread(container)).not.toBe(originalThread);
       expect(thread(container).scrollTop).toBe(100);
 
       rerender(

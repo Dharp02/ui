@@ -1110,6 +1110,8 @@ export const miewebUISafelist = [
   'items-center',
   'justify-center',
   'justify-between',
+  'justify-start',
+  'rtl:rotate-180',
   'gap-1',
   'gap-2',
   'px-3',

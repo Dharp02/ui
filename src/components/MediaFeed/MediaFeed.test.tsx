@@ -135,6 +135,19 @@ function renderFeed(props: Partial<MediaFeedProps<Update>> = {}) {
   return render(<MediaFeed items={updates} {...accessors} {...props} />);
 }
 
+function preferReducedMotion() {
+  vi.spyOn(window, 'matchMedia').mockImplementation((query) => ({
+    matches: query === '(prefers-reduced-motion: reduce)',
+    media: query,
+    onchange: null,
+    addListener: () => {},
+    removeListener: () => {},
+    addEventListener: () => {},
+    removeEventListener: () => {},
+    dispatchEvent: () => false,
+  }));
+}
+
 let pageVisible: boolean;
 let play: ReturnType<typeof vi.spyOn>;
 let pause: ReturnType<typeof vi.spyOn>;
@@ -471,22 +484,234 @@ describe('MediaFeed', () => {
   });
 
   it('suppresses automatic playback for reduced motion while keeping manual playback available', () => {
-    vi.spyOn(window, 'matchMedia').mockImplementation((query) => ({
-      matches: query === '(prefers-reduced-motion: reduce)',
-      media: query,
-      onchange: null,
-      addListener: () => {},
-      removeListener: () => {},
-      addEventListener: () => {},
-      removeEventListener: () => {},
-      dispatchEvent: () => false,
-    }));
+    preferReducedMotion();
     renderFeed();
     visibility([0.9, 0.1, 0]);
     expect(play).not.toHaveBeenCalled();
     const firstItem = screen.getByRole('article', { name: 'First update' });
     fireEvent.click(within(firstItem).getByRole('button', { name: 'Play' }));
     expect(play).toHaveBeenCalledOnce();
+  });
+
+  it('waits for the explicitly requested clip to be selected and visible before playing under reduced motion', () => {
+    preferReducedMotion();
+    const onActiveItemChange = vi.fn();
+    const props = {
+      autoPlay: false,
+      activeItemId: 'second',
+      playbackRequest: { itemId: 'second', requestId: 1 },
+      onActiveItemChange,
+    };
+    const { container } = renderFeed(props);
+    expect(play).not.toHaveBeenCalled();
+    visibility([0.9, 0.1, 0]);
+    expect(play).not.toHaveBeenCalled();
+    expect(onActiveItemChange).toHaveBeenLastCalledWith(updates[0]);
+    visibility([0.1, 0.9, 0]);
+    const clips = [...container.querySelectorAll('video')];
+    expect(play).toHaveBeenCalledOnce();
+    expect(clips.filter((clip) => !clip.paused)).toEqual([clips[1]]);
+  });
+
+  it('consumes a request once, preserves playback when cleared, and requires a fresh token after user pause', () => {
+    preferReducedMotion();
+    const props = { autoPlay: false, activeItemId: 'first' };
+    const request = { itemId: 'first', requestId: 'gesture-1' };
+    const { container, rerender } = renderFeed({
+      ...props,
+      playbackRequest: request,
+    });
+    visibility([0.9, 0.1, 0]);
+    const first = container.querySelector('video') as HTMLVideoElement;
+    expect(first.paused).toBe(false);
+    rerender(<MediaFeed items={updates} {...accessors} {...props} />);
+    expect(first.paused).toBe(false);
+    act(() => first.pause());
+    rerender(
+      <MediaFeed
+        items={updates}
+        {...accessors}
+        {...props}
+        playbackRequest={request}
+      />
+    );
+    expect(first.paused).toBe(true);
+    expect(play).toHaveBeenCalledOnce();
+    fireEvent.click(
+      within(screen.getByRole('article', { name: 'First update' })).getByRole(
+        'button',
+        { name: 'Open fullscreen' }
+      )
+    );
+    const modalClip = screen
+      .getByRole('dialog')
+      .querySelector('video') as HTMLVideoElement;
+    expect(modalClip.paused).toBe(true);
+    fireEvent.keyDown(document, { key: 'Escape' });
+    expect(first.paused).toBe(true);
+    rerender(
+      <MediaFeed
+        items={updates}
+        {...accessors}
+        {...props}
+        playbackRequest={{ itemId: 'first', requestId: 'gesture-2' }}
+      />
+    );
+    expect(first.paused).toBe(false);
+    expect(play).toHaveBeenCalledTimes(2);
+  });
+
+  it('transfers ongoing explicit playback to fullscreen without replaying a consumed request on a replacement source', () => {
+    preferReducedMotion();
+    const props = {
+      autoPlay: false,
+      activeItemId: 'first',
+      playbackRequest: { itemId: 'first', requestId: 1 },
+    };
+    const { container, rerender } = renderFeed(props);
+    visibility([0.9, 0.1, 0]);
+    const inline = container.querySelector('video') as HTMLVideoElement;
+    fireEvent.click(
+      within(screen.getByRole('article', { name: 'First update' })).getByRole(
+        'button',
+        { name: 'Open fullscreen' }
+      )
+    );
+    const fullscreenClip = screen
+      .getByRole('dialog')
+      .querySelector('video') as HTMLVideoElement;
+    expect(inline.paused).toBe(true);
+    expect(fullscreenClip.paused).toBe(false);
+    act(() => fullscreenClip.pause());
+    fireEvent.keyDown(document, { key: 'Escape' });
+    expect(inline.paused).toBe(true);
+    const changedSource = [
+      {
+        ...updates[0],
+        media: { kind: 'video' as const, src: 'replacement.mp4' },
+      },
+      ...updates.slice(1),
+    ];
+    rerender(<MediaFeed items={changedSource} {...accessors} {...props} />);
+    const replacement = container.querySelector('video') as HTMLVideoElement;
+    expect(replacement).not.toBe(inline);
+    expect(replacement.paused).toBe(true);
+    expect(play).toHaveBeenCalledTimes(2);
+  });
+
+  it('does not consume a pending Play request while loading or error content is shown', () => {
+    vi.stubGlobal('IntersectionObserver', undefined);
+    const props = {
+      autoPlay: false,
+      playbackRequest: { itemId: 'first', requestId: 1 },
+    };
+    const { container, rerender } = renderFeed({ autoPlay: false });
+    expect(play).not.toHaveBeenCalled();
+    rerender(<MediaFeed items={updates} {...accessors} {...props} loading />);
+    expect(container.querySelector('video')).toBeNull();
+    rerender(
+      <MediaFeed items={updates} {...accessors} {...props} error="Offline" />
+    );
+    expect(play).not.toHaveBeenCalled();
+    rerender(<MediaFeed items={updates} {...accessors} {...props} />);
+    expect((container.querySelector('video') as HTMLVideoElement).paused).toBe(
+      false
+    );
+    expect(play).toHaveBeenCalledOnce();
+  });
+
+  it('can retry an explicitly requested clip after its token has been consumed', () => {
+    preferReducedMotion();
+    const { container } = renderFeed({
+      autoPlay: false,
+      playbackRequest: { itemId: 'first', requestId: 1 },
+    });
+    visibility([0.9, 0.1, 0]);
+    const failed = container.querySelector('video') as HTMLVideoElement;
+    expect(failed.paused).toBe(false);
+    fireEvent.error(failed);
+    fireEvent.click(screen.getByRole('button', { name: 'Retry' }));
+    const retried = container.querySelector('video') as HTMLVideoElement;
+    expect(retried).not.toBe(failed);
+    expect(retried.paused).toBe(false);
+    expect(
+      [...container.querySelectorAll('video')].filter((clip) => !clip.paused)
+    ).toEqual([retried]);
+    act(() => retried.pause());
+    feedVisibility(false);
+    feedVisibility(true);
+    expect(retried.paused).toBe(true);
+  });
+
+  it('passes a pending manual token only to the matching active custom renderer', () => {
+    preferReducedMotion();
+    const renderer = vi.fn(provider);
+    const props = {
+      activeItemId: 'second',
+      autoPlay: false,
+      renderMedia: renderer,
+      playbackRequest: { itemId: 'second', requestId: 1 },
+    };
+    const { rerender } = renderFeed(props);
+    expect(
+      renderer.mock.calls.every(
+        ([, context]) => context.playbackRequestId === undefined
+      )
+    ).toBe(true);
+    renderer.mockClear();
+    visibility([0.1, 0.9, 0]);
+    const pending = renderer.mock.calls.filter(
+      ([, context]) => context.playbackRequestId !== undefined
+    );
+    expect(pending).toHaveLength(1);
+    expect(pending[0][1]).toMatchObject({
+      item: updates[1],
+      active: true,
+      autoPlay: false,
+      playbackRequestId: 1,
+    });
+    renderer.mockClear();
+    rerender(<MediaFeed items={updates} {...accessors} {...props} />);
+    expect(
+      renderer.mock.calls.every(
+        ([, context]) => context.playbackRequestId === undefined
+      )
+    ).toBe(true);
+  });
+
+  it('applies a manual YouTube request once without replaying it after the embed leaves view', () => {
+    preferReducedMotion();
+    const youtubeItems = [
+      {
+        ...updates[0],
+        media: {
+          kind: 'youtube' as const,
+          src: 'https://youtu.be/M7lc1UVf-VE',
+        },
+      },
+      ...updates.slice(1),
+    ];
+    const { container } = renderFeed({
+      items: youtubeItems,
+      autoPlay: false,
+      playbackRequest: { itemId: 'first', requestId: 1 },
+    });
+    visibility([0.9, 0.1, 0]);
+    expect(
+      new URL(
+        (container.querySelector('iframe') as HTMLIFrameElement).src
+      ).searchParams.get('autoplay')
+    ).toBe('1');
+    expect(play).not.toHaveBeenCalled();
+    feedVisibility(false);
+    expect(container.querySelector('iframe')).toBeNull();
+    feedVisibility(true);
+    expect(
+      new URL(
+        (container.querySelector('iframe') as HTMLIFrameElement).src
+      ).searchParams.get('autoplay')
+    ).toBe('0');
+    expect(play).not.toHaveBeenCalled();
   });
 
   it('stops a stale playback attempt that completes after the item became inactive', async () => {

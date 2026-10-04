@@ -68,15 +68,17 @@ the feed id. Keep this identity when adding actions: reactions and replies
 target the original conversation message, rather than a second media store.
 
 `SuperChat` and `SuperChatInbox` keep the ordinary thread as the default view.
-`view`/`onViewChange` support a host-controlled switch; `defaultView` starts an
+`view`/`onViewChange` support host-controlled navigation; `defaultView` starts an
 uncontrolled panel in either `thread` or `media`. The media view composes
 `MediaFeed`; `mediaFeedProps` exposes its behavior, labels and render slots while
 reserving the conversation's items and accessors. `mediaLabels` localizes the
-view switch and inline attachment action. The header and composer remain
+return control and inline attachment actions. The header and composer remain
 mounted in both views, and the composer keeps its existing send/restore contract.
 
-Inline native attachment previews use `MediaPlayer`; opening a preview selects
-the same attachment in the feed. Switching conversation remounts the feed so
+Playing an inline attachment opens the same attachment in the feed. The thread
+has no header view toggle; a control above the feed provides Back to conversation.
+Returning restores focus to the attachment that opened the feed when it is
+still mounted. Switching conversation remounts the feed so
 uncontrolled selection and fullscreen state cannot leak to another conversation.
 The virtualized thread forwards the same attachment action as ordinary rows.
 Custom feed players must obey `renderMedia`'s `active` playback boundary.

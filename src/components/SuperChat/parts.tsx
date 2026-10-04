@@ -643,8 +643,13 @@ interface MessageRowProps {
    * button (defaults to `'rich'`). */
   defaultCopyFormat?: SuperChatCopyFormat;
   /** Open an explicit attachment in the conversation media view. */
-  onOpenMedia?: (messageId: string, attachmentId: string) => void;
+  onOpenMedia?: (
+    messageId: string,
+    attachmentId: string,
+    play?: boolean
+  ) => void;
   openMediaLabel?: string;
+  playMediaLabel?: string;
 }
 
 /**
@@ -668,6 +673,7 @@ export const MessageRow = React.memo(function MessageRow({
   defaultCopyFormat = 'rich',
   onOpenMedia,
   openMediaLabel = 'Open in media feed',
+  playMediaLabel = 'Play',
 }: MessageRowProps) {
   const streaming = message.status === 'streaming';
   const hasBody =
@@ -1128,9 +1134,11 @@ export const MessageRow = React.memo(function MessageRow({
                     key={attachment.id}
                     attachment={attachment}
                     openLabel={openMediaLabel}
+                    playLabel={playMediaLabel}
+                    launchId={JSON.stringify([message.id, attachment.id])}
                     onOpen={
                       onOpenMedia
-                        ? () => onOpenMedia(message.id, attachment.id)
+                        ? (play) => onOpenMedia(message.id, attachment.id, play)
                         : undefined
                     }
                   />

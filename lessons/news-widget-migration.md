@@ -30,8 +30,10 @@ does not import the old proxy configuration or test backend.
 For SuperChat, store attachments on `SuperChatMessage.media` as
 `SuperChatMediaAttachment[]`. `getConversationMediaItems` derives feed entries
 that retain their conversation, message, attachment, and participant context.
-Thread/feed view selection changes presentation of that conversation; it does
-not create another feed store or infer attachments from arbitrary message text.
+Playing a thread attachment opens its media feed; Back to conversation restores
+the thread's reading position and draft. This changes presentation of that
+conversation; it does not create another feed store or infer attachments from
+arbitrary message text.
 Keep custom media rendering and engagement callbacks at the host boundary.
 
 Native audio/video playback uses `MediaPlayer`. YouTube remains an external

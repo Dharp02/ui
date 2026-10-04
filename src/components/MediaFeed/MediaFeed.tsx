@@ -46,6 +46,7 @@ function MediaFeedInner<T>(
     activeItemId,
     defaultActiveItemId,
     onActiveItemChange,
+    playbackRequest,
     loading = false,
     error,
     onRetry,
@@ -80,7 +81,10 @@ function MediaFeedInner<T>(
   const viewportRef = React.useRef<HTMLDivElement | null>(null);
   const cardRefs = React.useRef(new Map<string, HTMLElement>());
   const playbackPositions = React.useRef(
-    new Map<string, { src: string; timeMs: number }>()
+    new Map<string, { src: string; timeMs: number; playRequested?: boolean }>()
+  );
+  const consumedPlaybackRequests = React.useRef(
+    new Map<string, string | number>()
   );
   const fullscreenTriggerRef = React.useRef<HTMLButtonElement | null>(null);
   const hasObserver = typeof IntersectionObserver !== 'undefined';
@@ -193,6 +197,38 @@ function MediaFeedInner<T>(
     if (!items.length) setFullscreen(false);
   }, [items.length]);
 
+  // The gesture targets an already selected, visible surface. Consume it once
+  // per feed so a later source/fullscreen remount cannot resurrect a paused clip.
+  React.useEffect(() => {
+    if (
+      loading ||
+      error ||
+      activeIndex < 0 ||
+      !playbackRequest ||
+      playbackRequest.itemId !== activeId
+    )
+      return;
+    if (
+      !pageVisible ||
+      (!fullscreen && (!viewportVisible || visibleId !== activeId))
+    )
+      return;
+    consumedPlaybackRequests.current.set(
+      playbackRequest.itemId,
+      playbackRequest.requestId
+    );
+  }, [
+    activeId,
+    activeIndex,
+    fullscreen,
+    pageVisible,
+    viewportVisible,
+    visibleId,
+    playbackRequest,
+    loading,
+    error,
+  ]);
+
   React.useEffect(() => {
     const positions = playbackPositions.current;
     for (const id of positions.keys()) {
@@ -272,6 +308,8 @@ function MediaFeedInner<T>(
     const author = getAuthor?.(item);
     const caption = getCaption?.(item);
     const active =
+      !loading &&
+      !error &&
       pageVisible &&
       (immersive
         ? fullscreen && id === activeId
@@ -279,6 +317,12 @@ function MediaFeedInner<T>(
           viewportVisible &&
           id === activeId &&
           id === visibleId);
+    const playbackRequestId =
+      active &&
+      playbackRequest?.itemId === id &&
+      consumedPlaybackRequests.current.get(id) !== playbackRequest.requestId
+        ? playbackRequest.requestId
+        : undefined;
     return (
       <article
         key={id}
@@ -317,6 +361,7 @@ function MediaFeedInner<T>(
               autoPlay: allowAutoPlay,
               muted,
               loop,
+              playbackRequestId,
             })
           ) : (
             <FeedMedia
@@ -330,6 +375,7 @@ function MediaFeedInner<T>(
               labels={labels}
               onActivate={() => select(id)}
               playbackPosition={playbackPosition}
+              playbackRequestId={playbackRequestId}
             />
           )}
         </div>

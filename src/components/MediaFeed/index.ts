@@ -4,6 +4,7 @@ export type {
   MediaFeedClassNames,
   MediaFeedLabels,
   MediaFeedMedia,
+  MediaFeedPlaybackRequest,
   MediaFeedProps,
   MediaFeedRenderContext,
 } from './types';

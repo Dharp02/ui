@@ -52,6 +52,11 @@ body.condensed [data-slot='superchat-message-media'] {
   gap: 0.25rem;
 }
 
+body.condensed [data-slot='superchat-media-view'] > div:first-child {
+  padding-inline: 0.75rem;
+  padding-block-start: 0.25rem;
+}
+
 body.condensed [data-slot='badge'],
 body.condensed .mw-badge {
   border-radius: 2px;
