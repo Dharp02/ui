@@ -81,6 +81,29 @@ npm run storybook
 npm run build-storybook
 ```
 
+### iPhone Safari with Appium
+
+Use the [mobile testing guide](tests/mobile/README.md) for DeviceHub simulator selection, physical iPhone preparation, signing, WDA ports, and saved artifacts. Appium is installed in an isolated npm package with locked versions; these root commands delegate to that package.
+
+```bash
+pnpm mobile:install
+pnpm mobile:doctor
+
+# Run these services in separate terminals
+pnpm storybook --host 0.0.0.0 --ci
+pnpm mobile:server
+
+# In another terminal, select the DeviceHub simulator's UDID
+IOS_UDID='<simulator-udid>' pnpm test:mobile
+
+# Physical device: supply its explicit UDID and a phone-reachable Storybook URL
+IOS_UDID='<physical-iphone-udid>' \
+STORYBOOK_URL='http://<mac-lan-ip>:6006/' \
+pnpm test:mobile:device
+```
+
+The suite checks a small set of existing component canvases in Safari and writes ignored results to `tests/mobile/artifacts/`. It supplements the unit and visual tests; it does not assert complete mobile or keyboard behavior.
+
 ## Writing Tests
 
 ### Unit Tests

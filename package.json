@@ -302,6 +302,11 @@
     "test:visual": "playwright test",
     "test:visual:ui": "playwright test --ui",
     "test:visual:debug": "playwright test --debug",
+    "mobile:install": "npm ci --prefix tests/mobile",
+    "mobile:doctor": "npm --prefix tests/mobile run doctor",
+    "mobile:server": "npm --prefix tests/mobile run appium",
+    "test:mobile": "npm --prefix tests/mobile test",
+    "test:mobile:device": "IOS_REAL_DEVICE=1 npm --prefix tests/mobile test",
     "test:storybook": "test-storybook --url http://localhost:6006 --maxWorkers 2 --testTimeout 30000",
     "prepublishOnly": "npm run build"
   },
