@@ -1,6 +1,6 @@
 # iPhone Safari smoke tests
 
-These tests open the existing Storybook component canvases in Safari through Appium and XCUITest. Use the iPhone 17 Pro simulator shown in DeviceHub for the first run, then select the physical DougiPhone17Pro explicitly. DeviceHub displays the simulator; Appium connects to its underlying Xcode simulator by UDID.
+These tests open the existing Storybook component canvases in Safari through Appium and XCUITest. Use the iPhone 17 Pro simulator shown in DeviceHub for the first run, then select a physical iPhone explicitly. DeviceHub displays the simulator; Appium connects to its underlying Xcode simulator by UDID.
 
 ## Install and start the services
 
@@ -47,7 +47,7 @@ IOS_UDID='<simulator-udid>' pnpm test:mobile
 
 The default Storybook URL is `http://127.0.0.1:6006/`. Without `IOS_UDID`, the runner selects an available simulator named `iPhone 17 Pro` only when exactly one matches. Use `IOS_DEVICE_NAME` for another simulator name or `IOS_PLATFORM_VERSION` to disambiguate installed runtimes. Ambiguous or missing matches fail before a session starts. The runner selects portrait orientation; DeviceHub can remain open to observe it.
 
-## Phase 2: physical DougiPhone17Pro
+## Phase 2: physical iPhone
 
 This uses the same suite with environment variables; switching devices requires no source changes or commits. Connect the iPhone to the Mac, trust the computer, and make sure Xcode recognizes it. Enable Developer Mode and UI Automation, plus Safari's Web Inspector and Remote Automation settings. The WDA runner also needs valid development signing. Follow Appium's [device preparation](https://appium.github.io/appium-xcuitest-driver/latest/preparation/real-device-config/) and [provisioning profile guide](https://appium.github.io/appium-xcuitest-driver/latest/preparation/prov-profile-full-manual/) for the installed iOS/Xcode version.
 
@@ -62,7 +62,7 @@ Open Storybook in Safari on the phone using the Mac's reachable LAN address. Bot
 ```bash
 IOS_REAL_DEVICE=1 \
 IOS_UDID='<physical-iphone-udid>' \
-IOS_DEVICE_NAME='DougiPhone17Pro' \
+IOS_DEVICE_NAME='<iphone-name>' \
 STORYBOOK_URL='http://<mac-lan-ip>:6006/' \
 pnpm test:mobile
 ```
