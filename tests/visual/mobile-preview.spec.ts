@@ -149,6 +149,22 @@ test.describe('Mobile component preview', () => {
     ).toHaveAttribute('placeholder', 'DeviceEmailPlaceholder');
     await expect(canvas.locator('html')).toHaveAttribute('data-theme', 'dark');
     await expect(canvas.locator('html')).toHaveAttribute('dir', 'rtl');
+
+    // The existing canvas launcher must preserve the same project settings.
+    await page.setViewportSize({ width: 1280, height: 900 });
+    const popupPromise = page.waitForEvent('popup');
+    await page
+      .getByRole('button', { name: 'Open canvas in new tab', exact: true })
+      .click();
+    const popup = await popupPromise;
+    await expect(popup.locator('html')).toHaveAttribute('dir', 'rtl');
+    await expect(popup.locator('html')).toHaveAttribute('data-theme', 'dark');
+    const canvasUrl = new URL(popup.url());
+    expect(canvasUrl.searchParams.get('id')).toBe(inputStory);
+    expect(canvasUrl.searchParams.get('globals')).toBe(
+      launched.searchParams.get('globals')
+    );
+    await expect(popup.locator('[data-mobile-sandbox]')).toHaveCount(0);
   });
 
   test('dark input sandbox fits the phone viewport with readable navigation', async ({

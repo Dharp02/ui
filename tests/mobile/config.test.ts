@@ -34,7 +34,11 @@ describe('real-device Storybook URL', () => {
     '2130706433',
     '0x7f000002',
     '0.0.0.0',
+    '0.0.0.1',
+    '0.1.2.3',
+    '0.255.255.255',
     '0',
+    '0x00ffffff',
     '[::1]',
     '[0:0:0:0:0:0:0:1]',
     '[::]',
@@ -43,6 +47,8 @@ describe('real-device Storybook URL', () => {
     '[::ffff:7fff:ffff]',
     '[0:0:0:0:0:ffff:7f00:1]',
     '[::ffff:0.0.0.0]',
+    '[::ffff:0.1.2.3]',
+    '[::ffff:ff:ffff]',
   ])('rejects device-local host %s', async (host) => {
     vi.stubEnv('STORYBOOK_URL', `http://${host}:6006/`);
     await expect(import('./config.mjs')).rejects.toThrow(
@@ -54,11 +60,14 @@ describe('real-device Storybook URL', () => {
   it.each([
     '192.168.1.10',
     '10.0.0.2',
+    '1.0.0.0',
     'storybook.local',
     'localhost.example.com',
     '127.example.com',
+    '0.example.com',
     '[fd00::2]',
     '[::ffff:192.168.1.10]',
+    '[::ffff:1.0.0.0]',
   ])('allows a potentially reachable host %s', async (host) => {
     const url = `http://${host}:6006/catalog/`;
     vi.stubEnv('STORYBOOK_URL', url);

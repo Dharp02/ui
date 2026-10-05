@@ -9,15 +9,14 @@ function isDeviceLocalHostname(hostname) {
   // URL canonicalizes IP literals, including dotted IPv4-mapped IPv6 addresses.
   const mappedIPv4 = /^\[::ffff:([\da-f]+):([\da-f]+)\]$/.exec(host);
   if (mappedIPv4) {
-    const high = Number.parseInt(mappedIPv4[1], 16);
-    const low = Number.parseInt(mappedIPv4[2], 16);
-    return (high === 0 && low === 0) || high >>> 8 === 127;
+    const firstOctet = Number.parseInt(mappedIPv4[1], 16) >>> 8;
+    return firstOctet === 0 || firstOctet === 127;
   }
   return (
     host === 'localhost' ||
     host.endsWith('.localhost') ||
-    /^127(?:\.\d{1,3}){3}$/.test(host) ||
-    ['0.0.0.0', '[::]', '[::1]'].includes(host)
+    /^(?:0|127)(?:\.\d{1,3}){3}$/.test(host) ||
+    ['[::]', '[::1]'].includes(host)
   );
 }
 

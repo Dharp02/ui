@@ -660,27 +660,7 @@ addons.register('mieweb-open-in-new-tab', (api) => {
             const url = new URL('iframe.html', window.location.href);
             url.searchParams.set('id', storyId);
             url.searchParams.set('viewMode', 'story');
-            // Only forward this project's toolbar globals (see preview.tsx
-            // globalTypes); tool globals (measure/outline) and object-valued
-            // globals (viewport, backgrounds, a11y) must not follow the story
-            // into the popped-out tab.
-            const FORWARDED_GLOBALS = new Set([
-              'brand',
-              'theme',
-              'density',
-              'locale',
-            ]);
-            const globalsParam = Object.entries(api.getGlobals() ?? {})
-              .filter(([key, value]) => {
-                if (!FORWARDED_GLOBALS.has(key)) return false;
-                return (
-                  typeof value === 'string' ||
-                  typeof value === 'number' ||
-                  typeof value === 'boolean'
-                );
-              })
-              .map(([key, value]) => `${key}:${String(value)}`)
-              .join(';');
+            const globalsParam = serializeProjectGlobals(api.getGlobals() ?? {});
             if (globalsParam) url.searchParams.set('globals', globalsParam);
             window.open(url.toString(), '_blank', 'noopener,noreferrer');
           },
