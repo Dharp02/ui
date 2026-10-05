@@ -90,7 +90,9 @@ export const PhiMask = React.forwardRef<HTMLSpanElement, PhiMaskProps>(
       return () => window.clearTimeout(timer);
     }, [revealed, autoHideMs, setRevealed]);
 
-    const visible = keepLast > 0 ? value.slice(-keepLast) : '';
+    // At least one character always stays hidden, however large keepLast is.
+    const suffix = Math.min(keepLast, value.length - 1);
+    const visible = suffix > 0 ? value.slice(-suffix) : '';
     const shown = revealed && canReveal;
 
     return (

@@ -338,6 +338,7 @@ function CanvasInner({
     direction,
     variant,
     visible.map((v) => v.node.id),
+    edgeList.map((e) => [e.source, e.target]),
   ]);
   React.useEffect(() => {
     let cancelled = false;
@@ -387,7 +388,7 @@ function CanvasInner({
         ? edgeList
             .filter((e) => positions.has(e.source) && positions.has(e.target))
             .map((e) => ({
-              id: `${e.source}->${e.target}`,
+              id: JSON.stringify([e.source, e.target]),
               source: e.source,
               target: e.target,
               type: 'smoothstep',

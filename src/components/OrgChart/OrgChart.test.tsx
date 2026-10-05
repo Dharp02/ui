@@ -154,6 +154,20 @@ describe('layoutOrgChart', () => {
     });
   });
 
+  it('gives every edge an unambiguous id', async () => {
+    await layoutOrgChart({
+      ...req,
+      ids: ['a->b', 'c', 'a', 'b->c'],
+      edges: [
+        { source: 'a->b', target: 'c' },
+        { source: 'a', target: 'b->c' },
+      ],
+    });
+    const graph = elk.calls[0] as { edges: { id: string }[] };
+    const ids = graph.edges.map((e) => e.id);
+    expect(new Set(ids).size).toBe(2);
+  });
+
   it('falls back to a depth grid when elk fails', async () => {
     elk.fail = true;
     const right = await layoutOrgChart(req);

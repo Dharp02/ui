@@ -18,6 +18,16 @@ const actions: RecordHeaderAction[] = [
 ];
 
 describe('RecordHeader', () => {
+  it('marks an image avatar decorative so the name is not read twice', () => {
+    const { container } = render(
+      <RecordHeader
+        title="Dana Ruiz"
+        avatar={{ name: 'Dana Ruiz', src: 'https://cdn.test/dana.png' }}
+      />
+    );
+    expect(container.querySelector('img')).toHaveAttribute('alt', '');
+  });
+
   it('renders the title as h1 with badges, subtitle and meta', () => {
     render(
       <RecordHeader

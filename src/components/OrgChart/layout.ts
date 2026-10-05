@@ -54,7 +54,7 @@ export async function layoutOrgChart(
       height: req.height,
     })),
     edges: req.edges.map((e) => ({
-      id: `${e.source}->${e.target}`,
+      id: JSON.stringify([e.source, e.target]),
       sources: [e.source],
       targets: [e.target],
     })),

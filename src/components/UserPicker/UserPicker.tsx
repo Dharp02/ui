@@ -261,6 +261,7 @@ export const UserPicker = React.forwardRef<HTMLDivElement, UserPickerProps>(
             size="xs"
             src={selectedUsers[0].avatarUrl}
             name={selectedUsers[0].name}
+            alt=""
           />
           <span className="truncate">{selectedUsers[0].name}</span>
         </>
@@ -448,6 +449,7 @@ export const UserPicker = React.forwardRef<HTMLDivElement, UserPickerProps>(
                               size="xs"
                               src={row.user.avatarUrl}
                               name={row.user.name}
+                              alt=""
                             />
                             <span className="min-w-0 flex-1">
                               <span className="block truncate">

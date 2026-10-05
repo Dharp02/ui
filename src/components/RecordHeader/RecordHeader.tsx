@@ -126,6 +126,8 @@ export const RecordHeader = React.forwardRef<HTMLElement, RecordHeaderProps>(
         size="lg"
         src={avatar.src}
         name={avatar.name}
+        // The title already names the record; don't announce it twice.
+        alt=""
         className="shrink-0"
       />
     ) : Icon ? (

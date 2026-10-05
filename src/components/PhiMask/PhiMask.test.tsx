@@ -18,6 +18,16 @@ describe('PhiMask', () => {
     expect(container).toHaveTextContent('ending in 6789');
   });
 
+  it('always hides at least one character', () => {
+    const { container, rerender } = render(
+      <PhiMask value="6789" keepLast={4} />
+    );
+    expect(container).toHaveTextContent('ending in 789');
+    expect(container).not.toHaveTextContent('6789');
+    rerender(<PhiMask value="7" keepLast={9} />);
+    expect(container).not.toHaveTextContent('7');
+  });
+
   it('reveals on toggle and reports every reveal', async () => {
     const onReveal = vi.fn();
     const user = userEvent.setup();
