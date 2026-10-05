@@ -102,7 +102,7 @@ STORYBOOK_URL='http://<mac-lan-ip>:6006/' \
 pnpm test:mobile:device
 ```
 
-The suite checks a small set of existing component canvases in Safari and writes ignored results to `tests/mobile/artifacts/`. It supplements the unit and visual tests; it does not assert complete mobile or keyboard behavior.
+The suite checks component canvases and the mobile sandbox in Safari, including native keyboard entry, variant selection, return navigation, full-screen mode, and standalone examples. Results and screenshots are ignored under `tests/mobile/artifacts/`. This is a representative smoke suite, not a complete mobile compatibility matrix. See the [mobile guide](tests/mobile/README.md) for the sandbox workflow and per-story presentation settings.
 
 ## Writing Tests
 

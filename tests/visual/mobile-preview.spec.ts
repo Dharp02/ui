@@ -1,0 +1,269 @@
+import { test, expect, type Page } from '@playwright/test';
+
+const inputStory = 'text-inputs-input--with-label';
+const globals = 'brand:mieweb;theme:dark;density:standard;locale:en';
+
+function previewUrl(
+  id: string,
+  options: { args?: string; globals?: string; viewMode?: string } = {}
+) {
+  const query = new URLSearchParams({
+    id,
+    viewMode: options.viewMode ?? 'story',
+    mobilePreview: 'sandbox',
+    globals: options.globals ?? globals,
+  });
+  if (options.args) query.set('args', options.args);
+  return `/iframe.html?${query}`;
+}
+
+async function expectNoHorizontalOverflow(page: Page) {
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () => document.documentElement.scrollWidth - window.innerWidth
+      )
+    )
+    .toBeLessThanOrEqual(1);
+}
+
+test.describe('Mobile component preview', () => {
+  test.use({ viewport: { width: 390, height: 844 }, hasTouch: true });
+
+  test.beforeEach(async ({ page }) => {
+    // The manager's hosted assistant is unrelated to the preview navigation.
+    await page.route('https://ozwellapi.os.mieweb.org/**', (route) =>
+      route.fulfill({ contentType: 'application/javascript', body: '' })
+    );
+  });
+
+  test('manager launch and return preserve the current story, args, and globals', async ({
+    page,
+  }) => {
+    const query = new URLSearchParams({
+      path: `/story/${inputStory}`,
+      args: 'label:DeviceEmail;placeholder:DeviceEmailPlaceholder',
+      globals: `${globals};direction:rtl;user:alice;device:trusted`,
+    });
+    await page.goto(`/?${query}`);
+    const canvas = page.frameLocator('#storybook-preview-iframe');
+    await expect(
+      canvas.getByLabel('DeviceEmail', { exact: true })
+    ).toHaveAttribute('placeholder', 'DeviceEmailPlaceholder');
+    await expect(canvas.locator('[data-mobile-sandbox]')).toHaveCount(0);
+
+    const launch = page.getByRole('button', {
+      name: 'Open mobile sandbox',
+      exact: true,
+    });
+    // A native tap must reach this action without first scrolling the toolbar.
+    await expect
+      .poll(() =>
+        launch.evaluate((button) => {
+          const bounds = button.getBoundingClientRect();
+          return (
+            bounds.left >= 0 &&
+            bounds.right <= innerWidth &&
+            bounds.top >= 0 &&
+            bounds.bottom <= innerHeight &&
+            button.contains(
+              document.elementFromPoint(
+                bounds.x + bounds.width / 2,
+                bounds.y + bounds.height / 2
+              )
+            )
+          );
+        })
+      )
+      .toBe(true);
+    await launch.click();
+    await expect(page.locator('[data-mobile-sandbox]')).toBeVisible();
+    await expect(
+      page.getByLabel('DeviceEmail', { exact: true })
+    ).toHaveAttribute('placeholder', 'DeviceEmailPlaceholder');
+    await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
+    await expect(page.locator('html')).toHaveAttribute('dir', 'rtl');
+    const launched = new URL(page.url());
+    expect(launched.pathname).toBe('/iframe.html');
+    expect(launched.searchParams.get('id')).toBe(inputStory);
+    for (const state of [
+      'theme:dark',
+      'direction:rtl',
+      'user:alice',
+      'device:trusted',
+    ]) {
+      expect(launched.searchParams.get('globals')).toContain(state);
+    }
+
+    await page.locator('[data-mobile-back]').click();
+    await expect(page).toHaveURL(
+      (url) => url.searchParams.get('path') === `/story/${inputStory}`
+    );
+    await expect(
+      canvas.getByLabel('DeviceEmail', { exact: true })
+    ).toHaveAttribute('placeholder', 'DeviceEmailPlaceholder');
+    await expect(canvas.locator('html')).toHaveAttribute('data-theme', 'dark');
+    await expect(canvas.locator('html')).toHaveAttribute('dir', 'rtl');
+  });
+
+  test('dark input sandbox fits the phone viewport with readable navigation', async ({
+    page,
+  }) => {
+    await page.goto(previewUrl(inputStory));
+    await expect(
+      page.getByRole('textbox', { name: 'Email', exact: true })
+    ).toBeVisible();
+    await expect(page.getByLabel('Story variant')).toHaveValue(inputStory);
+    await expect(page.locator('[data-mobile-sandbox]')).toBeVisible();
+    await expect
+      .poll(async () => {
+        const bounds = await page
+          .locator('[data-mobile-sandbox]')
+          .boundingBox();
+        return bounds && { x: bounds.x, y: bounds.y, width: bounds.width };
+      })
+      .toEqual({ x: 0, y: 0, width: 390 });
+    await expect(
+      page.getByRole('link', { name: 'View source on GitHub' })
+    ).toHaveCount(0);
+    await expectNoHorizontalOverflow(page);
+    await expect(page).toHaveScreenshot('input-sandbox-dark-mobile.png', {
+      animations: 'disabled',
+      caret: 'hide',
+    });
+  });
+
+  test('native variant selection at 320px uses sibling defaults and updates the return link', async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 320, height: 568 });
+    await page.goto(
+      previewUrl(inputStory, { args: 'label:CustomEmail;placeholder:custom' })
+    );
+    await expect(page.getByLabel('CustomEmail', { exact: true })).toBeVisible();
+    const variant = page.getByLabel('Story variant');
+    await expect(
+      variant.locator('option[value="text-inputs-input--password"]')
+    ).toHaveCount(1);
+    await variant.selectOption('text-inputs-input--password');
+    await expect(page.getByLabel('Password', { exact: true })).toHaveAttribute(
+      'type',
+      'password'
+    );
+    await expect(page.getByLabel('Password', { exact: true })).toHaveAttribute(
+      'placeholder',
+      '••••••••'
+    );
+    expect(new URL(page.url()).searchParams.has('args')).toBe(false);
+    await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
+    await expectNoHorizontalOverflow(page);
+    const back = new URL(
+      (await page.locator('[data-mobile-back]').getAttribute('href'))!
+    );
+    expect(back.searchParams.get('path')).toBe(
+      '/story/text-inputs-input--password'
+    );
+    expect(back.searchParams.has('args')).toBe(false);
+  });
+
+  test('full screen hides navigation and browser Back restores the sandbox', async ({
+    page,
+  }) => {
+    await page.goto(previewUrl(inputStory, { args: 'label:FullscreenEmail' }));
+    await page
+      .getByRole('button', { name: 'Full screen', exact: true })
+      .click();
+    await expect(page).toHaveURL(
+      (url) => url.searchParams.get('mobilePreview') === 'fullscreen'
+    );
+    await expect(
+      page.getByLabel('FullscreenEmail', { exact: true })
+    ).toBeVisible();
+    await expect(page.locator('[data-mobile-sandbox]')).toHaveCount(0);
+    await expect(
+      page.getByRole('link', { name: 'View source on GitHub' })
+    ).toHaveCount(0);
+    await page.goBack();
+    await expect(page.locator('[data-mobile-sandbox]')).toBeVisible();
+    await expect(
+      page.getByLabel('FullscreenEmail', { exact: true })
+    ).toBeVisible();
+  });
+
+  test('complete examples and the keyboard host own their viewport without sandbox chrome', async ({
+    page,
+  }) => {
+    test.setTimeout(120_000);
+    for (const [id, ready] of [
+      [
+        'billing-invoicepaymentpage--default',
+        '[data-slot="invoice-payment-header"]',
+      ],
+      ['chat-chatcomposer--mobile-keyboard-shell', 'textarea'],
+      ['dashboards-dashboard-demo--dashboard', 'main'],
+    ]) {
+      await page.goto(previewUrl(id));
+      await expect(
+        page.locator(`#storybook-root ${ready}`).first()
+      ).toBeVisible();
+      await expect(page.locator('[data-mobile-sandbox]')).toHaveCount(0);
+      await expect(
+        page.getByRole('link', { name: 'View source on GitHub' })
+      ).toHaveCount(0);
+    }
+    // The sibling gallery shares fullscreen/application-local meta, but is not
+    // a complete application and must retain sandbox navigation.
+    await page.goto(previewUrl('dashboards-dashboard-demo--all-components'));
+    await expect(page.locator('[data-mobile-sandbox]')).toBeVisible();
+  });
+
+  test('a fullscreen Modal component retains the sandbox and opens at actual viewport bounds', async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 320, height: 568 });
+    await page.goto(previewUrl('overlays-modal--default'));
+    await expect(page.locator('[data-mobile-sandbox]')).toBeVisible();
+    await page.getByRole('button', { name: 'Open Modal', exact: true }).click();
+    const dialog = page.getByRole('dialog');
+    await expect(dialog).toBeVisible();
+    await expect
+      .poll(async () => {
+        const bounds = await dialog.boundingBox();
+        return (
+          bounds &&
+          Object.fromEntries(
+            Object.entries(bounds).map(([key, value]) => [
+              key,
+              Math.round(value),
+            ])
+          )
+        );
+      })
+      .toEqual({ x: 0, y: 0, width: 320, height: 568 });
+    await expectNoHorizontalOverflow(page);
+    await expect(page).toHaveScreenshot('modal-open-dark-small-mobile.png', {
+      animations: 'disabled',
+      caret: 'hide',
+    });
+    await dialog.getByRole('button', { name: 'Close', exact: true }).click();
+    await expect(dialog).toHaveCount(0);
+    await expect(page.locator('[data-mobile-back]')).toBeVisible();
+  });
+
+  test('docs ignore mobile preview mode and retain their normal documentation layout', async ({
+    page,
+  }) => {
+    await page.goto(
+      previewUrl('text-inputs-input--docs', { viewMode: 'docs' })
+    );
+    await expect(page.locator('.sbdocs-wrapper')).toBeVisible();
+    await expect(
+      page.getByRole('heading', { name: 'Input', exact: true }).first()
+    ).toBeVisible();
+    await expect(page.locator('[data-mobile-sandbox]')).toHaveCount(0);
+    await expect(page.locator('html')).not.toHaveAttribute(
+      'data-mobile-preview'
+    );
+    await expect(page.locator('.mobile-preview-content')).toHaveCount(0);
+  });
+});

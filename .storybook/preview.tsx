@@ -26,6 +26,8 @@ import { CodeLookup } from '../src/components/CodeLookup';
 import { CodeLookupProvider } from '../src/components/CodeLookup/context';
 import { isRtlLocale } from '../src/hooks/useDirection';
 import { CatalogDocsPage } from './CatalogDocsPage';
+import { withMobilePreview } from './MobilePreview';
+import { mobilePreviewMode } from './mobile-preview';
 
 // Map of available brands
 const brands: Record<string, BrandConfig> = {
@@ -223,7 +225,7 @@ const withGitHubSource: Decorator = (Story, context) => {
   // link still renders in docs view, where examples are bounded.
   const showFooter = !(
     context.viewMode === 'story' &&
-    context.parameters?.githubSourceFooter === false
+    (context.parameters?.githubSourceFooter === false || mobilePreviewMode())
   );
 
   return (
@@ -279,6 +281,7 @@ const withBrand: Decorator = (Story, context) => {
 
   // Check if the story has fullscreen layout
   const isFullscreen = context.parameters?.layout === 'fullscreen';
+  const isMobilePreview = context.viewMode === 'story' && mobilePreviewMode();
   
   // Build font family string
   const fontFamily = brand.typography.fontFamily.sans
@@ -289,7 +292,7 @@ const withBrand: Decorator = (Story, context) => {
     <>
       {fontLink && <link rel="stylesheet" href={fontLink} />}
       <div
-        className={`min-h-[200px] transition-colors duration-200 ${isDark ? 'dark' : ''} ${isFullscreen ? '' : 'p-4'}`}
+        className={`${isMobilePreview ? '' : 'min-h-[200px]'} transition-colors duration-200 ${isDark ? 'dark' : ''} ${isFullscreen || isMobilePreview ? '' : 'p-4'}`}
         style={{
           backgroundColor: semanticColors.background,
           color: semanticColors.foreground,
@@ -583,7 +586,7 @@ const preview: Preview = {
       },
     },
   },
-  decorators: [withGitHubSource, withBrand, withCodeLookup],
+  decorators: [withGitHubSource, withBrand, withCodeLookup, withMobilePreview],
 };
 
 export default preview;

@@ -280,7 +280,7 @@
     "copy:style-css": "mkdir -p dist/styles && cp src/styles/init.css src/styles/effects.css dist/styles/ 2>/dev/null || true",
     "copy:markdown-css": "mkdir -p dist/components/Markdown && cp src/components/Markdown/styles.css dist/components/Markdown/ 2>/dev/null || true",
     "copy:kerebron-css": "mkdir -p dist && cp src/styles/kerebron.css dist/kerebron.css",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "tsc --noEmit && tsc -p .storybook/tsconfig.mobile.json",
     "lint": "eslint \"src/**/*.{ts,tsx}\"",
     "lint:fix": "eslint \"src/**/*.{ts,tsx}\" --fix",
     "rtl:scan": "node scripts/rtl-scan.mjs",
