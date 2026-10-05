@@ -27,6 +27,47 @@ async function expectNoHorizontalOverflow(page: Page) {
     .toBeLessThanOrEqual(1);
 }
 
+async function expectSidebarFooterReachable(page: Page) {
+  const footer = page.locator('[data-slot="sidebar-footer"]');
+  await expect(footer).toBeVisible();
+  // Check before clicking: Playwright's automatic scrolling could hide a
+  // clipped footer. Native Safari coverage also exercises its changing toolbar.
+  await expect
+    .poll(() =>
+      footer.evaluate((element) => {
+        const settings = element.querySelector('button')!;
+        const viewport = window.visualViewport;
+        const left = viewport?.offsetLeft ?? 0;
+        const top = viewport?.offsetTop ?? 0;
+        const right = left + (viewport?.width ?? innerWidth);
+        const bottom = top + (viewport?.height ?? innerHeight);
+        const fits = (bounds: DOMRect) =>
+          bounds.width > 0 &&
+          bounds.height > 0 &&
+          bounds.left >= left - 1 &&
+          bounds.right <= right + 1 &&
+          bounds.top >= top - 1 &&
+          bounds.bottom <= bottom + 1;
+        const bounds = settings.getBoundingClientRect();
+        return {
+          footerFits: fits(element.getBoundingClientRect()),
+          settingsFits: fits(bounds),
+          settingsReceivesPointer: settings.contains(
+            document.elementFromPoint(
+              bounds.left + bounds.width / 2,
+              bounds.top + bounds.height / 2
+            )
+          ),
+        };
+      })
+    )
+    .toEqual({
+      footerFits: true,
+      settingsFits: true,
+      settingsReceivesPointer: true,
+    });
+}
+
 test.describe('Mobile component preview', () => {
   test.use({ viewport: { width: 390, height: 844 }, hasTouch: true });
 
@@ -216,6 +257,81 @@ test.describe('Mobile component preview', () => {
     await page.goto(previewUrl('dashboards-dashboard-demo--all-components'));
     await expect(page.locator('[data-mobile-sandbox]')).toBeVisible();
   });
+
+  for (const [brand, theme] of [
+    ['mieweb', 'dark'],
+    ['bluehive', 'light'],
+  ]) {
+    test(`Dashboard drawer keeps Settings reachable as the viewport shrinks (${brand}, ${theme})`, async ({
+      page,
+    }) => {
+      await page.goto(
+        previewUrl('dashboards-dashboard-demo--dashboard', {
+          globals: `brand:${brand};theme:${theme};density:standard;locale:en`,
+        })
+      );
+      await page.getByRole('button', { name: 'Open navigation' }).click();
+      const close = page.getByRole('button', { name: 'Close navigation' });
+      await expect(close).toBeVisible();
+      await expectSidebarFooterReachable(page);
+
+      // Desktop emulation does not reproduce Safari's vh/dvh toolbar difference,
+      // but resizing an open drawer checks reflow at normal and short heights.
+      for (const viewport of [
+        { width: 390, height: 640 },
+        { width: 750, height: 292 },
+      ]) {
+        await page.setViewportSize(viewport);
+        await expect(close).toBeVisible();
+        await expectSidebarFooterReachable(page);
+      }
+
+      await page
+        .locator('[data-slot="sidebar-footer"]')
+        .getByRole('button', { name: 'Settings', exact: true })
+        .click();
+      await expect(
+        page.getByRole('heading', { name: 'Settings', exact: true, level: 1 })
+      ).toBeVisible();
+      await expect(page.locator('[data-slot="sidebar-backdrop"]')).toHaveCount(
+        0
+      );
+    });
+
+    test(`Dashboard desktop sidebar keeps Settings usable (${brand}, ${theme})`, async ({
+      page,
+    }) => {
+      await page.setViewportSize({ width: 1280, height: 800 });
+      await page.goto(
+        previewUrl('dashboards-dashboard-demo--dashboard', {
+          globals: `brand:${brand};theme:${theme};density:standard;locale:en`,
+        })
+      );
+      const sidebar = page.locator('[data-slot="sidebar"]');
+      await expectSidebarFooterReachable(page);
+      await expect(page.locator('[data-slot="sidebar-backdrop"]')).toHaveCount(
+        0
+      );
+      await expect
+        .poll(async () => {
+          const navigation = await sidebar.boundingBox();
+          const content = await page.getByRole('main').boundingBox();
+          return (
+            navigation &&
+            content &&
+            content.x >= navigation.x + navigation.width - 1
+          );
+        })
+        .toBe(true);
+      await sidebar
+        .getByRole('button', { name: 'Settings', exact: true })
+        .click();
+      await expect(
+        page.getByRole('heading', { name: 'Settings', exact: true, level: 1 })
+      ).toBeVisible();
+      await expectSidebarFooterReachable(page);
+    });
+  }
 
   test('a fullscreen Modal component retains the sandbox and opens at actual viewport bounds', async ({
     page,

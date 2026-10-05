@@ -163,7 +163,8 @@ The original four checks still cover an enabled button, native keyboard email en
 - Sandbox Input with the iOS keyboard, visible field bounds, native variant selection, Full screen, and browser Back.
 - Opening and closing a viewport-contained Modal from the sandbox.
 - The standalone keyboard shell's composer remaining visible above the keyboard, avoiding focus zoom, and keeping the keyboard open after sending.
-- The standalone Dashboard's mobile navigation drawer.
+- The standalone Dashboard's mobile navigation drawer, including its footer
+  fitting above Safari's toolbar and opening Settings by a native tap.
 - The standalone Inbox's conversation/back navigation and portrait/landscape/portrait layouts.
 
 The suite checks required story IDs before starting WDA. It uses XCUITest taps and native typing, and chooses the variant through iOS's native picker. Screenshots and viewport measurements accompany the results. A passing run establishes these specific interactions and bounds; review the screenshots for safe-area spacing and visual quality. This is not a complete mobile accessibility audit or visual regression suite.

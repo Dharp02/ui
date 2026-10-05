@@ -881,7 +881,8 @@ export const miewebUISafelist = [
   'transition-[width]',
   'duration-150',
 
-  // Sidebar — desktop collapse animates the inline size only
+  // Sidebar — mobile follows browser chrome; desktop animates inline size only
+  'h-[100dvh]',
   'transition-[width,min-width]',
 
   // SectionSpyNav — sticky rail, brand tone whites, sliding underline

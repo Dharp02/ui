@@ -449,6 +449,25 @@ tests.push(
       const close = await browser.$('button[aria-label="Close navigation"]');
       await close.waitForDisplayed();
       await assertFitsViewport('button[aria-label="Close navigation"]');
+      // A visible close control does not prove the bottom of the drawer fits:
+      // Safari's expanded toolbar can cover a footer in a 100vh sidebar.
+      const footer = '[data-slot="sidebar-footer"]';
+      await assertFitsViewport(footer);
+      await assertFitsViewport(`${footer} button`);
+      assert.equal(
+        await browser.execute((selector) => {
+          const button = document.querySelector(`${selector} button`);
+          const bounds = button.getBoundingClientRect();
+          return button.contains(
+            document.elementFromPoint(
+              bounds.left + bounds.width / 2,
+              bounds.top + bounds.height / 2
+            )
+          );
+        }, footer),
+        true,
+        'The Settings button must be reachable without scrolling the drawer.'
+      );
       report.dashboardNavigation = await capture('mobile-dashboard-navigation');
       await close.click();
       // This drawer remains mounted and slides offscreen. DOM visibility alone
@@ -470,6 +489,17 @@ tests.push(
         }
       );
       assert.equal(await navigation.isDisplayed(), true);
+      await navigation.click();
+      await close.waitForDisplayed();
+      await assertFitsViewport(`${footer} button`);
+      await tapNative('Settings');
+      await (await browser.$('h1=Settings')).waitForDisplayed();
+      await (
+        await browser.$('[data-slot="sidebar-backdrop"]')
+      ).waitForExist({
+        reverse: true,
+      });
+      report.dashboardSettings = await capture('mobile-dashboard-settings');
     },
   ],
   [
