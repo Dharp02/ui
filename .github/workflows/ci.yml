@@ -5,6 +5,7 @@ on:
     branches: [main, develop]
   pull_request:
     branches: [main, develop]
+    types: [opened, synchronize, reopened, ready_for_review]
 
 # Least-privilege default for all jobs (override per-job as needed).
 permissions:
@@ -13,6 +14,7 @@ permissions:
 jobs:
   lint-and-type-check:
     name: Lint and Type Check
+    if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -52,6 +54,7 @@ jobs:
 
   unit-tests:
     name: Unit Tests
+    if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -87,6 +90,7 @@ jobs:
 
   visual-tests:
     name: Visual Regression Tests
+    if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
     runs-on: ubuntu-latest
     timeout-minutes: 60
     steps:
@@ -140,6 +144,7 @@ jobs:
 
   build-test:
     name: Build Test
+    if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -185,6 +190,7 @@ jobs:
 
   accessibility-tests:
     name: Accessibility Tests
+    if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -242,6 +248,7 @@ jobs:
 
   security-audit:
     name: Security Audit
+    if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
