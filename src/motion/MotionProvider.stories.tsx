@@ -44,6 +44,8 @@ Install the optional peer dependency, then wrap the app once:
 pnpm add motion
 \`\`\`
 
+(Use \`npm install motion\` or \`yarn add motion\` if that is your project's package manager.)
+
 \`\`\`tsx
 import { MotionProvider } from '@mieweb/ui/motion';
 

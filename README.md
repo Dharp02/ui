@@ -59,8 +59,8 @@ embedded in a non-React page. If your project already has those dependencies:
 pnpm add @mieweb/ui
 ```
 
-Use `npm install @mieweb/ui` or `yarn add @mieweb/ui` if that is your project's
-package manager. You do not need to clone this repository or run Storybook to use
+If your project uses npm or yarn instead, run `npm install @mieweb/ui` or
+`yarn add @mieweb/ui`. You do not need to clone this repository or run Storybook to use
 the library.
 
 For a project without React, install the rendering dependencies:
