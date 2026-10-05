@@ -141,7 +141,7 @@ export const FullApplication = {
 };
 ```
 
-The Dashboard demo, ChatComposer's Mobile Keyboard Shell, and SuperChat Inbox Playground use this mode. Opening them through the toolbar shows the application directly, with no sandbox header or source footer; use Safari's Back to return to Storybook. `layout: 'fullscreen'` alone does not opt a story into standalone mode: overlays such as Modal still get sandbox navigation. The mobile presentation only applies to explicitly opened top-level preview URLs, so embedded manager canvases and docs keep their usual layout.
+Examples using this mode include the Dashboard demo, ChatComposer's Mobile Keyboard Shell, SuperChat Inbox Playground, InvoicePaymentPage, DashboardWidgets, and the composed LandingPage stories. Opening a standalone story through the toolbar shows the application directly, with no sandbox header or source footer; use Safari's Back to return to Storybook. `layout: 'fullscreen'` alone does not opt a story into standalone mode: overlays such as Modal still get sandbox navigation. The mobile presentation only applies to explicitly opened top-level preview URLs, so embedded manager canvases and docs keep their usual layout.
 
 ## Focused browser and configuration checks
 
