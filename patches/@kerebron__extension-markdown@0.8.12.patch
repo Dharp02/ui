@@ -38,10 +38,26 @@ index 0bd4e5e36caf3e94a9148ac20b757c68e0940894..8d3eaa9099343f2994ab8f11635fb316
              open: 'math_inline_open',
              close: 'math_inline_close',
 diff --git a/esm/token_handlers/inline_token_handlers.js b/esm/token_handlers/inline_token_handlers.js
-index b9f690609ab8f219284d671d03f46c79899dd34d..dd9e79d509f607ec6e0b15a2299ce0afbfb7d032 100644
+index b9f690609ab8f219284d671d03f46c79899dd34d..6a910124c79eb49cbaf185405d821cd1b43abdea 100644
 --- a/esm/token_handlers/inline_token_handlers.js
 +++ b/esm/token_handlers/inline_token_handlers.js
-@@ -194,6 +194,43 @@ export function getInlineTokensHandlers() {
+@@ -1,5 +1,15 @@
+ import MathMl2LaTeX from 'mathml2latex';
+ import { fixCharacters } from '../utils.js';
++// mieweb/ui patch (mieweb/ui#536): escape values interpolated into
++// double-quoted HTML attributes so quote-bearing input cannot corrupt the
++// markup or inject attributes; entities decode back on re-parse.
++function escapeHtmlAttr(value) {
++    return String(value)
++        .replace(/&/g, '&amp;')
++        .replace(/"/g, '&quot;')
++        .replace(/</g, '&lt;')
++        .replace(/>/g, '&gt;');
++}
+ export function escapeMarkdown(token, current) {
+     const markdownChars = [
+         { char: '\\', escape: '\\\\' },
+@@ -194,6 +204,43 @@ export function getInlineTokensHandlers() {
                  ctx.current.log(token.markup || '~', token);
              },
          ],
@@ -73,7 +89,7 @@ index b9f690609ab8f219284d671d03f46c79899dd34d..dd9e79d509f607ec6e0b15a2299ce0af
 +            (token, ctx) => {
 +                const color = token.attrGet('color');
 +                ctx.current.log(color && color !== 'yellow'
-+                    ? `<mark style="background-color: ${color}">`
++                    ? `<mark style="background-color: ${escapeHtmlAttr(color)}">`
 +                    : '<mark>', token);
 +            },
 +        ],
@@ -85,7 +101,7 @@ index b9f690609ab8f219284d671d03f46c79899dd34d..dd9e79d509f607ec6e0b15a2299ce0af
          'link_open': [
              (token, ctx) => {
                  ctx.stash('getInlineTokensHandlers.link_open');
-@@ -350,6 +387,40 @@ export function getHtmlInlineFormatTokensHandlers() {
+@@ -350,6 +397,40 @@ export function getHtmlInlineFormatTokensHandlers() {
                  ctx.current.log(`</${tag}>`, token);
              },
          ],
@@ -114,7 +130,7 @@ index b9f690609ab8f219284d671d03f46c79899dd34d..dd9e79d509f607ec6e0b15a2299ce0af
 +            (token, ctx) => {
 +                const color = token.attrGet('color');
 +                ctx.current.log(color && color !== 'yellow'
-+                    ? `<mark style="background-color: ${color}">`
++                    ? `<mark style="background-color: ${escapeHtmlAttr(color)}">`
 +                    : '<mark>', token);
 +            },
 +        ],

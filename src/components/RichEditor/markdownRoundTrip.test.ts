@@ -82,4 +82,37 @@ describe('markdown mark round-trip', () => {
       await roundTrip('<mark style="background-color: red">warning</mark>')
     ).toBe('<mark style="background-color: red">warning</mark>');
   });
+
+  it('escapes quote-bearing highlight colors instead of injecting attributes', async () => {
+    // The markdown/HTML parse paths sanitize malformed styles, so inject the
+    // hostile color straight into the mark attrs to pin the serializer: it
+    // must HTML-escape the value rather than let `"` break out of the
+    // attribute (both inline-token handler contexts share escapeHtmlAttr).
+    editor.setDocument({
+      type: 'doc',
+      content: [
+        {
+          type: 'paragraph',
+          content: [
+            {
+              type: 'text',
+              text: 'x',
+              marks: [
+                {
+                  type: 'highlight',
+                  attrs: { color: 'red" onmouseover="alert(1)' },
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    });
+    const saved = new TextDecoder()
+      .decode(await editor.saveDocument(MARKDOWN_TYPE))
+      .trim();
+    expect(saved).toBe(
+      '<mark style="background-color: red&quot; onmouseover=&quot;alert(1)">x</mark>'
+    );
+  });
 });
