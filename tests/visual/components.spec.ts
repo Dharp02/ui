@@ -52,10 +52,9 @@ async function gotoStory(
 // Warm up the server before running tests
 test.beforeAll(async ({ browser }) => {
   const page = await browser.newPage();
-  // Visit the index to ensure server is fully ready. goto() already waits
-  // for 'load'; waiting for 'networkidle' here is brittle because the
-  // Storybook manager keeps the network busy and can exceed the hook timeout.
-  await page.goto('/');
+  // Warm up the manager without waiting for optional external widgets/fonts.
+  // Each test waits for its own story to render before making assertions.
+  await page.goto('/', { waitUntil: 'domcontentloaded' });
   await page.close();
 });
 

@@ -248,7 +248,10 @@ export const Playground: Story = {
   // Page-level inbox: fill the canvas height (#504). SourcesAndGuards below is
   // a scrolling reference page, so the decorator is per-story, not meta-level.
   decorators: [fullHeightChat],
-  parameters: { githubSourceFooter: false },
+  parameters: {
+    githubSourceFooter: false,
+    mobilePreview: { mode: 'standalone' },
+  },
   render: (args) => (
     <InteractiveInbox
       {...args}
