@@ -4,6 +4,8 @@
     "types": ["node", "vite/client", "@testing-library/jest-dom"]
   },
   "include": [
+    "./manager.ts",
+    "./preview.tsx",
     "./mobile-preview.ts",
     "./MobilePreview.tsx",
     "./mobile-preview.test.ts"

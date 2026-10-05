@@ -464,6 +464,7 @@
     "@storybook/addon-a11y": "^10.2.11",
     "@storybook/addon-docs": "^10.2.11",
     "@storybook/addon-links": "^10.2.11",
+    "@storybook/icons": "2.0.1",
     "@storybook/react": "^10.2.11",
     "@storybook/react-vite": "^10.2.11",
     "@storybook/test-runner": "0.24.3",

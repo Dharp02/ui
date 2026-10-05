@@ -23,7 +23,10 @@ import { wagglelineBrand } from '../src/brands/waggleline';
 import { webchartBrand } from '../src/brands/webchart';
 import type { BrandConfig } from '../src/brands/types';
 import { CodeLookup } from '../src/components/CodeLookup';
-import { CodeLookupProvider } from '../src/components/CodeLookup/context';
+import {
+  CodeLookupProvider,
+  type CodeLookupComponent,
+} from '../src/components/CodeLookup/context';
 import { isRtlLocale } from '../src/hooks/useDirection';
 import { CatalogDocsPage } from './CatalogDocsPage';
 import { withMobilePreview } from './MobilePreview';
@@ -305,6 +308,9 @@ const withBrand: Decorator = (Story, context) => {
   );
 };
 
+// Adapt the forward-ref component to the provider's element-returning contract.
+const PreviewCodeLookup: CodeLookupComponent = (props) => <CodeLookup {...props} />;
+
 // Provides an ambient CodeLookup so the healthcare components' default (no
 // explicit `codeLookup` / `renderCodeSearch` prop) demonstrates offline coded
 // search. Stories that inject their own config still win (explicit overrides
@@ -322,7 +328,7 @@ const withCodeLookup: Decorator = (Story, context) => {
   const lookupLocale = ['en', 'es'].includes(locale) ? locale : 'en';
   return (
     <CodeLookupProvider
-      component={CodeLookup}
+      component={PreviewCodeLookup}
       indexUrl="/codify"
       locale={lookupLocale}
       memory={{ userId, storage: trusted ? 'local' : 'session' }}

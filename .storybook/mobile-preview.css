@@ -53,6 +53,9 @@ html[data-mobile-preview] #storybook-root {
 .mobile-preview-navigation button {
   cursor: pointer;
 }
+.mobile-preview-back-icon:dir(rtl) {
+  transform: scaleX(-1);
+}
 .mobile-preview-navigation :is(a, button):hover {
   background: var(--mieweb-muted);
 }

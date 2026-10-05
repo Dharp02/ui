@@ -124,6 +124,10 @@ test.describe('Mobile component preview', () => {
     ).toHaveAttribute('placeholder', 'DeviceEmailPlaceholder');
     await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
     await expect(page.locator('html')).toHaveAttribute('dir', 'rtl');
+    await expect(page.locator('.mobile-preview-back-icon')).toHaveCSS(
+      'transform',
+      'matrix(-1, 0, 0, 1, 0, 0)'
+    );
     const launched = new URL(page.url());
     expect(launched.pathname).toBe('/iframe.html');
     expect(launched.searchParams.get('id')).toBe(inputStory);
@@ -156,6 +160,10 @@ test.describe('Mobile component preview', () => {
     ).toBeVisible();
     await expect(page.getByLabel('Story variant')).toHaveValue(inputStory);
     await expect(page.locator('[data-mobile-sandbox]')).toBeVisible();
+    await expect(page.locator('.mobile-preview-back-icon')).toHaveCSS(
+      'transform',
+      'none'
+    );
     await expect
       .poll(async () => {
         const bounds = await page

@@ -4,13 +4,27 @@ const env = process.env;
 export const realDevice = env.IOS_REAL_DEVICE === '1';
 export const baseUrl = new URL(env.STORYBOOK_URL || 'http://127.0.0.1:6006/');
 
+function isDeviceLocalHostname(hostname) {
+  const host = hostname.replace(/\.$/, '');
+  // URL canonicalizes IP literals, including dotted IPv4-mapped IPv6 addresses.
+  const mappedIPv4 = /^\[::ffff:([\da-f]+):([\da-f]+)\]$/.exec(host);
+  if (mappedIPv4) {
+    const high = Number.parseInt(mappedIPv4[1], 16);
+    const low = Number.parseInt(mappedIPv4[2], 16);
+    return (high === 0 && low === 0) || high >>> 8 === 127;
+  }
+  return (
+    host === 'localhost' ||
+    host.endsWith('.localhost') ||
+    /^127(?:\.\d{1,3}){3}$/.test(host) ||
+    ['0.0.0.0', '[::]', '[::1]'].includes(host)
+  );
+}
+
 if (!['http:', 'https:'].includes(baseUrl.protocol)) {
   throw new Error('STORYBOOK_URL must be an http(s) URL.');
 }
-if (
-  realDevice &&
-  ['localhost', '127.0.0.1', '0.0.0.0', '[::1]'].includes(baseUrl.hostname)
-) {
+if (realDevice && isDeviceLocalHostname(baseUrl.hostname)) {
   throw new Error(
     'Set STORYBOOK_URL to a URL reachable from the iPhone (e.g. your Mac LAN IP).'
   );
@@ -125,7 +139,7 @@ export function storyUrl(id) {
   url.searchParams.set('viewMode', 'story');
   url.searchParams.set(
     'globals',
-    'brand:mieweb;theme:light;density:normal;locale:en'
+    'brand:mieweb;theme:light;density:standard;locale:en'
   );
   return url.href;
 }

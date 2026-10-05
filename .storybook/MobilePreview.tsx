@@ -95,7 +95,10 @@ function MobileNavigation({ context }: { context: StoryContext }) {
     <header className="mobile-preview-navigation" data-mobile-sandbox>
       <nav aria-label={copy.navigation}>
         <a href={back.href} data-mobile-back>
-          <span aria-hidden="true">←</span> {copy.back}
+          <span className="mobile-preview-back-icon" aria-hidden="true">
+            ←
+          </span>{' '}
+          {copy.back}
         </a>
         <button
           type="button"
