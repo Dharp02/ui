@@ -19,6 +19,9 @@ patchedDependencies:
   '@kerebron/extension-codecrock@0.8.12':
     hash: 992a39133ad7f10f463d904fcce0e313ec5f6635917b6ee05275d88f6fb20351
     path: patches/@kerebron__extension-codecrock@0.8.12.patch
+  '@kerebron/extension-markdown@0.8.12':
+    hash: 6b433a5e766e4858e67aa21b9ad90af692c1e98c2aedc8c84dcce38071c432de
+    path: patches/@kerebron__extension-markdown@0.8.12.patch
   '@kerebron/extension-menu@0.8.12':
     hash: d808fc6ec0eaf3fd4982ade7ed78c5c14f37eec04dcee965f3ac2152367b5b62
     path: patches/@kerebron__extension-menu@0.8.12.patch
@@ -7156,7 +7159,7 @@ snapshots:
       '@kerebron/extension-basic-editor': 0.8.12
       '@kerebron/extension-codecrock': 0.8.12(patch_hash=992a39133ad7f10f463d904fcce0e313ec5f6635917b6ee05275d88f6fb20351)
       '@kerebron/extension-dev-toolkit': 0.8.12(svelte@5.56.3(@typescript-eslint/types@8.56.1))
-      '@kerebron/extension-markdown': 0.8.12
+      '@kerebron/extension-markdown': 0.8.12(patch_hash=6b433a5e766e4858e67aa21b9ad90af692c1e98c2aedc8c84dcce38071c432de)
       '@kerebron/extension-menu': 0.8.12(patch_hash=d808fc6ec0eaf3fd4982ade7ed78c5c14f37eec04dcee965f3ac2152367b5b62)
       '@kerebron/extension-menu-legacy': 0.8.12
       '@kerebron/extension-odt': 0.8.12
@@ -7201,7 +7204,7 @@ snapshots:
     transitivePeerDependencies:
       - svelte
 
-  '@kerebron/extension-markdown@0.8.12':
+  '@kerebron/extension-markdown@0.8.12(patch_hash=6b433a5e766e4858e67aa21b9ad90af692c1e98c2aedc8c84dcce38071c432de)':
     dependencies:
       '@kerebron/editor': 0.8.12
       '@kerebron/extension-basic-editor': 0.8.12
