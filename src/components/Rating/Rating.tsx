@@ -93,7 +93,7 @@ export const Rating = React.forwardRef<HTMLDivElement, RatingProps>(
     const stars = Array.from({ length: max }, (_, i) => i + 1);
 
     if (!onChange) {
-      const rounded = Math.round(value * 2) / 2;
+      const rounded = Math.min(max, Math.max(0, Math.round(value * 2) / 2));
       return (
         <div
           ref={ref}
@@ -114,7 +114,7 @@ export const Rating = React.forwardRef<HTMLDivElement, RatingProps>(
       );
     }
 
-    const current = Math.round(value);
+    const current = Math.min(max, Math.max(0, Math.round(value)));
     const select = (next: number) => {
       const clamped = Math.min(max, Math.max(1, next));
       onChange(clamped);
