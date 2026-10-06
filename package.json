@@ -151,6 +151,26 @@
         "default": "./dist/globe.cjs"
       }
     },
+    "./deck": {
+      "import": {
+        "types": "./dist/deck.d.ts",
+        "default": "./dist/deck.js"
+      },
+      "require": {
+        "types": "./dist/deck.d.cts",
+        "default": "./dist/deck.cjs"
+      }
+    },
+    "./maps": {
+      "import": {
+        "types": "./dist/maps.d.ts",
+        "default": "./dist/maps.js"
+      },
+      "require": {
+        "types": "./dist/maps.d.cts",
+        "default": "./dist/maps.cjs"
+      }
+    },
     "./templates": {
       "import": {
         "types": "./dist/templates.d.ts",
@@ -260,7 +280,7 @@
     "copy:style-css": "mkdir -p dist/styles && cp src/styles/init.css src/styles/effects.css dist/styles/ 2>/dev/null || true",
     "copy:markdown-css": "mkdir -p dist/components/Markdown && cp src/components/Markdown/styles.css dist/components/Markdown/ 2>/dev/null || true",
     "copy:kerebron-css": "mkdir -p dist && cp src/styles/kerebron.css dist/kerebron.css",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "tsc --noEmit && tsc -p .storybook/tsconfig.mobile.json",
     "lint": "eslint \"src/**/*.{ts,tsx}\"",
     "lint:fix": "eslint \"src/**/*.{ts,tsx}\" --fix",
     "rtl:scan": "node scripts/rtl-scan.mjs",
@@ -282,20 +302,26 @@
     "test:visual": "playwright test",
     "test:visual:ui": "playwright test --ui",
     "test:visual:debug": "playwright test --debug",
+    "mobile:install": "npm ci --prefix tests/mobile",
+    "mobile:doctor": "npm --prefix tests/mobile run doctor",
+    "mobile:server": "npm --prefix tests/mobile run appium",
+    "test:mobile": "npm --prefix tests/mobile test",
+    "test:mobile:device": "IOS_REAL_DEVICE=1 npm --prefix tests/mobile test",
     "test:storybook": "test-storybook --url http://localhost:6006 --maxWorkers 2 --testTimeout 30000",
     "prepublishOnly": "npm run build"
   },
   "peerDependencies": {
-    "@kerebron/editor": ">=0.8.6",
-    "@kerebron/editor-kits": ">=0.8.6",
-    "@kerebron/extension-basic-editor": ">=0.8.6",
-    "@kerebron/extension-yjs": ">=0.8.6",
-    "@kerebron/wasm": ">=0.8.6",
+    "@kerebron/editor": ">=0.8.12",
+    "@kerebron/editor-kits": ">=0.8.12",
+    "@kerebron/extension-basic-editor": ">=0.8.12",
+    "@kerebron/extension-yjs": ">=0.8.12",
+    "@kerebron/wasm": ">=0.8.12",
     "@mieweb/q": "1.0.0",
     "ag-grid-community": ">=32.0.0",
     "ag-grid-react": ">=32.0.0",
     "js-yaml": ">=4.0.0",
     "katex": ">=0.16.0",
+    "leaflet": ">=1.9.0",
     "mermaid": ">=11.0.0",
     "motion": ">=12.0.0",
     "papaparse": ">=5.0.0",
@@ -314,6 +340,9 @@
     "yjs": ">=13.6.0"
   },
   "peerDependenciesMeta": {
+    "leaflet": {
+      "optional": true
+    },
     "react-globe.gl": {
       "optional": true
     },
@@ -423,11 +452,11 @@
     "@esheet/fields": "0.0.5",
     "@esheet/renderer": "0.0.5",
     "@eslint/js": "^9.39.3",
-    "@kerebron/editor": "^0.8.6",
-    "@kerebron/editor-kits": "^0.8.6",
-    "@kerebron/extension-basic-editor": "^0.8.6",
-    "@kerebron/extension-yjs": "^0.8.6",
-    "@kerebron/wasm": "^0.8.6",
+    "@kerebron/editor": "^0.8.12",
+    "@kerebron/editor-kits": "^0.8.12",
+    "@kerebron/extension-basic-editor": "^0.8.12",
+    "@kerebron/extension-yjs": "^0.8.12",
+    "@kerebron/wasm": "^0.8.12",
     "@mieweb/datavis": "link:./packages/datavis",
     "@mieweb/q": "1.0.0",
     "@monaco-editor/react": "^4.7.0",
@@ -435,6 +464,7 @@
     "@storybook/addon-a11y": "^10.2.11",
     "@storybook/addon-docs": "^10.2.11",
     "@storybook/addon-links": "^10.2.11",
+    "@storybook/icons": "2.0.1",
     "@storybook/react": "^10.2.11",
     "@storybook/react-vite": "^10.2.11",
     "@storybook/test-runner": "0.24.3",
@@ -445,6 +475,7 @@
     "@testing-library/user-event": "^14.6.1",
     "@types/google-libphonenumber": "^7.4.30",
     "@types/js-yaml": "^4.0.9",
+    "@types/leaflet": "^1.9.22",
     "@types/luxon": "^3.7.1",
     "@types/node": "^22.19.11",
     "@types/papaparse": "^5.3.16",
@@ -479,6 +510,7 @@
     "js-yaml": "^4.1.1",
     "jsdom": "^26.1.0",
     "katex": "^0.17.0",
+    "leaflet": "^1.9.4",
     "mermaid": "^11.15.0",
     "motion": "^12.34.2",
     "papaparse": "^5.5.3",

@@ -52,9 +52,9 @@ async function gotoStory(
 // Warm up the server before running tests
 test.beforeAll(async ({ browser }) => {
   const page = await browser.newPage();
-  // Visit the index to ensure server is fully ready
-  await page.goto('/');
-  await page.waitForLoadState('networkidle');
+  // Warm up the manager without waiting for optional external widgets/fonts.
+  // Each test waits for its own story to render before making assertions.
+  await page.goto('/', { waitUntil: 'domcontentloaded' });
   await page.close();
 });
 
@@ -497,6 +497,47 @@ test.describe('Visual Regression Tests - Core Components', () => {
     await expect(page).toHaveScreenshot('ai-chat-playground-condensed.png');
   });
 
+  test('OzwellChat - Streaming Response settles with jump button', async ({
+    page,
+  }) => {
+    // The story streams its long answer on real timers; install a fake clock
+    // and pause it so time only advances via runFor() — the run is fully
+    // deterministic: the demo's kickoff (800ms), 120ms stream ticks, and the
+    // trailing follow-up fire exactly when told to.
+    await page.clock.install({ time: new Date('2026-01-15T12:00:00') });
+    await page.clock.pauseAt(new Date('2026-01-15T12:00:01'));
+    await gotoStory(page, 'chat-ozwellchat--streaming-response');
+
+    await page.clock.runFor(800); // kickoff fires, stream begins
+    // Advance until the final sentence lands. Stepping 1s at a time (less
+    // than the 1.2s follow-up delay) guarantees we stop after the stream
+    // completes but before the follow-up message fires.
+    const endText = page.getByText(/documented in the encounter note/);
+    for (let i = 0; i < 30 && (await endText.count()) === 0; i++) {
+      await page.clock.runFor(1000);
+    }
+    // Reveal-then-hold: the view held at the reply's first line, so the
+    // completed answer sits below the fold behind the jump button, which
+    // already carries its "New messages" hint (chunks landed while holding).
+    const jumpButton = page.locator("[data-slot='ai-chat-jump-to-bottom']");
+    await expect(jumpButton).toBeVisible();
+    await expect(page).toHaveScreenshot('ozwell-chat-streaming-settled.png');
+
+    // Land the trailing follow-up, then jump to the bottom via the button —
+    // the hook rejects programmatic scrolls, and its spring animation runs
+    // on rAF, which the fake clock drives: advance until it settles.
+    await page.clock.runFor(1300);
+    await jumpButton.click();
+    for (let i = 0; i < 30 && (await jumpButton.isVisible()); i++) {
+      await page.clock.runFor(500);
+    }
+    await expect(
+      page.getByText('Anything else you’d like me to pull from the chart?')
+    ).toBeInViewport();
+    await expect(jumpButton).toBeHidden();
+    await expect(page).toHaveScreenshot('ozwell-chat-streaming-bottom.png');
+  });
+
   test('AIMessage - Thinking active (streaming)', async ({ page }) => {
     // Expanded violet "Thinking" pill with the reasoning text visible.
     await gotoStory(page, 'chat-aimessage--thinking-active');
@@ -835,7 +876,23 @@ test.describe('Visual Regression Tests - Templates', () => {
     ['social-proof-statssection--cards', 'template-stats-cards.png'],
     ['social-proof-testimonialsection--cards', 'template-testimonials.png'],
     // Pinned at the first frame by `animations: 'disabled'`: track, mask and duplicate copy.
-    ['social-proof-logocloudsection--marquee', 'template-logocloud-marquee.png'],
+    [
+      'social-proof-logocloudsection--marquee',
+      'template-logocloud-marquee.png',
+    ],
+    ['social-proof-statssection--ruled', 'template-stats-ruled.png'],
+    ['reports-benchmarktablesection--default', 'report-benchmark-table.png'],
+    ['reports-rankedlistsection--side-by-side', 'report-ranked-lists.png'],
+    [
+      'reports-tilecartogramsection--united-states',
+      'report-tile-cartogram.png',
+    ],
+    ['reports-metriclistsection--maturing', 'report-metric-list.png'],
+    [
+      'reports-reportmethodology--default',
+      'report-methodology-dark.png',
+      { globals: 'theme:dark' },
+    ],
   ];
 
   for (const [storyId, file, options] of sections) {
@@ -857,5 +914,166 @@ test.describe('Visual Regression Tests - Templates', () => {
       animations: 'disabled',
       fullPage: true,
     });
+  });
+});
+
+test.describe('Visual Regression Tests - Deck', () => {
+  // Reduced motion shows every reveal and skips the count-up, so frames are stable.
+  test.beforeEach(async ({ page }) => {
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+  });
+
+  const decks: [string, string, { globals?: string; mobile?: boolean }?][] = [
+    ['presentations-deck--all-slide-types', 'deck-cover.png'],
+    [
+      'presentations-deck--all-slide-types',
+      'deck-cover-eh.png',
+      { globals: 'brand:enterprise-health' },
+    ],
+    ['presentations-deck--light-tone', 'deck-light-metrics.png'],
+    [
+      'presentations-deck--all-slide-types',
+      'deck-cover-mobile.png',
+      { mobile: true },
+    ],
+  ];
+
+  for (const [storyId, file, options] of decks) {
+    test(`Deck - ${file}`, async ({ page }) => {
+      if (options?.mobile)
+        await page.setViewportSize({ width: 390, height: 844 });
+      await gotoStory(page, storyId, options);
+      await expect(page).toHaveScreenshot(file, { animations: 'disabled' });
+    });
+  }
+
+  test('Deck - Chart slide', async ({ page }) => {
+    await gotoStory(page, 'presentations-deck--all-slide-types');
+    await page
+      .locator('[data-slot="deck-slide"][data-index="3"]')
+      .scrollIntoViewIfNeeded();
+    await expect(page.locator('[data-index="3"]')).toHaveAttribute(
+      'data-seen',
+      ''
+    );
+    await expect(page).toHaveScreenshot('deck-chart.png', {
+      animations: 'disabled',
+    });
+  });
+});
+
+test.describe('Visual Regression Tests - RichEditor (kerebron.css)', () => {
+  // Guards the unlayered `.kb-editor` revert rules in src/styles/kerebron.css:
+  // Tailwind preflight (and @mieweb/q's unlayered copy of it) must not strip
+  // heading sizes, list markers, link color, or code styling inside the editor.
+  const formattedStory = 'editors-richeditor--formatted-content';
+
+  async function waitForFormatted(page: Page) {
+    // Content appears only after the tree-sitter WASM markdown parser loads.
+    await page
+      .locator('.kb-editor h1')
+      .waitFor({ state: 'visible', timeout: 30000 });
+    await page
+      .locator('.kb-editor ul li')
+      .first()
+      .waitFor({ state: 'visible' });
+  }
+
+  test('RichEditor - Formatted content (light)', async ({ page }) => {
+    await gotoStory(page, formattedStory);
+    await waitForFormatted(page);
+    await expect(page).toHaveScreenshot('richeditor-formatted-light.png');
+  });
+
+  test('RichEditor - Formatted content (dark)', async ({ page }) => {
+    await gotoStory(page, formattedStory, { globals: 'theme:dark' });
+    await waitForFormatted(page);
+    await expect(page).toHaveScreenshot('richeditor-formatted-dark.png');
+  });
+
+  test('RichEditor - Heading dropdown opens with active state', async ({
+    page,
+  }) => {
+    // Guards the extension-menu patch: without it the toolbar dropdowns
+    // never fire (dnt-shim MouseEvent bug) and freshly rendered items
+    // carry no active/disabled state.
+    await gotoStory(page, formattedStory);
+    await waitForFormatted(page);
+    await page.locator('.kb-editor h1').click();
+    await page
+      .locator('.kb-dropdown__label', { hasText: 'Heading' })
+      .first()
+      .click();
+    await page
+      .locator('.kb-custom-menu__overflow-item', { hasText: 'Heading 1' })
+      .first()
+      .waitFor({ state: 'visible' });
+    // DOM assertion first: the screenshot's global diff threshold could
+    // swallow one item's styling. Pre-patch, freshly rendered items never
+    // ran update(), so these attributes were absent entirely.
+    await expect(
+      page
+        .locator('.kb-custom-menu__overflow-item', { hasText: 'Heading 1' })
+        .first()
+        .locator('.kb-menu__button')
+    ).toHaveAttribute('aria-disabled', 'true'); // caret is in the h1
+    await expect(
+      page
+        .locator('.kb-custom-menu__overflow-item', { hasText: 'Heading 2' })
+        .first()
+        .locator('.kb-menu__button')
+    ).toHaveAttribute('aria-disabled', 'false');
+    await expect(page).toHaveScreenshot('richeditor-heading-dropdown.png');
+
+    // The regression being guarded is command dispatch (dnt-shim MouseEvent
+    // bug): activate an item via its wrapper label and assert the document
+    // actually changed.
+    await page
+      .locator('.kb-custom-menu__overflow-item', { hasText: 'Heading 2' })
+      .first()
+      .locator('.kb-custom-menu__overflow-item-label')
+      .click();
+    await expect(page.locator('.kb-editor h1')).toHaveCount(0);
+    await expect(page.locator('.kb-editor h2')).toHaveCount(2);
+  });
+
+  test('RichEditor - Lists dropdown opens with active state', async ({
+    page,
+  }) => {
+    await gotoStory(page, formattedStory);
+    await waitForFormatted(page);
+    await page.locator('.kb-editor ul li').first().click();
+    await page
+      .locator('.kb-dropdown__label', { hasText: 'Lists' })
+      .first()
+      .click();
+    await page
+      .locator('.kb-custom-menu__overflow-item', { hasText: 'Bullet' })
+      .first()
+      .waitFor({ state: 'visible' });
+    // No state-attribute assertion here: list toggles are select-only cmdItems
+    // (no enable/active spec), so update() sets nothing observable on them —
+    // the heading test asserts aria state, and the dispatch below guards the
+    // command path.
+    await expect(page).toHaveScreenshot('richeditor-lists-dropdown.png');
+
+    // Activate "Bullet List" via its ICON with the cursor in a plain
+    // paragraph: the click lands inside the inner menu button, which must
+    // dispatch the command exactly once (guards the dom.contains() fix —
+    // a double dispatch would nest a second list).
+    await page.locator('.kb-editor p', { hasText: 'inline code' }).click();
+    await page
+      .locator('.kb-dropdown__label', { hasText: 'Lists' })
+      .first()
+      .click();
+    await page
+      .locator('.kb-custom-menu__overflow-item', { hasText: 'Bullet' })
+      .first()
+      .locator('.kb-icon')
+      .first()
+      .click();
+    await expect(page.locator('.kb-editor ul')).toHaveCount(2);
+    await expect(page.locator('.kb-editor ul ul')).toHaveCount(0);
+    await expect(page.locator('.kb-editor ol')).toHaveCount(1);
   });
 });
