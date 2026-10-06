@@ -58,7 +58,8 @@ export interface MediaPlayerProps extends VariantProps<
   poster?: string;
   /** Browser preload hint (default browser behavior when omitted). */
   preload?: 'none' | 'metadata' | 'auto';
-  /** Caption/subtitle tracks or alternative media sources. */
+  /** Caption/subtitle `<track>` elements. The `src` attribute is always set
+   * on the media element, so alternative `<source>` children are ignored. */
   children?: React.ReactNode;
   /** Localized load-error and retry text. */
   labels?: { error?: string; retry?: string };

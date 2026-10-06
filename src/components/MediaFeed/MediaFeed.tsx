@@ -88,11 +88,13 @@ function MediaFeedInner<T>(
   );
   const fullscreenTriggerRef = React.useRef<HTMLButtonElement | null>(null);
   const hasObserver = typeof IntersectionObserver !== 'undefined';
-  const [visibleId, setVisibleId] = React.useState<string | null>(() =>
-    hasObserver ? null : (activeId ?? null)
-  );
+  // Hydration safety: the server cannot know whether the client supports
+  // IntersectionObserver, so both environments start "not visible" and the
+  // mount effects below establish real visibility (observer callbacks, or the
+  // no-observer fallback). Offscreen autoplay therefore never starts early.
+  const [visibleId, setVisibleId] = React.useState<string | null>(null);
   const visibleIdRef = React.useRef(visibleId);
-  const [viewportVisible, setViewportVisible] = React.useState(!hasObserver);
+  const [viewportVisible, setViewportVisible] = React.useState(false);
   const [pageVisible, setPageVisible] = React.useState(
     () =>
       typeof document === 'undefined' || document.visibilityState !== 'hidden'
@@ -135,7 +137,11 @@ function MediaFeedInner<T>(
   // A separate viewport observer also pauses a feed scrolled off the host page.
   React.useEffect(() => {
     const root = rootRef.current;
-    if (!root || typeof IntersectionObserver === 'undefined') return;
+    if (!root || typeof IntersectionObserver === 'undefined') {
+      // No-observer fallback: assume the feed is on screen.
+      setViewportVisible(true);
+      return;
+    }
     const observer = new IntersectionObserver(([entry]) => {
       setViewportVisible(entry.isIntersecting);
     });

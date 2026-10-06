@@ -285,6 +285,17 @@ export function SuperChat({
     setView('thread');
   }, [setView]);
 
+  // A fresh host playback request supersedes a consumed inline Play launch, so
+  // `mediaFeedProps.playbackRequest` keeps working while the media view is open.
+  const hostPlaybackRequest = mediaFeedProps?.playbackRequest;
+  const hostPlaybackKey = hostPlaybackRequest
+    ? `${hostPlaybackRequest.itemId}\u0000${hostPlaybackRequest.requestId}`
+    : undefined;
+  React.useEffect(() => {
+    if (hostPlaybackKey === undefined) return;
+    setManualPlaybackRequest(undefined);
+  }, [hostPlaybackKey]);
+
   React.useEffect(() => {
     if (internalView.conversationId !== conversation.id) {
       setInternalView({ conversationId: conversation.id, view: 'thread' });
@@ -643,6 +654,8 @@ export function SuperChat({
       onOpenMedia={handleOpenMedia}
       openMediaLabel={labels.openMedia}
       playMediaLabel={labels.playMedia}
+      mediaErrorLabel={mediaFeedProps?.labels?.mediaError}
+      mediaRetryLabel={mediaFeedProps?.labels?.retry}
     />
   );
 
@@ -863,6 +876,8 @@ export function SuperChat({
               onOpenMedia={handleOpenMedia}
               openMediaLabel={labels.openMedia}
               playMediaLabel={labels.playMedia}
+              mediaErrorLabel={mediaFeedProps?.labels?.mediaError}
+              mediaRetryLabel={mediaFeedProps?.labels?.retry}
               scrollRef={threadRef}
               contentRef={threadContentRef}
               containerProps={{

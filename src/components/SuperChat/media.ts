@@ -1,4 +1,4 @@
-import { DateTime } from 'luxon';
+import { byTime } from './parts';
 import type { SuperChatConversation, SuperChatMediaItem } from './types';
 
 /**
@@ -15,22 +15,17 @@ export function getConversationMediaItems(
       participant,
     ])
   );
-  const timeOf = (time: Date | string) =>
-    time instanceof Date
-      ? DateTime.fromJSDate(time).toMillis()
-      : DateTime.fromISO(time).toMillis();
-
-  return [...conversation.thread]
-    .sort((a, b) => timeOf(a.time) - timeOf(b.time))
-    .flatMap((message) =>
-      (message.media ?? []).map((attachment) => ({
-        // Tuple encoding prevents collisions when ids themselves contain a
-        // delimiter. Including the conversation keeps selection scoped to it.
-        id: JSON.stringify([conversation.id, message.id, attachment.id]),
-        conversationId: conversation.id,
-        message,
-        attachment,
-        participant: participants.get(message.participantId),
-      }))
-    );
+  // The same comparator the thread uses, so both views accept the same
+  // `Date | string` contract and always agree on chronological order.
+  return [...conversation.thread].sort(byTime).flatMap((message) =>
+    (message.media ?? []).map((attachment) => ({
+      // Tuple encoding prevents collisions when ids themselves contain a
+      // delimiter. Including the conversation keeps selection scoped to it.
+      id: JSON.stringify([conversation.id, message.id, attachment.id]),
+      conversationId: conversation.id,
+      message,
+      attachment,
+      participant: participants.get(message.participantId),
+    }))
+  );
 }

@@ -650,6 +650,10 @@ interface MessageRowProps {
   ) => void;
   openMediaLabel?: string;
   playMediaLabel?: string;
+  /** Localized preview load-error text (falls back to the player default). */
+  mediaErrorLabel?: string;
+  /** Localized preview retry text (falls back to the player default). */
+  mediaRetryLabel?: string;
 }
 
 /**
@@ -674,6 +678,8 @@ export const MessageRow = React.memo(function MessageRow({
   onOpenMedia,
   openMediaLabel = 'Open in media feed',
   playMediaLabel = 'Play',
+  mediaErrorLabel,
+  mediaRetryLabel,
 }: MessageRowProps) {
   const streaming = message.status === 'streaming';
   const hasBody =
@@ -1135,6 +1141,8 @@ export const MessageRow = React.memo(function MessageRow({
                     attachment={attachment}
                     openLabel={openMediaLabel}
                     playLabel={playMediaLabel}
+                    errorLabel={mediaErrorLabel}
+                    retryLabel={mediaRetryLabel}
                     launchId={JSON.stringify([message.id, attachment.id])}
                     onOpen={
                       onOpenMedia

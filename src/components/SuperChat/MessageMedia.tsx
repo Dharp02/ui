@@ -10,12 +10,18 @@ export function MessageMedia({
   onOpen,
   openLabel,
   playLabel,
+  errorLabel,
+  retryLabel,
   launchId,
 }: {
   attachment: SuperChatMediaAttachment;
   onOpen?: (play?: boolean) => void;
   openLabel: string;
   playLabel: string;
+  /** Localized load-error text; the player's default applies when omitted. */
+  errorLabel?: string;
+  /** Localized retry text; the player's default applies when omitted. */
+  retryLabel?: string;
   launchId: string;
 }) {
   const playable = attachment.kind !== 'image';
@@ -47,6 +53,7 @@ export function MessageMedia({
             aria-label={attachment.alt ?? attachment.title ?? openLabel}
             controls={!onOpen}
             preload="metadata"
+            labels={{ error: errorLabel, retry: retryLabel }}
             className="max-h-72"
           />
         </div>
