@@ -456,6 +456,14 @@ test.describe('Visual Regression Tests - Core Components', () => {
     await expect(page).toHaveScreenshot('superchat-playground.png');
   });
 
+  test('SuperChat - Composer selectors', async ({ page }) => {
+    // Agent + model selector row in the SuperChat composer.
+    await gotoStory(page, 'superchat-superchat-panel--composer-selectors');
+    const composer = page.locator("[data-slot='chat-composer']");
+    await composer.waitFor({ state: 'visible' });
+    await expect(composer).toHaveScreenshot('superchat-composer-selectors.png');
+  });
+
   test('SuperChat - Read only', async ({ page }) => {
     // Disabled composer with the read-only placeholder.
     await gotoStory(page, 'superchat-superchat-panel--playground', {
