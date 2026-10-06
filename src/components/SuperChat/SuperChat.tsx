@@ -773,7 +773,7 @@ export function SuperChat({
         className
       )}
     >
-      {showHeader && (
+      {showHeader ? (
         <header
           data-slot="superchat-header"
           className="flex items-center justify-between gap-2 border-b border-neutral-200 p-3 dark:border-neutral-700"
@@ -833,6 +833,11 @@ export function SuperChat({
             </button>
           )}
         </header>
+      ) : (
+        // Keeps the panel's aria-labelledby reference valid without a visible header.
+        <h2 id={headingId} className="sr-only">
+          {conversation.title}
+        </h2>
       )}
 
       {activeView === 'media' ? (
