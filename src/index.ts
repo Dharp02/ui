@@ -101,6 +101,7 @@ export * from './components/Markdown';
 export * from './components/MedicationList';
 export * from './components/MediaEditor';
 export * from './components/MediaPlayer';
+export * from './components/MediaFeed';
 export * from './components/MegaMenu';
 export * from './components/Messaging';
 export * from './components/Modal';
