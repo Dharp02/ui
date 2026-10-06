@@ -1633,7 +1633,9 @@ describe('SuperChatConversations', () => {
     const list = container.querySelector(
       '[data-slot="superchat-conversation-list"]'
     ) as HTMLElement;
-    expect(within(list).getByText('No older conversations')).toBeInTheDocument();
+    expect(
+      within(list).getByText('No older conversations')
+    ).toBeInTheDocument();
     expect(list.lastElementChild).toContainElement(
       screen.getByText('No older conversations')
     );
@@ -1701,6 +1703,28 @@ describe('SuperChatInbox', () => {
     expect(panel).not.toBeNull();
     const thread = within(panel as HTMLElement);
     expect(thread.getByText('first conversation')).toBeInTheDocument();
+  });
+
+  it('starts on the list below sm, or on the chat with defaultMobileView="chat"', () => {
+    const panelHidden = (defaultMobileView?: 'list' | 'chat') => {
+      const { container, unmount } = render(
+        <div style={{ height: 400 }}>
+          <SuperChatInbox
+            conversations={conversations}
+            currentParticipantId="u1"
+            defaultActiveConversationId="c1"
+            defaultMobileView={defaultMobileView}
+          />
+        </div>
+      );
+      const hidden = (
+        container.querySelector('[data-slot="superchat"]') as HTMLElement
+      ).classList.contains('hidden');
+      unmount();
+      return hidden;
+    };
+    expect(panelHidden()).toBe(true);
+    expect(panelHidden('chat')).toBe(false);
   });
 
   it('switches the active panel when another conversation is opened', async () => {

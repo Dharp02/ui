@@ -340,6 +340,7 @@ uncontrolled).
 | `virtualized`                 | `boolean`                                     | `false`            | Windowed thread rendering — only mount rows near the viewport. Enable for long histories.           |
 | `showSidebar`                 | `boolean`                                     | `true`             | Show the conversation list.                                                                         |
 | `listFooter`                  | `ReactNode`                                   | —                  | Content after the last conversation in the list (e.g. a "load older" control).                      |
+| `defaultMobileView`           | `'list' \| 'chat'`                            | `'list'`           | Pane shown first below the `sm` breakpoint; `'chat'` opens the active conversation.                 |
 | `linkBuilder`                 | `SuperChatLinkBuilder`                        | —                  | Build hrefs for `ref` thread items.                                                                 |
 | `className`                   | `string`                                      | —                  | Extra classes on the root.                                                                          |
 | `onMessageSent`               | `(text, { conversation, mentions }) => void`  | —                  | Fired on send; `mentions` are the addressed participant ids.                                        |

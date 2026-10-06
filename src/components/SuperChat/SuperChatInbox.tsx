@@ -62,6 +62,11 @@ export interface SuperChatInboxProps {
   showSidebar?: boolean;
   /** Content after the last conversation in the sidebar list (see {@link SuperChatConversationsProps.listFooter}). */
   listFooter?: React.ReactNode;
+  /**
+   * Which pane a small screen starts on, where only one of list and chat fits
+   * (below `sm`). Defaults to the list; `'chat'` opens the active conversation.
+   */
+  defaultMobileView?: 'list' | 'chat';
   /** Build hrefs for `ref` thread items. */
   linkBuilder?: SuperChatLinkBuilder;
   /** Format for a message's default copy action (Ctrl/Cmd-click on copy). */
@@ -115,6 +120,7 @@ export function SuperChatInbox({
   virtualized,
   showSidebar = true,
   listFooter,
+  defaultMobileView = 'list',
   linkBuilder,
   defaultCopyFormat,
   className,
@@ -138,7 +144,9 @@ export function SuperChatInbox({
   // On small screens the list and panel can't fit side by side, so we show one
   // at a time (master-detail). `mobileView` tracks which is visible; on `sm`+
   // both are always shown and this state is ignored.
-  const [mobileView, setMobileView] = React.useState<'list' | 'chat'>('list');
+  const [mobileView, setMobileView] = React.useState<'list' | 'chat'>(
+    defaultMobileView
+  );
 
   const handleOpen = (c: SuperChatConversation) => {
     if (activeConversationId === undefined) setInternalActive(c.id);
