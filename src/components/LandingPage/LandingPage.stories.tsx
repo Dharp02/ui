@@ -11,6 +11,10 @@ import {
   templateOrigin,
   verticalHubBlocks,
 } from '../../templates/storyData';
+import {
+  benchmarkReportBlocks,
+  reportGateFields,
+} from '../../templates/reportStoryData';
 
 function RoiTeaser({ id }: { id?: string }) {
   return (
@@ -44,7 +48,7 @@ const meta: Meta<typeof LandingPage> = {
       description: {
         component: `### What it's for
 
-Renders a whole marketing page from data. \`blocks\` is an array of plain objects — each a section's props tagged with a \`type\` — so a page is a content file, not a component. Six presets (\`landingPresets\`) record the page archetypes the BlueHive and Enterprise Health sites repeat, and \`validateLandingPage\` checks a page against the heading contract and a preset.
+Renders a whole marketing page from data. \`blocks\` is an array of plain objects — each a section's props tagged with a \`type\` — so a page is a content file, not a component. Seven presets (\`landingPresets\`) record the page archetypes the BlueHive and Enterprise Health sites repeat, and \`validateLandingPage\` checks a page against the heading contract and a preset.
 
 | Preset | For | Required blocks |
 | --- | --- | --- |
@@ -54,6 +58,7 @@ Renders a whole marketing page from data. \`blocks\` is an array of plain object
 | \`comparison\` | Your product against an alternative, row by row | hero, comparison, cta |
 | \`resource\` | A guide or tool offered for contact details | hero, lead-form |
 | \`pricing\` | Plans, proof and pre-purchase questions | hero, pricing, faq |
+| \`benchmark-report\` | A published data report with provenance, methodology and byline | hero, methodology |
 
 Each preset's recommended order is in \`landingPresets[id].sequence\`; the stories below render one page per preset.
 
@@ -193,6 +198,51 @@ export default function Page() {
           target: 'content-videosection',
           why: 'Rendered for `video` blocks.',
         },
+        {
+          type: 'contains',
+          target: 'reports-reportlegend',
+          why: 'Rendered for `report-legend` blocks.',
+        },
+        {
+          type: 'contains',
+          target: 'reports-benchmarktablesection',
+          why: 'Rendered for `benchmark-table` blocks.',
+        },
+        {
+          type: 'contains',
+          target: 'reports-rankedlistsection',
+          why: 'Rendered for `ranked-list` blocks.',
+        },
+        {
+          type: 'contains',
+          target: 'reports-tilecartogramsection',
+          why: 'Rendered for `tile-cartogram` blocks.',
+        },
+        {
+          type: 'contains',
+          target: 'reports-metriclistsection',
+          why: 'Rendered for `metric-list` blocks.',
+        },
+        {
+          type: 'contains',
+          target: 'reports-reportmethodology',
+          why: 'Rendered for `methodology` blocks.',
+        },
+        {
+          type: 'contains',
+          target: 'reports-reportbyline',
+          why: 'Rendered for `byline` blocks.',
+        },
+        {
+          type: 'contains',
+          target: 'reports-linkgroupssection',
+          why: 'Rendered for `link-groups` blocks.',
+        },
+        {
+          type: 'contains',
+          target: 'reports-pdfembedsection',
+          why: 'Rendered for `pdf-embed` blocks.',
+        },
       ],
     },
   },
@@ -215,20 +265,79 @@ export default function Page() {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-export const VerticalHub: Story = { args: { blocks: verticalHubBlocks } };
+export const VerticalHub: Story = {
+  args: { blocks: verticalHubBlocks },
+  parameters: { mobilePreview: { mode: 'standalone' } },
+};
 
-export const ServiceDetail: Story = { args: { blocks: serviceDetailBlocks } };
+export const ServiceDetail: Story = {
+  args: { blocks: serviceDetailBlocks },
+  parameters: { mobilePreview: { mode: 'standalone' } },
+};
 
-export const Campaign: Story = { args: { blocks: campaignBlocks } };
+export const Campaign: Story = {
+  args: { blocks: campaignBlocks },
+  parameters: { mobilePreview: { mode: 'standalone' } },
+};
 
-export const Comparison: Story = { args: { blocks: comparisonBlocks } };
+export const Comparison: Story = {
+  args: { blocks: comparisonBlocks },
+  parameters: { mobilePreview: { mode: 'standalone' } },
+};
 
-export const Resource: Story = { args: { blocks: resourceBlocks } };
+export const Resource: Story = {
+  args: { blocks: resourceBlocks },
+  parameters: { mobilePreview: { mode: 'standalone' } },
+};
 
-export const Pricing: Story = { args: { blocks: pricingBlocks } };
+export const Pricing: Story = {
+  args: { blocks: pricingBlocks },
+  parameters: { mobilePreview: { mode: 'standalone' } },
+};
+
+/** A sample benchmark report built from the Reports sections — illustrative data. */
+export const BenchmarkReport: Story = {
+  args: { blocks: benchmarkReportBlocks },
+  parameters: { mobilePreview: { mode: 'standalone' } },
+};
+
+/** A gated report: `LeadFormSection` with `highlights` listing what the download contains. */
+export const GatedReport: Story = {
+  parameters: { mobilePreview: { mode: 'standalone' } },
+  args: {
+    blocks: [
+      {
+        type: 'hero',
+        tone: 'brand',
+        eyebrow: 'Benchmark report',
+        title: 'The State of Transportation Workforce Health',
+        description:
+          'Findings, methodology and a 12-month roadmap for fleet safety leaders.',
+        meta: ['Benchmark report', '2027 edition'],
+      },
+      {
+        type: 'lead-form',
+        eyebrow: 'Free download',
+        title: 'Get the report',
+        description: 'We’ll email you the PDF.',
+        highlights: [
+          'Executive summary',
+          'Key findings',
+          'Methodology',
+          '12-month roadmap',
+        ],
+        fields: reportGateFields,
+        hiddenFields: { asset: 'state-of-transportation-2027' },
+        submitLabel: 'Email me the report',
+        action: '#',
+      },
+    ],
+  },
+};
 
 /** A `custom` block renders a site-owned section from the `custom` map. */
 export const WithCustomBlock: Story = {
+  parameters: { mobilePreview: { mode: 'standalone' } },
   args: {
     blocks: [
       serviceDetailBlocks[0],
@@ -264,12 +373,16 @@ export const Validation: Story = {
 
 export const Mobile: Story = {
   args: { blocks: campaignBlocks },
-  parameters: { viewport: { defaultViewport: 'mobile1' } },
+  parameters: {
+    viewport: { defaultViewport: 'mobile1' },
+    mobilePreview: { mode: 'standalone' },
+  },
 };
 
 export const RTL: Story = {
   name: 'RTL',
   args: { blocks: verticalHubBlocks },
+  parameters: { mobilePreview: { mode: 'standalone' } },
   render: (args) => (
     <div dir="rtl">
       <LandingPage {...args} />

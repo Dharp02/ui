@@ -18,6 +18,10 @@ export const entries = {
   q: 'src/q.ts',
   // Landing-page sections; Server Components import from here. See src/templates.ts
   templates: 'src/templates.ts',
+  // Slide decks (client). See src/deck.ts
+  deck: 'src/deck.ts',
+  // Leaflet maps; `leaflet` is an optional peer. See src/maps.ts
+  maps: 'src/maps.ts',
   'hooks/index': 'src/hooks/index.ts',
   'utils/index': 'src/utils/index.ts',
   'tailwind-preset': 'src/tailwind-preset.ts',
@@ -60,6 +64,7 @@ export const entries = {
   'components/Markdown/index': 'src/components/Markdown/index.ts',
   'components/MediaEditor/index': 'src/components/MediaEditor/index.ts',
   'components/MediaPlayer/index': 'src/components/MediaPlayer/index.ts',
+  'components/MediaFeed/index': 'src/components/MediaFeed/index.ts',
   'components/MegaMenu/index': 'src/components/MegaMenu/index.ts',
   'components/Modal/index': 'src/components/Modal/index.ts',
   'components/OrbitRing/index': 'src/components/OrbitRing/index.ts',

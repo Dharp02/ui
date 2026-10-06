@@ -52,10 +52,9 @@ async function gotoStory(
 // Warm up the server before running tests
 test.beforeAll(async ({ browser }) => {
   const page = await browser.newPage();
-  // Visit the index to ensure server is fully ready. goto() already waits
-  // for 'load'; waiting for 'networkidle' here is brittle because the
-  // Storybook manager keeps the network busy and can exceed the hook timeout.
-  await page.goto('/');
+  // Warm up the manager without waiting for optional external widgets/fonts.
+  // Each test waits for its own story to render before making assertions.
+  await page.goto('/', { waitUntil: 'domcontentloaded' });
   await page.close();
 });
 
@@ -455,6 +454,14 @@ test.describe('Visual Regression Tests - Core Components', () => {
       .locator("[data-slot='chat-composer-input']")
       .waitFor({ state: 'visible' });
     await expect(page).toHaveScreenshot('superchat-playground.png');
+  });
+
+  test('SuperChat - Composer selectors', async ({ page }) => {
+    // Agent + model selector row in the SuperChat composer.
+    await gotoStory(page, 'superchat-superchat-panel--composer-selectors');
+    const composer = page.locator("[data-slot='chat-composer']");
+    await composer.waitFor({ state: 'visible' });
+    await expect(composer).toHaveScreenshot('superchat-composer-selectors.png');
   });
 
   test('SuperChat - Read only', async ({ page }) => {
@@ -881,6 +888,19 @@ test.describe('Visual Regression Tests - Templates', () => {
       'social-proof-logocloudsection--marquee',
       'template-logocloud-marquee.png',
     ],
+    ['social-proof-statssection--ruled', 'template-stats-ruled.png'],
+    ['reports-benchmarktablesection--default', 'report-benchmark-table.png'],
+    ['reports-rankedlistsection--side-by-side', 'report-ranked-lists.png'],
+    [
+      'reports-tilecartogramsection--united-states',
+      'report-tile-cartogram.png',
+    ],
+    ['reports-metriclistsection--maturing', 'report-metric-list.png'],
+    [
+      'reports-reportmethodology--default',
+      'report-methodology-dark.png',
+      { globals: 'theme:dark' },
+    ],
   ];
 
   for (const [storyId, file, options] of sections) {
@@ -950,6 +970,51 @@ test.describe('Visual Regression Tests - Record pages', () => {
     await page.locator('.react-flow__node').first().waitFor();
     await page.waitForTimeout(500);
     await expect(page).toHaveScreenshot('orgchart-default.png', {
+      animations: 'disabled',
+    });
+  });
+});
+
+test.describe('Visual Regression Tests - Deck', () => {
+  // Reduced motion shows every reveal and skips the count-up, so frames are stable.
+  test.beforeEach(async ({ page }) => {
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+  });
+
+  const decks: [string, string, { globals?: string; mobile?: boolean }?][] = [
+    ['presentations-deck--all-slide-types', 'deck-cover.png'],
+    [
+      'presentations-deck--all-slide-types',
+      'deck-cover-eh.png',
+      { globals: 'brand:enterprise-health' },
+    ],
+    ['presentations-deck--light-tone', 'deck-light-metrics.png'],
+    [
+      'presentations-deck--all-slide-types',
+      'deck-cover-mobile.png',
+      { mobile: true },
+    ],
+  ];
+
+  for (const [storyId, file, options] of decks) {
+    test(`Deck - ${file}`, async ({ page }) => {
+      if (options?.mobile)
+        await page.setViewportSize({ width: 390, height: 844 });
+      await gotoStory(page, storyId, options);
+      await expect(page).toHaveScreenshot(file, { animations: 'disabled' });
+    });
+  }
+
+  test('Deck - Chart slide', async ({ page }) => {
+    await gotoStory(page, 'presentations-deck--all-slide-types');
+    await page
+      .locator('[data-slot="deck-slide"][data-index="3"]')
+      .scrollIntoViewIfNeeded();
+    await expect(page.locator('[data-index="3"]')).toHaveAttribute(
+      'data-seen',
+      ''
+    );
+    await expect(page).toHaveScreenshot('deck-chart.png', {
       animations: 'disabled',
     });
   });
