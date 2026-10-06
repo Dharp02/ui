@@ -1622,6 +1622,33 @@ describe('SuperChatConversations', () => {
     await user.click(screen.getByLabelText('New conversation'));
     expect(onNewConversation).toHaveBeenCalled();
   });
+
+  it('renders listFooter after the last conversation, inside the list', () => {
+    const { container } = render(
+      <SuperChatConversations
+        conversations={conversations}
+        listFooter={<span>No older conversations</span>}
+      />
+    );
+    const list = container.querySelector(
+      '[data-slot="superchat-conversation-list"]'
+    ) as HTMLElement;
+    expect(within(list).getByText('No older conversations')).toBeInTheDocument();
+    expect(list.lastElementChild).toContainElement(
+      screen.getByText('No older conversations')
+    );
+  });
+
+  it('renders no footer element without listFooter', () => {
+    const { container } = render(
+      <SuperChatConversations conversations={conversations} />
+    );
+    expect(
+      container.querySelector(
+        '[data-slot="superchat-conversation-list-footer"]'
+      )
+    ).toBeNull();
+  });
 });
 
 describe('SuperChatInbox', () => {

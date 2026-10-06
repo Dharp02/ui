@@ -60,6 +60,7 @@ const meta: Meta<typeof SuperChatInbox> = {
     renderPlugins: { control: false, table: { category: 'Rendering' } },
     renderTextContent: { control: false, table: { category: 'Rendering' } },
     linkBuilder: { control: false, table: { category: 'Rendering' } },
+    listFooter: { control: false, table: { category: 'Behavior' } },
     className: { control: false },
     onMessageSent: { control: false, table: { category: 'Callbacks' } },
     composerProps: { control: false, table: { category: 'Composer' } },

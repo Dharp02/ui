@@ -60,6 +60,8 @@ export interface SuperChatInboxProps {
   virtualized?: boolean;
   /** Show the conversation sidebar. */
   showSidebar?: boolean;
+  /** Content after the last conversation in the sidebar list (see {@link SuperChatConversationsProps.listFooter}). */
+  listFooter?: React.ReactNode;
   /** Build hrefs for `ref` thread items. */
   linkBuilder?: SuperChatLinkBuilder;
   /** Format for a message's default copy action (Ctrl/Cmd-click on copy). */
@@ -112,6 +114,7 @@ export function SuperChatInbox({
   order,
   virtualized,
   showSidebar = true,
+  listFooter,
   linkBuilder,
   defaultCopyFormat,
   className,
@@ -159,6 +162,7 @@ export function SuperChatInbox({
           activeConversationId={activeId}
           onConversationOpened={handleOpen}
           onNewConversation={onNewConversation}
+          listFooter={listFooter}
           className={cn(
             'w-full sm:w-64',
             mobileView === 'chat' && 'hidden sm:flex'

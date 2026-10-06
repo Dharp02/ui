@@ -339,6 +339,7 @@ uncontrolled).
 | `order`                       | `'asc' \| 'desc'`                             | `'asc'`            | Thread ordering: `asc` (oldest→newest, messenger style) or `desc` (newest→oldest, feed style).      |
 | `virtualized`                 | `boolean`                                     | `false`            | Windowed thread rendering — only mount rows near the viewport. Enable for long histories.           |
 | `showSidebar`                 | `boolean`                                     | `true`             | Show the conversation list.                                                                         |
+| `listFooter`                  | `ReactNode`                                   | —                  | Content after the last conversation in the list (e.g. a "load older" control).                      |
 | `linkBuilder`                 | `SuperChatLinkBuilder`                        | —                  | Build hrefs for `ref` thread items.                                                                 |
 | `className`                   | `string`                                      | —                  | Extra classes on the root.                                                                          |
 | `onMessageSent`               | `(text, { conversation, mentions }) => void`  | —                  | Fired on send; `mentions` are the addressed participant ids.                                        |
@@ -382,6 +383,7 @@ The conversation switcher. Supports controlled or uncontrolled selection.
 | `className`                   | `string`                  | —                  | Extra classes on the root.                    |
 | `onConversationOpened`        | `(conversation) => void`  | —                  | Fired when a conversation is selected.        |
 | `onNewConversation`           | `() => void`              | —                  | Shows a "+" button when provided.             |
+| `listFooter`                  | `ReactNode`               | —                  | Content after the last conversation, inside the scrolling list. |
 
 ---
 
