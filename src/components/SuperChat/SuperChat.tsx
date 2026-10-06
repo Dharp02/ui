@@ -128,11 +128,15 @@ export interface SuperChatProps {
   /** Selected agent id for the composer's agent selector. */
   selectedAgent?: string | null;
   onAgentChange?: (agentId: string) => void;
+  /** Localized accessible label / empty-state text for the agent selector. */
+  agentSelectorLabel?: string;
   /** Props for the composer's model selector (shown when provided). */
   modelSelectorProps?: ComposerModelSelectorProps;
   /** While true, the send button becomes a stop button (requires `onStop`). */
   isStreaming?: boolean;
   onStop?: () => void;
+  /** Localized accessible label for the icon-only stop button. */
+  stopLabel?: string;
 
   // --- callbacks (chat-component-compatible) ---
   /**
@@ -197,9 +201,11 @@ export function SuperChat({
   agents,
   selectedAgent,
   onAgentChange,
+  agentSelectorLabel,
   modelSelectorProps,
   isStreaming,
   onStop,
+  stopLabel,
   onMessageSent,
   onMessageEdited,
   onConversationClosed,
@@ -1001,10 +1007,12 @@ export function SuperChat({
         agents={agents}
         selectedAgent={selectedAgent}
         onAgentChange={onAgentChange}
+        agentSelectorLabel={agentSelectorLabel}
         showModelSelector={!!modelSelectorProps}
         modelSelectorProps={modelSelectorProps}
         isStreaming={isStreaming}
         onStop={onStop}
+        stopLabel={stopLabel}
       />
     </section>
   );

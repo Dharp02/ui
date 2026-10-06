@@ -1716,6 +1716,23 @@ describe('SuperChat composer options', () => {
     expect(onAgentChange).toHaveBeenCalledWith('a2');
   });
 
+  it('forwards localized agent and stop labels', () => {
+    render(
+      <SuperChat
+        conversation={convo}
+        currentParticipantId="u1"
+        agents={agents}
+        selectedAgent={null}
+        agentSelectorLabel="Elegir agente"
+        isStreaming
+        onStop={vi.fn()}
+        stopLabel="Detener"
+      />
+    );
+    expect(screen.getByRole('button', { name: 'Elegir agente' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Detener' })).toBeTruthy();
+  });
+
   it('omits selectors when not configured', () => {
     render(<SuperChat conversation={convo} currentParticipantId="u1" />);
     expect(screen.queryByRole('button', { name: /Select agent/ })).toBeNull();

@@ -817,7 +817,7 @@ function ComposerSelectorsPanel() {
   const [agent, setAgent] = React.useState('triage');
   const [model, setModel] = React.useState(selectorModels.triage[0]);
   const [streaming, setStreaming] = React.useState(false);
-  const timer = React.useRef<number>();
+  const timer = React.useRef<number | undefined>(undefined);
   const models = selectorModels[agent];
 
   const stop = () => {
