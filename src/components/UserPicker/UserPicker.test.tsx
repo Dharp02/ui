@@ -185,4 +185,28 @@ describe('UserPicker', () => {
     await userEvent.click(trigger);
     expect(onQueryChange).toHaveBeenLastCalledWith('');
   });
+
+  it('keeps showing selected users when search results omit them', async () => {
+    function ServerSearch() {
+      const [list, setList] = React.useState(users);
+      return (
+        <>
+          <button onClick={() => setList([users[1]])}>Shrink</button>
+          <UserPicker
+            label="Owner"
+            users={list}
+            value="u1"
+            onChange={vi.fn()}
+          />
+        </>
+      );
+    }
+    render(<ServerSearch />);
+    const trigger = screen.getByRole('button', { name: /Owner/ });
+    expect(trigger).toHaveTextContent('Ada Lovelace');
+    // A server-side search replaces `users` with results that omit the
+    // selected person; the trigger must not fall back to the placeholder.
+    await userEvent.click(screen.getByRole('button', { name: 'Shrink' }));
+    expect(trigger).toHaveTextContent('Ada Lovelace');
+  });
 });

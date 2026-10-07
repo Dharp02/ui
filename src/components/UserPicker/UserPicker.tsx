@@ -143,8 +143,17 @@ export const UserPicker = React.forwardRef<HTMLDivElement, UserPickerProps>(
         ? [value as string]
         : [];
     const selectedIds = pendingIds ?? committed;
+    // Server-side search may replace `users` with results that omit people
+    // who are already selected; remember every record seen so the trigger
+    // keeps showing them instead of falling back to the placeholder.
+    const seenUsers = React.useRef(new Map<string, UserPickerUser>());
+    React.useEffect(() => {
+      for (const u of users) seenUsers.current.set(u.id, u);
+    }, [users]);
     const selectedUsers = selectedIds
-      .map((uid) => users.find((u) => u.id === uid))
+      .map(
+        (uid) => users.find((u) => u.id === uid) ?? seenUsers.current.get(uid)
+      )
       .filter((u): u is UserPickerUser => !!u);
 
     const q = query.trim().toLowerCase();

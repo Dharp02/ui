@@ -170,6 +170,16 @@ function AlertDialog({
     onOpenChange(false);
   };
 
+  // Closing (or reusing) the dialog orphans any in-flight action: its
+  // continuation must not clear the busy state or close a newer dialog.
+  const actionGen = React.useRef(0);
+  React.useEffect(() => {
+    if (!open) {
+      actionGen.current += 1;
+      setBusy(false);
+    }
+  }, [open]);
+
   const handleAction = async () => {
     let result: unknown;
     try {
@@ -179,12 +189,15 @@ function AlertDialog({
       return;
     }
     if (!isPromiseLike(result)) return;
+    const gen = ++actionGen.current;
     setBusy(true);
     try {
       await result;
+      if (gen !== actionGen.current) return;
       setBusy(false);
       onOpenChange(false);
     } catch {
+      if (gen !== actionGen.current) return;
       setBusy(false);
       // Disabling the button dropped focus; return it once re-enabled.
       requestAnimationFrame(() => actionRef.current?.focus());

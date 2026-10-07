@@ -251,6 +251,12 @@ function ActivityFeedInner<T>(
     () => new Map(categories.map((c) => [c.id, c])),
     [categories]
   );
+  // Persisted IDs may reference renamed/removed categories; applying them
+  // verbatim would filter out everything with no chip shown as active.
+  const effectiveFilter = React.useMemo(
+    () => selected.filter((id) => categoryById.has(id)),
+    [selected, categoryById]
+  );
   const pinnedSet = React.useMemo(() => new Set(pinnedIds), [pinnedIds]);
   const isPinned = (id: string) => pinOverrides.get(id) ?? pinnedSet.has(id);
   const matches = (item: T, filter: readonly string[]) =>
@@ -284,7 +290,7 @@ function ActivityFeedInner<T>(
   const zone = timeZone;
   const reference = now ?? new Date();
   const compact = density === 'compact';
-  const visible = items.filter((item) => matches(item, selected));
+  const visible = items.filter((item) => matches(item, effectiveFilter));
   const pinnedItems = groupByDay(
     visible.filter((item) => isPinned(getId(item))),
     getDate,
@@ -614,12 +620,12 @@ function ActivityFeedInner<T>(
             >
               <button
                 type="button"
-                aria-pressed={selected.length === 0}
+                aria-pressed={effectiveFilter.length === 0}
                 onClick={() => updateFilters([])}
                 data-slot="activity-feed-filter"
                 className={cn(
                   chipClasses,
-                  selected.length === 0
+                  effectiveFilter.length === 0
                     ? 'border-primary-500/40 bg-primary-500/10 text-foreground'
                     : 'border-border text-muted-foreground hover:bg-muted',
                   classNames?.filter
@@ -628,7 +634,7 @@ function ActivityFeedInner<T>(
                 {text.allCategories}
               </button>
               {categories.map((category) => {
-                const active = selected.includes(category.id);
+                const active = effectiveFilter.includes(category.id);
                 const accent = accentClasses[category.color ?? 'primary'];
                 const Icon = category.icon;
                 return (
@@ -639,8 +645,8 @@ function ActivityFeedInner<T>(
                     onClick={() =>
                       updateFilters(
                         active
-                          ? selected.filter((c) => c !== category.id)
-                          : [...selected, category.id]
+                          ? effectiveFilter.filter((c) => c !== category.id)
+                          : [...effectiveFilter, category.id]
                       )
                     }
                     data-slot="activity-feed-filter"

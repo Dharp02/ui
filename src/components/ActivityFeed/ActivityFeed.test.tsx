@@ -88,6 +88,19 @@ describe('ActivityFeed', () => {
     render(<ActivityFeed {...base} storageKey="bad" />);
   });
 
+  it('ignores persisted category ids that no longer exist', () => {
+    window.localStorage.setItem(
+      'feed',
+      JSON.stringify({ categories: ['removed-category'] })
+    );
+    render(<ActivityFeed {...base} storageKey="feed" />);
+    expect(screen.getAllByRole('listitem')).toHaveLength(activities.length);
+    expect(screen.getByRole('button', { name: 'All' })).toHaveAttribute(
+      'aria-pressed',
+      'true'
+    );
+  });
+
   it('hides descriptions in compact density', async () => {
     render(<ActivityFeed {...base} />);
     expect(screen.getByText(/SOC 2 report shared/)).toBeInTheDocument();

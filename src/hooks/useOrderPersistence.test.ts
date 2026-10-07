@@ -143,6 +143,28 @@ describe('useOrderPersistence', () => {
     await act(async () => vi.advanceTimersByTime(500));
     expect(onError).toHaveBeenCalledWith(failure);
   });
+
+  it('re-saves the newest order when an older overlapped save settles last', async () => {
+    let finishFirst!: () => void;
+    const save = vi
+      .fn()
+      .mockImplementationOnce(() => new Promise<void>((r) => (finishFirst = r)))
+      .mockImplementation(() => undefined);
+    const { result } = setup(['a', 'b', 'c'], { save, debounceMs: 10 });
+    await act(async () => {});
+    act(() => result.current.setOrder(['b', 'a', 'c']));
+    act(() => vi.advanceTimersByTime(10));
+    act(() => result.current.setOrder(['c', 'b', 'a']));
+    await act(async () => {
+      window.dispatchEvent(new Event('pagehide'));
+    });
+    expect(save).toHaveBeenCalledTimes(2);
+    // The stale first save settles after the forced one; the newest order
+    // is written once more so completion order cannot leave it stale.
+    await act(async () => finishFirst());
+    expect(save).toHaveBeenCalledTimes(3);
+    expect(save).toHaveBeenLastCalledWith(['c', 'b', 'a']);
+  });
 });
 
 describe('localStorageOrderAdapter', () => {

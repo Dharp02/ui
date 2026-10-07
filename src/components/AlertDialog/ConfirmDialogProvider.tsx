@@ -53,6 +53,16 @@ export function ConfirmDialogProvider({
     setOpen(false);
   }, []);
 
+  // If the provider unmounts with a dialog open, settle the promise as
+  // cancelled so callers awaiting confirm() aren't suspended forever.
+  React.useEffect(
+    () => () => {
+      resolveRef.current?.(false);
+      resolveRef.current = null;
+    },
+    []
+  );
+
   const api = React.useMemo<ConfirmApi>(() => {
     const show = (next: PendingDialog) =>
       new Promise<boolean>((resolve) => {

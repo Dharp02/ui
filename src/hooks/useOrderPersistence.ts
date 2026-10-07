@@ -62,6 +62,10 @@ export function useOrderPersistence(
   // In-flight save count: `force` (pagehide) saves may overlap a normal one,
   // so queued flushes resume only after every save settles.
   const saving = React.useRef(0);
+  // When saves overlap, their completion order is unknown and a stale write
+  // could land last; the newest payload is saved once more after all settle.
+  const lastStarted = React.useRef<string[] | null>(null);
+  const overlapped = React.useRef(false);
 
   // One save at a time; changes made meanwhile coalesce into the next save.
   // `force` skips the queue for page unloads, where a queued save never runs.
@@ -70,7 +74,9 @@ export function useOrderPersistence(
     const next = pending.current;
     if (!next || (saving.current > 0 && !force)) return;
     pending.current = null;
+    if (saving.current > 0) overlapped.current = true;
     saving.current += 1;
+    lastStarted.current = next;
     const { save: run, onError: fail } = callbacks.current;
     let result: void | Promise<void>;
     try {
@@ -82,7 +88,12 @@ export function useOrderPersistence(
       .catch((e: unknown) => fail?.(e))
       .finally(() => {
         saving.current -= 1;
-        if (saving.current === 0) flushPending();
+        if (saving.current > 0) return;
+        if (overlapped.current) {
+          overlapped.current = false;
+          pending.current ??= lastStarted.current;
+        }
+        flushPending();
       });
   }, []);
 

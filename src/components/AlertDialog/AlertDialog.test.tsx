@@ -247,6 +247,30 @@ describe('AlertDialog', () => {
       expect(screen.getByRole('button', { name: 'Cancel' })).toBeEnabled();
     });
 
+    it('ignores a stale async action after the dialog closes and reopens', async () => {
+      const { promise, resolve } = deferred();
+      const onOpenChange = vi.fn();
+      const dialog = (open: boolean) => (
+        <AlertDialog
+          open={open}
+          onOpenChange={onOpenChange}
+          title="T"
+          onAction={() => promise}
+        />
+      );
+      const { rerender } = renderWithTheme(dialog(true));
+      fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+      // The parent closes the dialog while the action is pending, then
+      // reuses the instance for another prompt.
+      rerender(dialog(false));
+      rerender(dialog(true));
+      onOpenChange.mockClear();
+      await act(async () => resolve());
+      // The stale continuation must not close or un-busy the new dialog.
+      expect(onOpenChange).not.toHaveBeenCalled();
+      expect(screen.getByRole('button', { name: 'Continue' })).toBeEnabled();
+    });
+
     it('does not close on a synchronous onAction', () => {
       const onOpenChange = vi.fn();
       renderWithTheme(
@@ -324,5 +348,17 @@ describe('useConfirm', () => {
     ).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'OK' }));
     await waitFor(() => expect(onResult).toHaveBeenCalledWith(undefined));
+  });
+
+  it('settles a pending confirm as cancelled when the provider unmounts', async () => {
+    const onResult = vi.fn();
+    const { unmount } = renderWithTheme(
+      <ConfirmDialogProvider>
+        <Harness onResult={onResult} />
+      </ConfirmDialogProvider>
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Ask' }));
+    unmount();
+    await waitFor(() => expect(onResult).toHaveBeenCalledWith(false));
   });
 });
