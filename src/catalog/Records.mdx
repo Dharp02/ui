@@ -24,8 +24,10 @@ import { Meta } from '@storybook/addon-docs/blocks';
 ## How they fit together
 
 - `RecordLayout` renders its `tabs` with `Tabs`; set `tabsUrlParam` so each tab has a link.
-- `ActivityFeed` and `FieldHistory` group by day the same way. Pins, removals and status
-  changes are optimistic: the change shows at once and is rolled back if your callback rejects.
+- `ActivityFeed` and `FieldHistory` group by day the same way. `ActivityFeed` pins and
+  `ActionPlan` status changes are optimistic: the change shows at once and is rolled back if
+  your callback rejects. `AssociationList` removals are pending instead: the row stays
+  visible with `aria-busy` and a spinner until `onRemove` settles.
 - `OrgChart` ships from **`@mieweb/ui/org-chart`**, not the main entry, because it needs the
   optional `@xyflow/react` and `elkjs` peers and `@xyflow/react/dist/style.css`.
 
