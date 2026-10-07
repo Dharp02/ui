@@ -188,7 +188,10 @@ function ServiceNote({ service, onNoteChange, labels }: ServiceNoteProps) {
         </button>
       )}
       {failed && (
-        <p role="alert" className="text-destructive text-xs">
+        <p
+          role="alert"
+          className="text-destructive-700 dark:text-destructive-400 text-xs"
+        >
           {labels.noteSaveError}
         </p>
       )}

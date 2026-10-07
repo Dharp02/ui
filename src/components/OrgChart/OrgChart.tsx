@@ -365,7 +365,10 @@ export const OrgChart = React.forwardRef<HTMLDivElement, OrgChartProps>(
     if (error) {
       body = stateBox(
         <>
-          <p role="alert" className="text-destructive">
+          <p
+            role="alert"
+            className="text-destructive-700 dark:text-destructive-400"
+          >
             {labels.error}
           </p>
           {onRetry && (

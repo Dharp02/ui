@@ -327,6 +327,7 @@ module.exports = {
     'text-destructive-700',
     'dark:text-success',
     'dark:text-destructive',
+    'dark:text-destructive-400',
     // Accordion — grid-rows height animation (arbitrary values TW3 won't scan)
     'transition-[grid-template-rows]',
     'grid-rows-[0fr]',

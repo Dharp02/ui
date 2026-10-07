@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
+import { User } from 'lucide-react';
 import { Avatar } from './Avatar';
 import { AvatarGroup } from '../AvatarGroup';
 
@@ -184,7 +185,7 @@ export const Initials: Story = {
 // Custom Fallback
 export const CustomFallback: Story = {
   args: {
-    fallback: <span>👤</span>,
+    fallback: <User aria-hidden="true" className="h-[60%] w-[60%]" />,
     size: 'lg',
   },
 };

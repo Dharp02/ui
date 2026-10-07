@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
+import { Badge } from '../Badge';
 import {
   ProviderDetailHeader,
   ProviderLogo,
@@ -217,12 +218,9 @@ export const FullPageDemo: Story = {
           <h2 className="mb-4 text-xl font-semibold">Services</h2>
           <div className="flex flex-wrap gap-2">
             {['Drug Testing', 'DOT Physical', 'Breath Alcohol'].map((s) => (
-              <span
-                key={s}
-                className="bg-primary-100 text-primary-900 dark:bg-primary-900 dark:text-primary-300 rounded-full px-3 py-1.5 text-sm"
-              >
+              <Badge key={s} size="lg">
                 {s}
-              </span>
+              </Badge>
             ))}
           </div>
         </div>

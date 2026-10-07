@@ -216,7 +216,7 @@ export const AvatarGroup = React.forwardRef<HTMLUListElement, AvatarGroupProps>(
               data-slot="avatar-group-overflow"
               className={cn(
                 avatarVariants({ size }),
-                'bg-muted text-muted-foreground ring-background ring-2'
+                'bg-muted text-foreground ring-background ring-2'
               )}
             >
               +{hidden.length}

@@ -232,7 +232,7 @@ export const InlineEdit = React.forwardRef<HTMLDivElement, InlineEditProps>(
         id={errorId}
         role="alert"
         data-slot="inline-edit-error"
-        className="text-destructive mt-1 text-sm"
+        className="text-destructive-700 dark:text-destructive-400 mt-1 text-sm"
       >
         {error}
       </p>

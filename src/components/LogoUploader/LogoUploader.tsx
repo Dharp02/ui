@@ -340,7 +340,7 @@ export const LogoUploader = React.forwardRef<HTMLDivElement, LogoUploaderProps>(
             id={errorId}
             role="alert"
             data-slot="logo-uploader-error"
-            className="text-destructive text-sm"
+            className="text-destructive-700 dark:text-destructive-400 text-sm"
           >
             {error}
           </p>
