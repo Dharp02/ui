@@ -191,9 +191,17 @@ export const OrgChart = React.forwardRef<HTMLDivElement, OrgChartProps>(
     // A group that isn't in `nodes` (stale default, removed on refresh) means no filter.
     const group = groupState && groups.includes(groupState) ? groupState : '';
     const [selectedId, setSelectedId] = React.useState<string | null>(null);
+    // Deterministic initial view so SSR and client hydrate the same tree;
+    // the narrow-screen default is applied once after mount.
     const [viewState, setViewState] = React.useState<OrgChartView>(
-      () => defaultView ?? (isNarrow() ? 'list' : 'chart')
+      defaultView ?? 'chart'
     );
+    const appliedNarrowDefault = React.useRef(false);
+    React.useEffect(() => {
+      if (appliedNarrowDefault.current) return;
+      appliedNarrowDefault.current = true;
+      if (defaultView === undefined && isNarrow()) setViewState('list');
+    }, [defaultView]);
     const view = viewProp ?? viewState;
     const [showMinimap, setShowMinimap] = React.useState(defaultShowMinimap);
     const [nativeFull, setNativeFull] = React.useState(false);

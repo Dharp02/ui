@@ -424,10 +424,12 @@ export function ServicePricingManager({
                   <div className="text-end">Actions</div>
                 </div>
 
-                {filteredServices.map((service) => {
+                {filteredServices.map((service, index) => {
                   const href = getServiceHref?.(service);
                   const expanded = expandedIds.has(service.id);
-                  const detailsId = `${detailsIdPrefix}-details-${service.id}`;
+                  // Row position, not `service.id`: an ID with whitespace would
+                  // turn the `aria-controls` IDREF into a multi-ID list.
+                  const detailsId = `${detailsIdPrefix}-details-${index}`;
                   return (
                     <div
                       key={service.id}

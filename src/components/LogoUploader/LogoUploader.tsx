@@ -72,9 +72,12 @@ function matchesAccept(file: File, accept: string): boolean {
 function FilePreview({ file, alt }: { file: File; alt: string }) {
   const canvasRef = React.useRef<HTMLCanvasElement>(null);
   React.useEffect(() => {
+    // Without the API (older engines, jsdom) the target keeps its spinner,
+    // same as an undecodable image.
+    if (typeof globalThis.createImageBitmap !== 'function') return;
     let cancelled = false;
     globalThis
-      .createImageBitmap?.(file)
+      .createImageBitmap(file)
       .then((bitmap) => {
         const canvas = canvasRef.current;
         if (!cancelled && canvas) {

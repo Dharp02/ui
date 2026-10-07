@@ -59,16 +59,18 @@ export function useOrderPersistence(
     undefined
   );
   const touched = React.useRef(false);
-  const saving = React.useRef(false);
+  // In-flight save count: `force` (pagehide) saves may overlap a normal one,
+  // so queued flushes resume only after every save settles.
+  const saving = React.useRef(0);
 
   // One save at a time; changes made meanwhile coalesce into the next save.
   // `force` skips the queue for page unloads, where a queued save never runs.
   const flush = React.useCallback(function flushPending(force = false) {
     clearTimeout(timer.current);
     const next = pending.current;
-    if (!next || (saving.current && !force)) return;
+    if (!next || (saving.current > 0 && !force)) return;
     pending.current = null;
-    saving.current = true;
+    saving.current += 1;
     const { save: run, onError: fail } = callbacks.current;
     let result: void | Promise<void>;
     try {
@@ -79,8 +81,8 @@ export function useOrderPersistence(
     void Promise.resolve(result)
       .catch((e: unknown) => fail?.(e))
       .finally(() => {
-        saving.current = false;
-        flushPending();
+        saving.current -= 1;
+        if (saving.current === 0) flushPending();
       });
   }, []);
 
