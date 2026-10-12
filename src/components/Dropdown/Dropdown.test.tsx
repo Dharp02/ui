@@ -381,12 +381,12 @@ describe('Dropdown', () => {
 
     // …while ArrowLeft opens toward the inline-end.
     fireEvent.keyDown(trigger, { key: 'ArrowLeft' });
-    expect(
-      await screen.findByRole('menuitem', { name: 'Beta' })
-    ).toBeInTheDocument();
+    const submenuItem = await screen.findByRole('menuitem', { name: 'Beta' });
 
-    // ArrowRight closes it again.
-    fireEvent.keyDown(trigger, { key: 'ArrowRight' });
+    // The flyout is portaled to document.body, outside the dir override, so
+    // its close key must come from the direction sampled at the trigger:
+    // ArrowRight closes it again, dispatched on the focused submenu item.
+    fireEvent.keyDown(submenuItem, { key: 'ArrowRight' });
     expect(screen.queryByRole('menuitem', { name: 'Beta' })).toBeNull();
   });
 

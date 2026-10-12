@@ -1140,9 +1140,11 @@ function DropdownSubmenu({
                   if (event.pointerType === 'mouse') scheduleClose();
                 }}
                 onKeyDown={(event) => {
-                  const closeKey = isRtl(event.currentTarget)
-                    ? 'ArrowRight'
-                    : 'ArrowLeft';
+                  // The panel is portaled to document.body, so computing the
+                  // direction from event.currentTarget would miss a local dir
+                  // override around the dropdown — reuse the direction sampled
+                  // from the in-place trigger when the flyout opened.
+                  const closeKey = rtl ? 'ArrowRight' : 'ArrowLeft';
                   if (event.key === closeKey || event.key === 'Escape') {
                     event.preventDefault();
                     event.stopPropagation();
