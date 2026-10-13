@@ -110,6 +110,67 @@ describe('MegaMenu', () => {
   });
 });
 
+describe('MegaMenu panel clamp (direction-aware)', () => {
+  // jsdom has no layout: fake the root rect, panel width and viewport, then
+  // fire a resize so `position()` re-runs with the mocked geometry.
+  const PANEL_WIDTH = 600;
+  const setupGeometry = (rect: { left: number; right: number }) => {
+    const panel = document.querySelector(
+      '[data-slot="mega-menu-panel"]'
+    ) as HTMLElement;
+    const root = panel.parentElement as HTMLElement;
+    root.getBoundingClientRect = () =>
+      ({
+        ...rect,
+        top: 0,
+        bottom: 40,
+        width: rect.right - rect.left,
+        height: 40,
+        x: rect.left,
+        y: 0,
+        toJSON: () => ({}),
+      }) as ReturnType<HTMLElement['getBoundingClientRect']>;
+    Object.defineProperty(panel, 'offsetWidth', {
+      value: PANEL_WIDTH,
+      configurable: true,
+    });
+    Object.defineProperty(document.documentElement, 'clientWidth', {
+      value: 1024,
+      configurable: true,
+    });
+    return { panel, root };
+  };
+
+  it('anchors the panel left edge to the trigger in LTR', () => {
+    renderWithTheme(<MegaMenu menu={menu} open onOpenChange={() => {}} />);
+    const { panel } = setupGeometry({ left: 100, right: 250 });
+    fireEvent(window, new Event('resize'));
+    // desired = rect.left (100) → offset 100 − 100 = 0
+    expect(panel.style.left).toBe('0px');
+  });
+
+  it('anchors the panel right edge to the trigger in RTL', () => {
+    renderWithTheme(<MegaMenu menu={menu} open onOpenChange={() => {}} />);
+    const { panel, root } = setupGeometry({ left: 700, right: 850 });
+    // jsdom has no [dir] cascade — set direction on the element isRtl reads.
+    root.setAttribute('dir', 'rtl');
+    root.style.direction = 'rtl';
+    fireEvent(window, new Event('resize'));
+    // desired = rect.right − panel width = 850 − 600 = 250 → offset 250 − 700
+    expect(panel.style.left).toBe('-450px');
+  });
+
+  it('clamps to viewport padding when the RTL panel would overflow left', () => {
+    renderWithTheme(<MegaMenu menu={menu} open onOpenChange={() => {}} />);
+    const { panel, root } = setupGeometry({ left: 100, right: 250 });
+    root.setAttribute('dir', 'rtl');
+    root.style.direction = 'rtl';
+    fireEvent(window, new Event('resize'));
+    // desired = 250 − 600 = −350 → clamped to pad 16 → offset 16 − 100 = −84
+    expect(panel.style.left).toBe('-84px');
+  });
+});
+
 describe('MegaMenuBar', () => {
   it('keeps only one menu open at a time', () => {
     const other: MegaMenuConfig = {
