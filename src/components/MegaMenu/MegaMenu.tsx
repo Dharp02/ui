@@ -3,7 +3,7 @@
 import * as React from 'react';
 import { ArrowRight, ChevronDown, ChevronRight } from 'lucide-react';
 import { cn } from '../../utils/cn';
-import { isRtl } from '../../hooks/useDirection';
+import { useDirection } from '../../hooks/useDirection';
 import { buttonVariants } from '../Button';
 
 // =============================================================================
@@ -175,6 +175,8 @@ export function MegaMenu({
   // Clamp the panel inside the viewport (it's absolutely positioned under the
   // trigger). Anchoring is logical: the panel's inline-start edge aligns with
   // the trigger's — left edge in LTR, right edge in RTL — before clamping.
+  // `useDirection` is reactive, so an open panel re-clamps when `dir` changes.
+  const direction = useDirection(rootRef);
   const position = React.useCallback(() => {
     const root = rootRef.current;
     const panel = panelRef.current;
@@ -185,14 +187,15 @@ export function MegaMenu({
     const rect = root.getBoundingClientRect();
     const pad = 16;
     const vw = document.documentElement.clientWidth;
-    const desired = isRtl(root) ? rect.right - panel.offsetWidth : rect.left;
+    const desired =
+      direction === 'rtl' ? rect.right - panel.offsetWidth : rect.left;
     const clamped = Math.min(
       Math.max(desired, pad),
       Math.max(pad, vw - pad - panel.offsetWidth)
     );
     setLeft(clamped - rect.left);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [hoverMinWidth]);
+  }, [hoverMinWidth, direction]);
 
   const curPath = currentPath ? normalizePath(currentPath) : null;
   const isCurrent = (href: string) =>

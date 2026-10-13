@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { screen, fireEvent } from '@testing-library/react';
+import { screen, fireEvent, act, waitFor } from '@testing-library/react';
 import { renderWithTheme } from '../../test/test-utils';
 import { Tooltip, type TooltipPlacement } from './Tooltip';
 
@@ -10,7 +10,16 @@ const TRIGGER = { left: 500, right: 540, top: 300, bottom: 320 };
 const TOOLTIP = { width: 100, height: 30 };
 const OFFSET = 8;
 
-function renderOpenTooltip(placement: TooltipPlacement, rtl = false) {
+// jsdom has no [dir] cascade — set direction on the element the reactive
+// useDirection(wrapperRef) hook reads, then flush its MutationObserver.
+async function setDirection(wrapper: HTMLElement, dir: 'ltr' | 'rtl') {
+  await act(async () => {
+    wrapper.setAttribute('dir', dir);
+    wrapper.style.direction = dir;
+  });
+}
+
+async function renderOpenTooltip(placement: TooltipPlacement, rtl = false) {
   renderWithTheme(
     <Tooltip content="tip" placement={placement} open>
       <button>trigger</button>
@@ -21,9 +30,7 @@ function renderOpenTooltip(placement: TooltipPlacement, rtl = false) {
   const wrapper = screen.getByRole('button', { name: 'trigger' })
     .parentElement as HTMLElement;
   if (rtl) {
-    // jsdom has no [dir] cascade — set direction on the element isRtl reads.
-    wrapper.setAttribute('dir', 'rtl');
-    wrapper.style.direction = 'rtl';
+    await setDirection(wrapper, 'rtl');
   }
   wrapper.getBoundingClientRect = () =>
     ({
@@ -46,35 +53,44 @@ function renderOpenTooltip(placement: TooltipPlacement, rtl = false) {
       toJSON: () => ({}),
     }) as ReturnType<HTMLElement['getBoundingClientRect']>;
   fireEvent(window, new Event('resize'));
-  return tooltip;
+  return { tooltip, wrapper };
 }
 
 const LEFT_OF_TRIGGER = `${TRIGGER.left - TOOLTIP.width - OFFSET}px`; // 392px
 const RIGHT_OF_TRIGGER = `${TRIGGER.right + OFFSET}px`; // 548px
 
 describe('Tooltip logical placements', () => {
-  it('places `start` on the left in LTR', () => {
-    const tooltip = renderOpenTooltip('start');
+  it('places `start` on the left in LTR', async () => {
+    const { tooltip } = await renderOpenTooltip('start');
     expect(tooltip.style.left).toBe(LEFT_OF_TRIGGER);
   });
 
-  it('places `start` on the right in RTL', () => {
-    const tooltip = renderOpenTooltip('start', true);
+  it('places `start` on the right in RTL', async () => {
+    const { tooltip } = await renderOpenTooltip('start', true);
     expect(tooltip.style.left).toBe(RIGHT_OF_TRIGGER);
   });
 
-  it('places `end` on the right in LTR', () => {
-    const tooltip = renderOpenTooltip('end');
+  it('places `end` on the right in LTR', async () => {
+    const { tooltip } = await renderOpenTooltip('end');
     expect(tooltip.style.left).toBe(RIGHT_OF_TRIGGER);
   });
 
-  it('places `end` on the left in RTL', () => {
-    const tooltip = renderOpenTooltip('end', true);
+  it('places `end` on the left in RTL', async () => {
+    const { tooltip } = await renderOpenTooltip('end', true);
     expect(tooltip.style.left).toBe(LEFT_OF_TRIGGER);
   });
 
-  it('keeps physical `left` unchanged in RTL', () => {
-    const tooltip = renderOpenTooltip('left', true);
+  it('keeps physical `left` unchanged in RTL', async () => {
+    const { tooltip } = await renderOpenTooltip('left', true);
     expect(tooltip.style.left).toBe(LEFT_OF_TRIGGER);
+  });
+
+  it('repositions an open tooltip when the direction changes live', async () => {
+    const { tooltip, wrapper } = await renderOpenTooltip('start');
+    expect(tooltip.style.left).toBe(LEFT_OF_TRIGGER);
+    // No resize/scroll here: the reactive useDirection dep alone must
+    // recalculate the already-open tooltip's position (lands in a rAF).
+    await setDirection(wrapper, 'rtl');
+    await waitFor(() => expect(tooltip.style.left).toBe(RIGHT_OF_TRIGGER));
   });
 });

@@ -1,7 +1,7 @@
 import * as React from 'react';
 import { createPortal } from 'react-dom';
 import { cn } from '../../utils/cn';
-import { isRtl } from '../../hooks/useDirection';
+import { useDirection } from '../../hooks/useDirection';
 import { usePrefersReducedMotion } from '../../hooks/usePrefersReducedMotion';
 
 export type TooltipPlacement =
@@ -125,7 +125,9 @@ function Tooltip({
     }
   }, []);
 
-  // Calculate optimal position for tooltip
+  // Calculate optimal position for tooltip. `useDirection` is reactive, so an
+  // open tooltip repositions immediately when the nearest `dir` changes.
+  const direction = useDirection(wrapperRef);
   const calculatePosition = React.useCallback(() => {
     if (!wrapperRef.current || !tooltipRef.current) return;
 
@@ -135,7 +137,7 @@ function Tooltip({
     const viewportHeight = window.innerHeight;
 
     // Resolve logical placements against the trigger's text direction.
-    const rtl = isRtl(wrapperRef.current);
+    const rtl = direction === 'rtl';
     const resolvedPlacement: PhysicalPlacement =
       preferredPlacement === 'start'
         ? rtl
@@ -247,7 +249,7 @@ function Tooltip({
     }
 
     setPosition({ top, left, actualPlacement, arrowOffset });
-  }, [preferredPlacement, offset]);
+  }, [preferredPlacement, offset, direction]);
 
   // Detect dark mode from document
   React.useEffect(() => {

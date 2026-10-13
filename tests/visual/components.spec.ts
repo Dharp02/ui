@@ -934,15 +934,18 @@ test.describe('Visual Regression Tests - EH Frontdoor Components', () => {
     }
     // The panel clamp is logical too: under RTL its inline-start (right)
     // edge must align with the trigger root's right edge instead of the
-    // LTR left-anchoring. Geometry, not pixels — the 5% tolerance can
-    // swallow the anchor flip.
+    // LTR left-anchoring. Assert closeness, not just an upper bound — the
+    // old left-anchored layout also kept the panel's right edge inside the
+    // root, so a one-sided check could not catch a regression.
     const panel = page.locator("[data-slot='mega-menu-panel']");
-    const rootRight = await panel.evaluate(
-      (el) => el.parentElement!.getBoundingClientRect().right
-    );
     await expect
-      .poll(() => panel.evaluate((el) => el.getBoundingClientRect().right))
-      .toBeLessThanOrEqual(rootRight + 1);
+      .poll(() =>
+        panel.evaluate((el) => {
+          const rootRight = el.parentElement!.getBoundingClientRect().right;
+          return Math.abs(rootRight - el.getBoundingClientRect().right);
+        })
+      )
+      .toBeLessThanOrEqual(1.5);
     expect(
       await panel.evaluate((el) => el.getBoundingClientRect().left)
     ).toBeGreaterThanOrEqual(15);
