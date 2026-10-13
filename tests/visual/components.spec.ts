@@ -52,9 +52,9 @@ async function gotoStory(
 // Warm up the server before running tests
 test.beforeAll(async ({ browser }) => {
   const page = await browser.newPage();
-  // Visit the index to ensure server is fully ready
-  await page.goto('/');
-  await page.waitForLoadState('networkidle');
+  // Warm up the manager without waiting for optional external widgets/fonts.
+  // Each test waits for its own story to render before making assertions.
+  await page.goto('/', { waitUntil: 'domcontentloaded' });
   await page.close();
 });
 
@@ -399,6 +399,55 @@ test.describe('Visual Regression Tests - Core Components', () => {
     expect(await composer.boundingBox()).toEqual(closedComposerBox);
   });
 
+  test('Modal - Full-screen mobile clears the safe areas', async ({ page }) => {
+    // Issue #548: below `sm` the full-screen Modal must pad itself clear of
+    // the status bar and home indicator. Chromium cannot emulate
+    // env(safe-area-inset-*), so simulate a notch through the override vars.
+    const safeTop = 59;
+    const safeBottom = 34;
+    await page.setViewportSize({ width: 390, height: 844 });
+    await gotoStory(page, 'overlays-modal--default');
+    await page.addStyleTag({
+      content: `:root { --mieweb-safe-area-top: ${safeTop}px; --mieweb-safe-area-bottom: ${safeBottom}px; }`,
+    });
+    await page.getByRole('button', { name: 'Open Modal' }).click();
+
+    const dialog = page.locator("[data-slot='modal']");
+    await expect(dialog).toBeVisible();
+    await dialog.evaluate((element) =>
+      Promise.all(
+        element.getAnimations({ subtree: true }).map((a) => a.finished)
+      )
+    );
+
+    const layout = await dialog.evaluate((element) => {
+      const style = getComputedStyle(element);
+      const box = element.getBoundingClientRect();
+      const header = element
+        .querySelector("[data-slot='modal-header']")!
+        .getBoundingClientRect();
+      const footer = element
+        .querySelector("[data-slot='modal-footer']")!
+        .getBoundingClientRect();
+      return {
+        paddingTop: style.paddingTop,
+        paddingBottom: style.paddingBottom,
+        headerOffset: header.top - box.top,
+        footerOffset: box.bottom - footer.bottom,
+      };
+    });
+    expect(layout.paddingTop).toBe(`${safeTop}px`);
+    expect(layout.paddingBottom).toBe(`${safeBottom}px`);
+    // Border is 1px, so the slots start just inside the inset.
+    expect(layout.headerOffset).toBeGreaterThanOrEqual(safeTop);
+    expect(layout.footerOffset).toBeGreaterThanOrEqual(safeBottom);
+
+    // Above `sm` the dialog is centred and rounded: no inset padding.
+    await page.setViewportSize({ width: 1024, height: 768 });
+    await expect(dialog).toHaveCSS('padding-top', '0px');
+    await expect(dialog).toHaveCSS('padding-bottom', '0px');
+  });
+
   test('MessageThread - Full thread with shared composer', async ({ page }) => {
     // MessageThread now embeds the shared ChatComposer in its border-t frame
     // (composer unification #465). Message footers show wall-clock times, so
@@ -456,6 +505,14 @@ test.describe('Visual Regression Tests - Core Components', () => {
     await expect(page).toHaveScreenshot('superchat-playground.png');
   });
 
+  test('SuperChat - Composer selectors', async ({ page }) => {
+    // Agent + model selector row in the SuperChat composer.
+    await gotoStory(page, 'superchat-superchat-panel--composer-selectors');
+    const composer = page.locator("[data-slot='chat-composer']");
+    await composer.waitFor({ state: 'visible' });
+    await expect(composer).toHaveScreenshot('superchat-composer-selectors.png');
+  });
+
   test('SuperChat - Read only', async ({ page }) => {
     // Disabled composer with the read-only placeholder.
     await gotoStory(page, 'superchat-superchat-panel--playground', {
@@ -495,6 +552,47 @@ test.describe('Visual Regression Tests - Core Components', () => {
       .locator("[data-slot='chat-composer-input']")
       .waitFor({ state: 'visible' });
     await expect(page).toHaveScreenshot('ai-chat-playground-condensed.png');
+  });
+
+  test('OzwellChat - Streaming Response settles with jump button', async ({
+    page,
+  }) => {
+    // The story streams its long answer on real timers; install a fake clock
+    // and pause it so time only advances via runFor() — the run is fully
+    // deterministic: the demo's kickoff (800ms), 120ms stream ticks, and the
+    // trailing follow-up fire exactly when told to.
+    await page.clock.install({ time: new Date('2026-01-15T12:00:00') });
+    await page.clock.pauseAt(new Date('2026-01-15T12:00:01'));
+    await gotoStory(page, 'chat-ozwellchat--streaming-response');
+
+    await page.clock.runFor(800); // kickoff fires, stream begins
+    // Advance until the final sentence lands. Stepping 1s at a time (less
+    // than the 1.2s follow-up delay) guarantees we stop after the stream
+    // completes but before the follow-up message fires.
+    const endText = page.getByText(/documented in the encounter note/);
+    for (let i = 0; i < 30 && (await endText.count()) === 0; i++) {
+      await page.clock.runFor(1000);
+    }
+    // Reveal-then-hold: the view held at the reply's first line, so the
+    // completed answer sits below the fold behind the jump button, which
+    // already carries its "New messages" hint (chunks landed while holding).
+    const jumpButton = page.locator("[data-slot='ai-chat-jump-to-bottom']");
+    await expect(jumpButton).toBeVisible();
+    await expect(page).toHaveScreenshot('ozwell-chat-streaming-settled.png');
+
+    // Land the trailing follow-up, then jump to the bottom via the button —
+    // the hook rejects programmatic scrolls, and its spring animation runs
+    // on rAF, which the fake clock drives: advance until it settles.
+    await page.clock.runFor(1300);
+    await jumpButton.click();
+    for (let i = 0; i < 30 && (await jumpButton.isVisible()); i++) {
+      await page.clock.runFor(500);
+    }
+    await expect(
+      page.getByText('Anything else you’d like me to pull from the chart?')
+    ).toBeInViewport();
+    await expect(jumpButton).toBeHidden();
+    await expect(page).toHaveScreenshot('ozwell-chat-streaming-bottom.png');
   });
 
   test('AIMessage - Thinking active (streaming)', async ({ page }) => {
@@ -543,6 +641,18 @@ test.describe('Visual Regression Tests - Core Components', () => {
     await expect(page).toHaveScreenshot('badge-default.png');
   });
 
+  test('Badge - Removable', async ({ page }) => {
+    await gotoStory(page, 'data-display-badge--removable');
+    await expect(page).toHaveScreenshot('badge-removable.png');
+  });
+
+  test('Badge - Removable (dark)', async ({ page }) => {
+    await gotoStory(page, 'data-display-badge--removable', {
+      globals: 'theme:dark',
+    });
+    await expect(page).toHaveScreenshot('badge-removable-dark.png');
+  });
+
   test('Card - Default', async ({ page }) => {
     await gotoStory(page, 'layout-card--default');
     await expect(page).toHaveScreenshot('card-default.png');
@@ -578,6 +688,81 @@ test.describe('Visual Regression Tests - Core Components', () => {
     await expect(page).toHaveScreenshot('countrycodedropdown-default.png');
   });
 
+  test('Dropdown - Submenu flyout opens inline-end (RTL)', async ({ page }) => {
+    // Under dir="rtl" DropdownSubmenu swaps its anchored placement to
+    // 'left-start' so the flyout, chevron, and open/close arrow keys all
+    // agree on the inline-end side.
+    await gotoStory(page, 'choice-inputs-dropdown--with-submenu', {
+      globals: 'direction:rtl',
+    });
+    await page.getByRole('button', { name: 'Export' }).click();
+    const trigger = page.locator("[data-slot='dropdown-submenu-trigger']");
+    await trigger.click();
+    const submenu = page.locator("[data-slot='dropdown-submenu']");
+    await submenu.waitFor({ state: 'visible' });
+    // The 5% page-diff tolerance can swallow a side-flip on a small panel,
+    // so assert the geometry directly: the flyout's right edge must sit at
+    // or before the trigger's left edge. Poll so the open animation (scale
+    // from the landing side) settles first.
+    const triggerBox = await trigger.evaluate((el) =>
+      ((r) => ({ left: r.left }))(el.getBoundingClientRect())
+    );
+    await expect
+      .poll(() =>
+        submenu.evaluate((el) => el.getBoundingClientRect().right)
+      )
+      .toBeLessThanOrEqual(triggerBox.left);
+    await expect(page).toHaveScreenshot('dropdown-submenu-rtl.png', {
+      animations: 'disabled',
+    });
+  });
+
+  test('Tooltip - Logical placements (LTR)', async ({ page }) => {
+    // `start`/`end` resolve against the trigger's text direction: in LTR
+    // start = left of the trigger, end = right.
+    await gotoStory(page, 'overlays-tooltip--logical-placements');
+    const startTip = page.getByRole('tooltip').filter({ hasText: 'Inline start' });
+    const endTip = page.getByRole('tooltip').filter({ hasText: 'Inline end' });
+    const startBtn = page.getByRole('button', { name: 'Start' });
+    const endBtn = page.getByRole('button', { name: 'End' });
+    // Geometry, not just pixels: the 5% page-diff tolerance can swallow a
+    // side swap on a small tooltip. Poll: positioning lands in a rAF.
+    const startBox = await startBtn.boundingBox();
+    const endBox = await endBtn.boundingBox();
+    await expect
+      .poll(() => startTip.evaluate((el) => el.getBoundingClientRect().right))
+      .toBeLessThanOrEqual(startBox!.x);
+    await expect
+      .poll(() => endTip.evaluate((el) => el.getBoundingClientRect().left))
+      .toBeGreaterThanOrEqual(endBox!.x + endBox!.width);
+    await expect(page).toHaveScreenshot('tooltip-logical-placements.png', {
+      animations: 'disabled',
+    });
+  });
+
+  test('Tooltip - Logical placements swap (RTL)', async ({ page }) => {
+    // Under dir="rtl" the logical placements mirror: start = right of the
+    // trigger, end = left.
+    await gotoStory(page, 'overlays-tooltip--logical-placements', {
+      globals: 'direction:rtl',
+    });
+    const startTip = page.getByRole('tooltip').filter({ hasText: 'Inline start' });
+    const endTip = page.getByRole('tooltip').filter({ hasText: 'Inline end' });
+    const startBtn = page.getByRole('button', { name: 'Start' });
+    const endBtn = page.getByRole('button', { name: 'End' });
+    const startBox = await startBtn.boundingBox();
+    const endBox = await endBtn.boundingBox();
+    await expect
+      .poll(() => startTip.evaluate((el) => el.getBoundingClientRect().left))
+      .toBeGreaterThanOrEqual(startBox!.x + startBox!.width);
+    await expect
+      .poll(() => endTip.evaluate((el) => el.getBoundingClientRect().right))
+      .toBeLessThanOrEqual(endBox!.x);
+    await expect(page).toHaveScreenshot('tooltip-logical-placements-rtl.png', {
+      animations: 'disabled',
+    });
+  });
+
   test('Table - Default', async ({ page }) => {
     await gotoStory(page, 'grids-table--default');
     await expect(page).toHaveScreenshot('table-default.png');
@@ -597,6 +782,31 @@ test.describe('Visual Regression Tests - Core Components', () => {
     });
   });
 
+  // CompletenessMeter's bar composes Progress (#549)
+  test('CompletenessMeter - Default', async ({ page }) => {
+    await gotoStory(page, 'record-details-completenessmeter--default');
+    await expect(page).toHaveScreenshot('completenessmeter-default.png', {
+      animations: 'disabled',
+    });
+  });
+
+  // TagEditor chips render removable Badges (#549)
+  test('TagEditor - Default', async ({ page }) => {
+    await gotoStory(page, 'text-inputs-tageditor--default');
+    await expect(page).toHaveScreenshot('tageditor-default.png');
+  });
+
+  // ProviderSearchFilters active-filter chips render removable Badges (#549)
+  test('ProviderSearchFilters - Active filters', async ({ page }) => {
+    await gotoStory(
+      page,
+      'providers-providersearchfilters--active-filters-demo'
+    );
+    await expect(page).toHaveScreenshot(
+      'providersearchfilters-active-filters.png'
+    );
+  });
+
   test('Text - All variants', async ({ page }) => {
     await gotoStory(page, 'foundations-text--all-variants');
     await expect(page).toHaveScreenshot('text-all-variants.png');
@@ -610,6 +820,38 @@ test.describe('Visual Regression Tests - Core Components', () => {
   test('Tabs - Underline', async ({ page }) => {
     await gotoStory(page, 'navigation-tabs--underline');
     await expect(page).toHaveScreenshot('tabs-underline.png');
+  });
+
+  test('Tabs - Dark keyboard focus ring blends with theme', async ({
+    page,
+  }) => {
+    // Issue #512: Tailwind's ring-offset color defaults to #fff, so the
+    // focus-visible ring on a dark background rendered as a white box
+    // swallowing the tab label, and the unlayered global :focus-visible
+    // outline stacked a second indicator on top of the ring.
+    await gotoStory(page, 'navigation-tabs--disabled-tab', {
+      globals: 'theme:dark',
+    });
+    await page.getByRole('tab', { name: 'Enabled', exact: true }).click();
+    await page.keyboard.press('ArrowRight'); // :focus-visible on "Also Enabled"
+    await page.waitForTimeout(300); // let the 200ms transition-all settle
+    const focused = page.getByRole('tab', { name: 'Also Enabled' });
+
+    const ring = await focused.evaluate((el) => {
+      const style = getComputedStyle(el);
+      return {
+        boxShadow: style.boxShadow,
+        outlineStyle: style.outlineStyle,
+        pageBackground: getComputedStyle(document.body).backgroundColor,
+      };
+    });
+    // Ring offset must match the themed background, not default white.
+    expect(ring.boxShadow).toContain(ring.pageBackground);
+    expect(ring.boxShadow).not.toContain('rgb(255, 255, 255)');
+    // focus-visible:outline-none must win over the global outline rule.
+    expect(ring.outlineStyle).toBe('none');
+
+    await expect(page).toHaveScreenshot('tabs-focus-dark.png');
   });
 
   // Components with branding fixes
@@ -670,6 +912,48 @@ test.describe('Visual Regression Tests - EH Frontdoor Components', () => {
     });
   });
 
+  test('MegaMenu - Grouped panel (RTL)', async ({ page }) => {
+    // Grouped renders all three mirrored icon sites: the group-link
+    // ChevronRight, the "Explore the platform" allLabel ArrowRight, and
+    // the featured "Take the tour" CTA ArrowRight — each must flip via
+    // rtl:-scale-x-100 under dir="rtl".
+    await gotoStory(page, 'navigation-megamenu--grouped', {
+      globals: 'direction:rtl',
+    });
+    // The 5% page-diff tolerance can swallow icon-sized regressions, so
+    // assert the mirror directly. Tailwind 4 renders -scale-x-100 via the
+    // CSS `scale` property, not `transform`.
+    const icons = page.locator(
+      'svg.lucide-chevron-right, svg.lucide-arrow-right'
+    );
+    await expect(icons).toHaveCount(3);
+    for (const icon of await icons.all()) {
+      expect(await icon.evaluate((el) => getComputedStyle(el).scale)).toBe(
+        '-1 1'
+      );
+    }
+    // The panel clamp is logical too: under RTL its inline-start (right)
+    // edge must align with the trigger root's right edge instead of the
+    // LTR left-anchoring. Assert closeness, not just an upper bound — the
+    // old left-anchored layout also kept the panel's right edge inside the
+    // root, so a one-sided check could not catch a regression.
+    const panel = page.locator("[data-slot='mega-menu-panel']");
+    await expect
+      .poll(() =>
+        panel.evaluate((el) => {
+          const rootRight = el.parentElement!.getBoundingClientRect().right;
+          return Math.abs(rootRight - el.getBoundingClientRect().right);
+        })
+      )
+      .toBeLessThanOrEqual(1.5);
+    expect(
+      await panel.evaluate((el) => el.getBoundingClientRect().left)
+    ).toBeGreaterThanOrEqual(15);
+    await expect(page).toHaveScreenshot('megamenu-grouped-rtl.png', {
+      animations: 'disabled',
+    });
+  });
+
   test('VideoCard - Default', async ({ page }) => {
     // Mask the YouTube thumbnail (external i.ytimg.com fetch is not
     // deterministic); the play button, duration pill, and copy stack are.
@@ -706,6 +990,55 @@ test.describe('Visual Regression Tests - EH Frontdoor Components', () => {
     });
   });
 
+  test('YearTimeline - Pinned to September (RTL)', async ({ page }) => {
+    // Deterministic pinned `now`. Locks the mirrored month grid plus the
+    // insetInlineStart positioning and rtl:translate-x mirroring of the
+    // today pill and playhead — they must stay aligned in September,
+    // measured from the right edge under dir="rtl".
+    await gotoStory(page, 'data-display-yeartimeline--pinned-to-september', {
+      globals: 'direction:rtl',
+    });
+    // The 5% page-diff tolerance can swallow marker-only regressions, so
+    // assert the geometry directly: dropping either rtl:translate-x
+    // compensation would skew one marker off the shared September line.
+    const centerX = (slot: string) =>
+      page
+        .locator(`[data-slot='${slot}']`)
+        .evaluate((el) =>
+          ((r) => r.left + r.width / 2)(el.getBoundingClientRect())
+        );
+    expect(
+      Math.abs(
+        (await centerX('year-timeline-today')) -
+          (await centerX('year-timeline-playhead'))
+      )
+    ).toBeLessThanOrEqual(1.5);
+    // The gridlines overlay must span exactly the month-scale column
+    // (inset by the label rail on the inline-start side) — reverting its
+    // insetInlineStart to physical `left` would misplace it in RTL while
+    // staying under the screenshot threshold.
+    const bounds = (locator: ReturnType<typeof page.locator>) =>
+      locator.evaluate((el) =>
+        ((r) => ({ left: r.left, right: r.right }))(el.getBoundingClientRect())
+      );
+    const gridlines = await bounds(
+      page.locator("[data-slot='year-timeline-gridlines']")
+    );
+    const monthScale = await bounds(
+      page.locator("[data-slot='year-timeline-today']").locator('..')
+    );
+    expect(Math.abs(gridlines.left - monthScale.left)).toBeLessThanOrEqual(1.5);
+    expect(Math.abs(gridlines.right - monthScale.right)).toBeLessThanOrEqual(
+      1.5
+    );
+    await expect(page).toHaveScreenshot(
+      'yeartimeline-pinned-september-rtl.png',
+      {
+        animations: 'disabled',
+      }
+    );
+  });
+
   test('SliderCalculator - ROI panel', async ({ page }) => {
     // Brand-sensitive: primary-800→950 radial panel, accent-gradient slider
     // fill, tabular-nums results.
@@ -729,6 +1062,24 @@ test.describe('Visual Regression Tests - EH Frontdoor Components', () => {
     // the detail card is deterministic.
     await gotoStory(page, 'showcase-radialexplorer--static');
     await expect(page).toHaveScreenshot('radialexplorer-static.png', {
+      animations: 'disabled',
+    });
+  });
+
+  test('RadialExplorer - Static spoke (RTL)', async ({ page }) => {
+    // The footer CTA ArrowRight must flip via rtl:-scale-x-100; the radial
+    // wheel itself stays rotationally symmetric (rtl-ignore trig).
+    await gotoStory(page, 'showcase-radialexplorer--static', {
+      globals: 'direction:rtl',
+    });
+    // Direct mirror assertion — the icon is far smaller than the 5%
+    // page-diff tolerance (Tailwind 4 maps -scale-x-100 to CSS `scale`).
+    const ctaArrow = page.locator('svg.lucide-arrow-right');
+    await expect(ctaArrow).toHaveCount(1);
+    expect(await ctaArrow.evaluate((el) => getComputedStyle(el).scale)).toBe(
+      '-1 1'
+    );
+    await expect(page).toHaveScreenshot('radialexplorer-static-rtl.png', {
       animations: 'disabled',
     });
   });
@@ -835,7 +1186,23 @@ test.describe('Visual Regression Tests - Templates', () => {
     ['social-proof-statssection--cards', 'template-stats-cards.png'],
     ['social-proof-testimonialsection--cards', 'template-testimonials.png'],
     // Pinned at the first frame by `animations: 'disabled'`: track, mask and duplicate copy.
-    ['social-proof-logocloudsection--marquee', 'template-logocloud-marquee.png'],
+    [
+      'social-proof-logocloudsection--marquee',
+      'template-logocloud-marquee.png',
+    ],
+    ['social-proof-statssection--ruled', 'template-stats-ruled.png'],
+    ['reports-benchmarktablesection--default', 'report-benchmark-table.png'],
+    ['reports-rankedlistsection--side-by-side', 'report-ranked-lists.png'],
+    [
+      'reports-tilecartogramsection--united-states',
+      'report-tile-cartogram.png',
+    ],
+    ['reports-metriclistsection--maturing', 'report-metric-list.png'],
+    [
+      'reports-reportmethodology--default',
+      'report-methodology-dark.png',
+      { globals: 'theme:dark' },
+    ],
   ];
 
   for (const [storyId, file, options] of sections) {
@@ -857,5 +1224,280 @@ test.describe('Visual Regression Tests - Templates', () => {
       animations: 'disabled',
       fullPage: true,
     });
+  });
+});
+
+test.describe('Visual Regression Tests - Record pages', () => {
+  // Fixtures pin `now`, so day headers and relative times stay stable.
+  const shots: [string, string, string?][] = [
+    ['records-recordlayout--contact', 'recordlayout-contact.png'],
+    [
+      'records-recordlayout--contact',
+      'recordlayout-contact-dark.png',
+      'theme:dark',
+    ],
+    ['record-details-recordheader--contact', 'recordheader-contact.png'],
+    ['record-details-propertylist--groups', 'propertylist-groups.png'],
+    ['record-details-avatargroup--presence', 'avatargroup-presence.png'],
+    [
+      'record-details-reviewcard--absolute-date',
+      'reviewcard-absolute-date.png',
+    ],
+    ['records-activityfeed--default', 'activityfeed-default.png'],
+    ['records-fieldhistory--default', 'fieldhistory-default.png'],
+    ['records-actionplan--default', 'actionplan-default.png'],
+  ];
+  for (const [id, file, globals] of shots) {
+    test(`${id}${globals ? ` (${globals})` : ''}`, async ({ page }) => {
+      await gotoStory(page, id, { globals });
+      await expect(page).toHaveScreenshot(file, {
+        animations: 'disabled',
+        fullPage: true,
+      });
+    });
+  }
+
+  test('RecordLayout - Contact (mobile)', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await gotoStory(page, 'records-recordlayout--contact');
+    await expect(page).toHaveScreenshot('recordlayout-contact-mobile.png', {
+      animations: 'disabled',
+      fullPage: true,
+    });
+  });
+
+  test('OrgChart - Default', async ({ page }) => {
+    await gotoStory(page, 'records-orgchart--default');
+    // The elk layout resolves after the first render.
+    await page.locator('.react-flow__node').first().waitFor();
+    await page.waitForTimeout(500);
+    await expect(page).toHaveScreenshot('orgchart-default.png', {
+      animations: 'disabled',
+    });
+  });
+});
+
+test.describe('Visual Regression Tests - Deck', () => {
+  // Reduced motion shows every reveal and skips the count-up, so frames are stable.
+  test.beforeEach(async ({ page }) => {
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+  });
+
+  const decks: [string, string, { globals?: string; mobile?: boolean }?][] = [
+    ['presentations-deck--all-slide-types', 'deck-cover.png'],
+    [
+      'presentations-deck--all-slide-types',
+      'deck-cover-eh.png',
+      { globals: 'brand:enterprise-health' },
+    ],
+    ['presentations-deck--light-tone', 'deck-light-metrics.png'],
+    [
+      'presentations-deck--all-slide-types',
+      'deck-cover-mobile.png',
+      { mobile: true },
+    ],
+  ];
+
+  for (const [storyId, file, options] of decks) {
+    test(`Deck - ${file}`, async ({ page }) => {
+      if (options?.mobile)
+        await page.setViewportSize({ width: 390, height: 844 });
+      await gotoStory(page, storyId, options);
+      await expect(page).toHaveScreenshot(file, { animations: 'disabled' });
+    });
+  }
+
+  test('Deck - Chart slide', async ({ page }) => {
+    await gotoStory(page, 'presentations-deck--all-slide-types');
+    await page
+      .locator('[data-slot="deck-slide"][data-index="3"]')
+      .scrollIntoViewIfNeeded();
+    await expect(page.locator('[data-index="3"]')).toHaveAttribute(
+      'data-seen',
+      ''
+    );
+    await expect(page).toHaveScreenshot('deck-chart.png', {
+      animations: 'disabled',
+    });
+  });
+
+  test('Deck - Adoption curve labels stay LTR in RTL', async ({ page }) => {
+    // The adoption-curve SVG stays physical (LTR) by design; the label strip
+    // beneath it carries dir="ltr" so labels keep tracking their bands.
+    await gotoStory(page, 'presentations-deck--all-slide-types', {
+      globals: 'direction:rtl',
+    });
+    const slide = page.locator('[data-slot="deck-slide"][data-index="17"]');
+    await slide.scrollIntoViewIfNeeded();
+    await expect(slide).toHaveAttribute('data-seen', '');
+    const strip = slide.locator('div[dir="ltr"]');
+    await expect(strip).toHaveCount(1);
+    await expect(strip).toHaveCSS('direction', 'ltr');
+    // Flex order must not reverse: first band label (innovators) remains at
+    // the strip's left edge, last (laggards) at the right.
+    const cells = strip.locator('> div');
+    const first = await cells.first().boundingBox();
+    const last = await cells.last().boundingBox();
+    const stripBox = await strip.boundingBox();
+    if (!first || !last || !stripBox) throw new Error('strip not rendered');
+    expect(Math.abs(first.x - stripBox.x)).toBeLessThanOrEqual(1.5);
+    expect(first.x + first.width).toBeLessThanOrEqual(last.x);
+    await expect(page).toHaveScreenshot('deck-adoption-curve-rtl.png', {
+      animations: 'disabled',
+    });
+  });
+});
+
+test.describe('Visual Regression Tests - RichEditor (kerebron.css)', () => {
+  // Guards the unlayered `.kb-editor` revert rules in src/styles/kerebron.css:
+  // Tailwind preflight (and @mieweb/q's unlayered copy of it) must not strip
+  // heading sizes, list markers, link color, or code styling inside the editor.
+  const formattedStory = 'editors-richeditor--formatted-content';
+
+  async function waitForFormatted(page: Page) {
+    // Content appears only after the tree-sitter WASM markdown parser loads.
+    await page
+      .locator('.kb-editor h1')
+      .waitFor({ state: 'visible', timeout: 30000 });
+    await page
+      .locator('.kb-editor ul li')
+      .first()
+      .waitFor({ state: 'visible' });
+  }
+
+  test('RichEditor - Formatted content (light)', async ({ page }) => {
+    await gotoStory(page, formattedStory);
+    await waitForFormatted(page);
+    await expect(page).toHaveScreenshot('richeditor-formatted-light.png');
+  });
+
+  test('RichEditor - Formatted content (dark)', async ({ page }) => {
+    await gotoStory(page, formattedStory, { globals: 'theme:dark' });
+    await waitForFormatted(page);
+    await expect(page).toHaveScreenshot('richeditor-formatted-dark.png');
+  });
+
+  test('RichEditor - Heading dropdown opens with active state', async ({
+    page,
+  }) => {
+    // Guards the extension-menu patch: without it the toolbar dropdowns
+    // never fire (dnt-shim MouseEvent bug) and freshly rendered items
+    // carry no active/disabled state.
+    await gotoStory(page, formattedStory);
+    await waitForFormatted(page);
+    await page.locator('.kb-editor h1').click();
+    await page
+      .locator('.kb-dropdown__label', { hasText: 'Heading' })
+      .first()
+      .click();
+    await page
+      .locator('.kb-custom-menu__overflow-item', { hasText: 'Heading 1' })
+      .first()
+      .waitFor({ state: 'visible' });
+    // DOM assertion first: the screenshot's global diff threshold could
+    // swallow one item's styling. Pre-patch, freshly rendered items never
+    // ran update(), so these attributes were absent entirely.
+    await expect(
+      page
+        .locator('.kb-custom-menu__overflow-item', { hasText: 'Heading 1' })
+        .first()
+        .locator('.kb-menu__button')
+    ).toHaveAttribute('aria-disabled', 'true'); // caret is in the h1
+    await expect(
+      page
+        .locator('.kb-custom-menu__overflow-item', { hasText: 'Heading 2' })
+        .first()
+        .locator('.kb-menu__button')
+    ).toHaveAttribute('aria-disabled', 'false');
+    await expect(page).toHaveScreenshot('richeditor-heading-dropdown.png');
+
+    // The regression being guarded is command dispatch (dnt-shim MouseEvent
+    // bug): activate an item via its wrapper label and assert the document
+    // actually changed.
+    await page
+      .locator('.kb-custom-menu__overflow-item', { hasText: 'Heading 2' })
+      .first()
+      .locator('.kb-custom-menu__overflow-item-label')
+      .click();
+    await expect(page.locator('.kb-editor h1')).toHaveCount(0);
+    await expect(page.locator('.kb-editor h2')).toHaveCount(2);
+  });
+
+  test('RichEditor - Lists dropdown opens with active state', async ({
+    page,
+  }) => {
+    await gotoStory(page, formattedStory);
+    await waitForFormatted(page);
+    await page.locator('.kb-editor ul li').first().click();
+    await page
+      .locator('.kb-dropdown__label', { hasText: 'Lists' })
+      .first()
+      .click();
+    await page
+      .locator('.kb-custom-menu__overflow-item', { hasText: 'Bullet' })
+      .first()
+      .waitFor({ state: 'visible' });
+    // No state-attribute assertion here: list toggles are select-only cmdItems
+    // (no enable/active spec), so update() sets nothing observable on them —
+    // the heading test asserts aria state, and the dispatch below guards the
+    // command path.
+    await expect(page).toHaveScreenshot('richeditor-lists-dropdown.png');
+
+    // Activate "Bullet List" via its ICON with the cursor in a plain
+    // paragraph: the click lands inside the inner menu button, which must
+    // dispatch the command exactly once (guards the dom.contains() fix —
+    // a double dispatch would nest a second list).
+    await page.locator('.kb-editor p', { hasText: 'inline code' }).click();
+    await page
+      .locator('.kb-dropdown__label', { hasText: 'Lists' })
+      .first()
+      .click();
+    await page
+      .locator('.kb-custom-menu__overflow-item', { hasText: 'Bullet' })
+      .first()
+      .locator('.kb-icon')
+      .first()
+      .click();
+    await expect(page.locator('.kb-editor ul')).toHaveCount(2);
+    await expect(page.locator('.kb-editor ul ul')).toHaveCount(0);
+    await expect(page.locator('.kb-editor ol')).toHaveCount(1);
+  });
+});
+
+test.describe('Visual Regression Tests - EmailEditor', () => {
+  const story = 'editors-emaileditor--default';
+
+  async function gotoEditor(page: Page, globals?: string) {
+    await gotoStory(page, story, { globals });
+    // Text blocks are sanitised after mount, so wait for their content.
+    await page.getByText('Here is what shipped').waitFor({ state: 'visible' });
+  }
+
+  test('EmailEditor - Desktop (light)', async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 900 });
+    await gotoEditor(page);
+    await expect(page).toHaveScreenshot('emaileditor-desktop-light.png');
+  });
+
+  test('EmailEditor - Desktop (dark)', async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 900 });
+    await gotoEditor(page, 'theme:dark');
+    await expect(page).toHaveScreenshot('emaileditor-desktop-dark.png');
+  });
+
+  test('EmailEditor - Selected block settings', async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 900 });
+    await gotoEditor(page);
+    await page.getByRole('heading', { name: 'Faster scheduling' }).click();
+    await expect(
+      page.getByRole('complementary', { name: 'Block settings' })
+    ).toContainText('Heading');
+    await expect(page).toHaveScreenshot('emaileditor-selected-block.png');
+  });
+
+  test('EmailEditor - Mobile', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await gotoEditor(page);
+    await expect(page).toHaveScreenshot('emaileditor-mobile.png');
   });
 });

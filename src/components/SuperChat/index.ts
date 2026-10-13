@@ -25,6 +25,8 @@ export {
 
 export { SuperChatInbox, type SuperChatInboxProps } from './SuperChatInbox';
 
+export { getConversationMediaItems } from './media';
+
 export {
   createMarkdownRenderer,
   type CreateMarkdownRendererOptions,
@@ -44,6 +46,11 @@ export type {
   // conversation / thread
   SuperChatConversation,
   SuperChatMessage,
+  SuperChatMediaAttachment,
+  SuperChatMediaItem,
+  SuperChatMediaFeedProps,
+  SuperChatMediaLabels,
+  SuperChatView,
   SuperChatItemType,
   SuperChatChannel,
   SuperChatCopyFormat,

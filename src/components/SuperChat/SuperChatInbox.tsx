@@ -12,7 +12,11 @@
 
 import * as React from 'react';
 import { cn } from '../../utils/cn';
-import { SuperChat, type SuperChatComposerProps } from './SuperChat';
+import {
+  SuperChat,
+  type SuperChatComposerProps,
+  type SuperChatProps,
+} from './SuperChat';
 import { SuperChatConversations } from './SuperChatConversations';
 import type {
   AIRenderTextContent,
@@ -32,6 +36,16 @@ import type {
 export interface SuperChatInboxProps {
   /** All conversations (host-owned state). */
   conversations: SuperChatConversation[];
+  /** Controlled thread/media view, forwarded to the active conversation panel. */
+  view?: SuperChatProps['view'];
+  /** Initial uncontrolled panel view; defaults to 'thread'. */
+  defaultView?: SuperChatProps['defaultView'];
+  /** Fired with the active conversation when its view is changed. */
+  onViewChange?: SuperChatProps['onViewChange'];
+  /** MediaFeed behavior and slots; items remain scoped to the active conversation. */
+  mediaFeedProps?: SuperChatProps['mediaFeedProps'];
+  /** Labels for the view switch and attachment previews. */
+  mediaLabels?: SuperChatProps['mediaLabels'];
   /** Controlled active conversation id. */
   activeConversationId?: string;
   /** Uncontrolled initial active conversation id. */
@@ -87,7 +101,7 @@ export interface SuperChatInboxProps {
       mentions: string[];
       attachments: ComposerAttachment[];
     }
-  ) => void;
+  ) => void | Promise<void>;
   /** Fired when the local user saves an edit to one of their own messages. */
   onMessageEdited?: (
     messageId: string,
@@ -107,6 +121,11 @@ export interface SuperChatInboxProps {
  */
 export function SuperChatInbox({
   conversations,
+  view,
+  defaultView,
+  onViewChange,
+  mediaFeedProps,
+  mediaLabels,
   activeConversationId,
   defaultActiveConversationId,
   currentParticipantId,
@@ -181,6 +200,11 @@ export function SuperChatInbox({
       {active ? (
         <SuperChat
           conversation={active}
+          view={view}
+          defaultView={defaultView}
+          onViewChange={onViewChange}
+          mediaFeedProps={mediaFeedProps}
+          mediaLabels={mediaLabels}
           currentParticipantId={currentParticipantId}
           renderPlugins={renderPlugins}
           renderTextContent={renderTextContent}

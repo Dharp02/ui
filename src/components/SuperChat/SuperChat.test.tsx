@@ -1,6 +1,12 @@
 import * as React from 'react';
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen, waitFor, within } from '@testing-library/react';
+import {
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+  within,
+} from '@testing-library/react';
 import { createMarkdownRenderer } from './render/createMarkdownRenderer';
 import { createCodePlugin } from './plugins/code';
 import { createGenUIPlugin } from './plugins/genui';
@@ -19,6 +25,7 @@ import { createNitroTablePlugin } from './plugins/nitroTable';
 import { SuperChat } from './SuperChat';
 import { SuperChatConversations } from './SuperChatConversations';
 import { SuperChatInbox } from './SuperChatInbox';
+import { MotionProvider } from '../../motion/MotionProvider';
 import type {
   GenUIRegistry,
   GenUIWidgetProps,
@@ -1609,6 +1616,36 @@ describe('SuperChatConversations', () => {
     );
   });
 
+  it('only animates unread badges that arrive after the first render', () => {
+    const badgeOf = (title: string) =>
+      screen
+        .getByText(title)
+        .closest('button')!
+        .querySelector<HTMLElement>('[data-slot="superchat-unread-badge"]')!;
+
+    const { rerender } = render(
+      <MotionProvider>
+        <SuperChatConversations conversations={conversations} />
+      </MotionProvider>
+    );
+    // Present on mount: rendered at rest, no enter animation.
+    expect(badgeOf('Intake').style.opacity).not.toBe('0');
+
+    const inserted: SuperChatConversation = {
+      ...conversations[1],
+      id: 'c3',
+      title: 'Referral',
+      unread: 1,
+    };
+    rerender(
+      <MotionProvider>
+        <SuperChatConversations conversations={[...conversations, inserted]} />
+      </MotionProvider>
+    );
+    // A row inserted later starts from the closed variant so its badge pops.
+    expect(badgeOf('Referral').style.opacity).toBe('0');
+  });
+
   it('fires onNewConversation from the new-conversation button', async () => {
     const onNewConversation = vi.fn();
     const { default: userEvent } = await import('@testing-library/user-event');
@@ -1744,5 +1781,85 @@ describe('SuperChatInbox', () => {
     expect(panel().getByText('first conversation')).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: /Follow-up/ }));
     expect(panel().getByText('second conversation')).toBeInTheDocument();
+  });
+});
+
+describe('SuperChat composer options', () => {
+  const convo: SuperChatConversation = {
+    id: 'opts',
+    title: 'Agent chat',
+    participants: [
+      { id: 'u1', kind: 'human', name: 'Me' },
+      { id: 'a1', kind: 'agent', name: 'Agent' },
+    ],
+    thread: [],
+  };
+  const agents = [
+    { id: 'a1', label: 'Triage Agent' },
+    { id: 'a2', label: 'Scribe' },
+  ];
+  const models = [
+    { provider: 'openai', model: 'gpt-5.2', label: 'gpt-5.2' },
+    { provider: 'anthropic', model: 'claude-opus-5', label: 'claude-opus-5' },
+  ];
+
+  it('renders controlled agent and model selectors and reports changes', async () => {
+    const onAgentChange = vi.fn();
+    render(
+      <SuperChat
+        conversation={convo}
+        currentParticipantId="u1"
+        agents={agents}
+        selectedAgent="a1"
+        onAgentChange={onAgentChange}
+        modelSelectorProps={{
+          models,
+          value: { provider: 'openai', model: 'gpt-5.2' },
+          onChange: vi.fn(),
+        }}
+      />
+    );
+    const agentTrigger = screen.getByRole('button', {
+      name: 'Select agent: Triage Agent',
+    });
+    expect(screen.getByRole('button', { name: /gpt-5\.2/ })).toBeTruthy();
+    fireEvent.click(agentTrigger);
+    const scribe = await screen.findByRole('menuitemradio', { name: /Scribe/ });
+    fireEvent.click(scribe);
+    expect(onAgentChange).toHaveBeenCalledWith('a2');
+  });
+
+  it('forwards localized agent and stop labels', () => {
+    render(
+      <SuperChat
+        conversation={convo}
+        currentParticipantId="u1"
+        agents={agents}
+        selectedAgent={null}
+        agentSelectorLabel="Elegir agente"
+        isStreaming
+        onStop={vi.fn()}
+        stopLabel="Detener"
+      />
+    );
+    expect(screen.getByRole('button', { name: 'Elegir agente' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Detener' })).toBeTruthy();
+  });
+
+  it('omits selectors when not configured', () => {
+    render(<SuperChat conversation={convo} currentParticipantId="u1" />);
+    expect(screen.queryByRole('button', { name: /Select agent/ })).toBeNull();
+  });
+
+  it('keeps an accessible name when the header is hidden', () => {
+    render(
+      <SuperChat
+        conversation={convo}
+        currentParticipantId="u1"
+        showHeader={false}
+      />
+    );
+    expect(screen.getByRole('group', { name: 'Agent chat' })).toBeTruthy();
+    expect(document.querySelector('[data-slot="superchat-header"]')).toBeNull();
   });
 });

@@ -1,6 +1,8 @@
 import * as React from 'react';
 import { cva } from 'class-variance-authority';
 import { cn } from '../../utils/cn';
+import { isRtl } from '../../hooks/useDirection';
+import { useUrlSearchParam } from '../../hooks/useUrlTab';
 
 // ============================================================================
 // Tabs Context
@@ -37,6 +39,17 @@ export interface TabsProps {
   onValueChange?: (value: string) => void;
   /** Visual variant of the tabs */
   variant?: 'underline' | 'pills' | 'enclosed';
+  /**
+   * Query parameter that mirrors the selected tab (uncontrolled only). Written
+   * with `history.replaceState`; omitted from the URL when it equals
+   * `defaultValue`.
+   */
+  urlParam?: string;
+  /**
+   * Values `urlParam` may select. Anything else in the URL falls back to
+   * `defaultValue`; without it, any non-empty value is accepted.
+   */
+  urlValues?: readonly string[];
   /** Tab content */
   children: React.ReactNode;
   /** Additional class name */
@@ -63,6 +76,8 @@ function Tabs({
   defaultValue,
   onValueChange,
   variant = 'underline',
+  urlParam,
+  urlValues,
   children,
   className,
 }: TabsProps) {
@@ -71,16 +86,25 @@ function Tabs({
   );
 
   const isControlled = controlledValue !== undefined;
-  const value = isControlled ? controlledValue : uncontrolledValue;
+  const syncsUrl = !isControlled && Boolean(urlParam);
+  const [urlValue, setUrlValue] = useUrlSearchParam(
+    syncsUrl ? urlParam : undefined,
+    defaultValue || '',
+    (v) => (urlValues ? urlValues.includes(v) : v !== '')
+  );
+  const value = isControlled
+    ? controlledValue
+    : syncsUrl
+      ? urlValue
+      : uncontrolledValue;
 
   const handleValueChange = React.useCallback(
     (newValue: string) => {
-      if (!isControlled) {
-        setUncontrolledValue(newValue);
-      }
+      if (syncsUrl) setUrlValue(newValue);
+      else if (!isControlled) setUncontrolledValue(newValue);
       onValueChange?.(newValue);
     },
-    [isControlled, onValueChange]
+    [isControlled, syncsUrl, setUrlValue, onValueChange]
   );
 
   return (
@@ -140,7 +164,15 @@ const TabsList = React.forwardRef<HTMLDivElement, TabsListProps>(
 
         let nextIndex: number;
 
-        switch (e.key) {
+        // Horizontal arrows are visual: under RTL, ArrowRight moves to the
+        // previous tab (the visually next one) and vice versa.
+        let key = e.key;
+        if (isRtl(e.currentTarget)) {
+          if (key === 'ArrowRight') key = 'ArrowLeft';
+          else if (key === 'ArrowLeft') key = 'ArrowRight';
+        }
+
+        switch (key) {
           case 'ArrowRight':
           case 'ArrowDown':
             e.preventDefault();
@@ -217,7 +249,7 @@ const tabsTriggerVariants = cva(
         ],
         pills: [
           'px-3 py-1.5 rounded-md text-sm',
-          'text-muted-foreground hover:text-foreground',
+          'text-neutral-600 dark:text-neutral-300 hover:text-foreground',
           'data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm',
         ],
         enclosed: [
