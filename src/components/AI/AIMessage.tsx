@@ -434,7 +434,9 @@ const messageVariants = cva('flex gap-3', {
 const bubbleVariants = cva('rounded-2xl px-4 py-2.5 w-fit max-w-[85%]', {
   variants: {
     variant: {
-      user: 'bg-primary-800 text-white dark:bg-primary-800',
+      // Links inherit the bubble's white text: a Markdown link's own
+      // `text-primary-800` is the bubble's background, so it would vanish.
+      user: 'bg-primary-800 text-white dark:bg-primary-800 [&_a]:text-current [&_a:hover]:text-current',
       assistant:
         'bg-neutral-100 text-neutral-900 dark:bg-neutral-800 dark:text-white',
       system:
