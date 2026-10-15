@@ -455,6 +455,8 @@ export interface ChatBubbleProps
     VariantProps<typeof bubbleVariants> {
   /** Show error styling (red border). */
   hasError?: boolean;
+  /** Show the message as not delivered yet (e.g. scheduled): dashed outline, no fill. */
+  pending?: boolean;
   /**
    * Optional left-border accent color. Used by multi-participant surfaces
    * (e.g. SuperChat) to tint a speaker's bubble; AI chat leaves it unset.
@@ -469,15 +471,27 @@ export interface ChatBubbleProps
  */
 const ChatBubble = React.forwardRef<HTMLDivElement, ChatBubbleProps>(
   (
-    { className, variant, hasError, accent, style, children, ...props },
+    {
+      className,
+      variant,
+      hasError,
+      pending,
+      accent,
+      style,
+      children,
+      ...props
+    },
     ref
   ) => {
     return (
       <div
         ref={ref}
         data-slot="chat-bubble"
+        data-pending={pending || undefined}
         className={cn(
           bubbleVariants({ variant }),
+          pending &&
+            'border-2 border-dashed border-neutral-400 bg-transparent text-neutral-900 dark:border-neutral-500 dark:bg-transparent dark:text-white',
           hasError && 'border border-red-300 dark:border-red-700',
           className
         )}

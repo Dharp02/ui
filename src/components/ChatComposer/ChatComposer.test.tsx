@@ -212,6 +212,63 @@ describe('ChatComposer', () => {
     expect(sendButton).toBeEnabled();
   });
 
+  describe('sendOptions', () => {
+    const sendOptions = [
+      { id: 'later', label: 'Send later…' },
+      { id: 'quiet', label: 'Send without notifying' },
+    ];
+
+    it('renders no options trigger without sendOptions', () => {
+      renderWithTheme(<ChatComposer onSend={vi.fn()} />);
+      expect(
+        screen.queryByRole('button', { name: 'More send options' })
+      ).not.toBeInTheDocument();
+    });
+
+    it('sends the draft with the chosen option id', () => {
+      const onSend = vi.fn();
+      renderWithTheme(
+        <ChatComposer onSend={onSend} sendOptions={sendOptions} />
+      );
+      fireEvent.change(getInput(), { target: { value: 'See you Monday' } });
+      fireEvent.click(
+        screen.getByRole('button', { name: 'More send options' })
+      );
+      fireEvent.click(
+        screen.getByRole('menuitem', { name: 'Send without notifying' })
+      );
+
+      expect(onSend).toHaveBeenCalledWith(
+        { content: 'See you Monday', attachments: [] },
+        { sendOption: 'quiet' }
+      );
+      expect(getInput()).toHaveValue('');
+    });
+
+    it('keeps a plain send free of meta', () => {
+      const onSend = vi.fn();
+      renderWithTheme(
+        <ChatComposer onSend={onSend} sendOptions={sendOptions} />
+      );
+      fireEvent.change(getInput(), { target: { value: 'Now' } });
+      fireEvent.keyDown(getInput(), { key: 'Enter' });
+      expect(onSend).toHaveBeenCalledWith({ content: 'Now', attachments: [] });
+    });
+
+    it('disables the options trigger with nothing to send', () => {
+      renderWithTheme(
+        <ChatComposer
+          onSend={vi.fn()}
+          sendOptions={sendOptions}
+          sendOptionsLabel="Más opciones de envío"
+        />
+      );
+      expect(
+        screen.getByRole('button', { name: 'Más opciones de envío' })
+      ).toBeDisabled();
+    });
+  });
+
   it('supports controlled value', () => {
     const onValueChange = vi.fn();
     renderWithTheme(

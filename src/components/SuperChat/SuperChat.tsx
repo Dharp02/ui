@@ -24,6 +24,7 @@ import {
   ChatComposer,
   type ChatComposerAgentOption,
   type ChatComposerProps,
+  type ChatComposerSendMeta,
 } from '../ChatComposer/ChatComposer';
 import type { ComposerModelSelectorProps } from '../AI/ComposerModelSelector';
 import { notifyComposerMigrationOnce } from '../ChatComposer/migration-notice';
@@ -55,6 +56,7 @@ import type {
   SuperChatMediaFeedProps,
   SuperChatMediaItem,
   SuperChatMediaLabels,
+  SuperChatMessageLabels,
   SuperChatView,
   SuperChatRef,
   SuperChatRenderPlugin,
@@ -80,6 +82,8 @@ export interface SuperChatProps {
   mediaFeedProps?: SuperChatMediaFeedProps;
   /** Labels for media launches and returning to the conversation. */
   mediaLabels?: Partial<SuperChatMediaLabels>;
+  /** Labels for per-message states, e.g. a scheduled message's indicator. */
+  messageLabels?: Partial<SuperChatMessageLabels>;
   /** The participant id representing the local user (alignment + compose). */
   currentParticipantId?: string;
   /** Opt-in rich render plugins (code/math/genui/…). */
@@ -153,7 +157,8 @@ export interface SuperChatProps {
    * Fired when the local user sends a message. If the callback returns a
    * promise it is awaited, and a rejected send restores the typed text into
    * the composer (the declared `void` return keeps every previously valid
-   * callback assignable).
+   * callback assignable). `sendOption` is the id of the
+   * `composerProps.sendOptions` entry the user sent with, if any.
    */
   onMessageSent?: (
     text: string,
@@ -161,6 +166,7 @@ export interface SuperChatProps {
       conversation: SuperChatConversation;
       mentions: string[];
       attachments: ComposerAttachment[];
+      sendOption?: string;
     }
   ) => void | Promise<void>;
   /**
@@ -203,6 +209,7 @@ export function SuperChat({
   onViewChange,
   mediaFeedProps,
   mediaLabels,
+  messageLabels,
   currentParticipantId,
   renderPlugins,
   renderTextContent,
@@ -251,6 +258,7 @@ export function SuperChat({
     unknownAuthor: 'Unknown',
     ...mediaLabels,
   };
+  const scheduledLabel = messageLabels?.scheduled ?? 'Scheduled';
   const mediaItems = React.useMemo(() => {
     const items = getConversationMediaItems(conversation);
     return order === 'desc' ? items.reverse() : items;
@@ -709,6 +717,7 @@ export function SuperChat({
       playMediaLabel={labels.playMedia}
       mediaErrorLabel={mediaFeedProps?.labels?.mediaError}
       mediaRetryLabel={mediaFeedProps?.labels?.retry}
+      scheduledLabel={scheduledLabel}
     />
   );
 
@@ -762,7 +771,7 @@ export function SuperChat({
   // Bridge the shared composer's `NewMessage` (File[] attachments) to
   // SuperChat's host callback (mentions + base64 `data:` URL attachments).
   const handleComposerSend = React.useCallback(
-    async (message: NewMessage) => {
+    async (message: NewMessage, sendMeta?: ChatComposerSendMeta) => {
       const epoch = draftEpochRef.current;
       try {
         const text = message.content;
@@ -774,7 +783,14 @@ export function SuperChat({
         // returned promise (e.g. an async host callback) is awaited so its
         // rejection follows the same restore path as a synchronous throw.
         await Promise.resolve(
-          onMessageSent?.(text, { conversation, mentions, attachments })
+          onMessageSent?.(text, {
+            conversation,
+            mentions,
+            attachments,
+            ...(sendMeta?.sendOption !== undefined
+              ? { sendOption: sendMeta.sendOption }
+              : {}),
+          })
         );
       } catch {
         // Parity with the previous MessageComposer: restore the text when
@@ -938,6 +954,7 @@ export function SuperChat({
               playMediaLabel={labels.playMedia}
               mediaErrorLabel={mediaFeedProps?.labels?.mediaError}
               mediaRetryLabel={mediaFeedProps?.labels?.retry}
+              scheduledLabel={scheduledLabel}
               scrollRef={threadRef}
               contentRef={threadContentRef}
               containerProps={{

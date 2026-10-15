@@ -21,7 +21,6 @@ import { SuperChatConversations } from './SuperChatConversations';
 import type {
   AIRenderTextContent,
   AttachmentKind,
-  ComposerAttachment,
   SuperChatConversation,
   SuperChatCopyFormat,
   SuperChatLinkBuilder,
@@ -46,6 +45,8 @@ export interface SuperChatInboxProps {
   mediaFeedProps?: SuperChatProps['mediaFeedProps'];
   /** Labels for the view switch and attachment previews. */
   mediaLabels?: SuperChatProps['mediaLabels'];
+  /** Labels for per-message states (see {@link SuperChatProps.messageLabels}). */
+  messageLabels?: SuperChatProps['messageLabels'];
   /** Controlled active conversation id. */
   activeConversationId?: string;
   /** Uncontrolled initial active conversation id. */
@@ -94,14 +95,7 @@ export interface SuperChatInboxProps {
    * promise it is awaited, and a rejected send restores the typed text into
    * the composer (same contract as {@link SuperChatProps.onMessageSent}).
    */
-  onMessageSent?: (
-    text: string,
-    meta: {
-      conversation: SuperChatConversation;
-      mentions: string[];
-      attachments: ComposerAttachment[];
-    }
-  ) => void | Promise<void>;
+  onMessageSent?: SuperChatProps['onMessageSent'];
   /** Fired when the local user saves an edit to one of their own messages. */
   onMessageEdited?: (
     messageId: string,
@@ -126,6 +120,7 @@ export function SuperChatInbox({
   onViewChange,
   mediaFeedProps,
   mediaLabels,
+  messageLabels,
   activeConversationId,
   defaultActiveConversationId,
   currentParticipantId,
@@ -205,6 +200,7 @@ export function SuperChatInbox({
           onViewChange={onViewChange}
           mediaFeedProps={mediaFeedProps}
           mediaLabels={mediaLabels}
+          messageLabels={messageLabels}
           currentParticipantId={currentParticipantId}
           renderPlugins={renderPlugins}
           renderTextContent={renderTextContent}

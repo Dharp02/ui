@@ -846,6 +846,34 @@ describe('SuperChat', () => {
       );
     });
 
+    it('passes the chosen send option to onMessageSent', async () => {
+      const { default: userEvent } =
+        await import('@testing-library/user-event');
+      const user = userEvent.setup();
+      const onMessageSent = vi.fn();
+      render(
+        <SuperChat
+          conversation={conversation}
+          currentParticipantId="u1"
+          onMessageSent={onMessageSent}
+          composerProps={{
+            sendOptions: [{ id: 'later', label: 'Send later…' }],
+          }}
+        />
+      );
+      await user.type(screen.getByLabelText('Message'), 'tomorrow');
+      await user.click(
+        screen.getByRole('button', { name: 'More send options' })
+      );
+      await user.click(screen.getByRole('menuitem', { name: 'Send later…' }));
+      await waitFor(() =>
+        expect(onMessageSent).toHaveBeenCalledWith(
+          'tomorrow',
+          expect.objectContaining({ sendOption: 'later' })
+        )
+      );
+    });
+
     it('turns @mentions off with an empty mentionOptions', async () => {
       const { default: userEvent } =
         await import('@testing-library/user-event');
@@ -1066,6 +1094,36 @@ describe('SuperChat', () => {
       </div>
     );
     expect(screen.getByText('(edited)')).toBeInTheDocument();
+  });
+
+  it('draws a scheduled message as pending with its time', () => {
+    const scheduled: SuperChatConversation = {
+      ...conversation,
+      thread: [
+        { ...conversation.thread[0], scheduledFor: '2026-06-08T09:00:00Z' },
+        conversation.thread[1],
+      ],
+    };
+    const { container } = render(
+      <div style={{ height: 400 }}>
+        <SuperChat
+          conversation={scheduled}
+          currentParticipantId="u1"
+          messageLabels={{ scheduled: 'Programado' }}
+        />
+      </div>
+    );
+    const indicators = container.querySelectorAll(
+      '[data-slot="superchat-scheduled-indicator"]'
+    );
+    expect(indicators).toHaveLength(1);
+    expect(indicators[0]).toHaveTextContent(/^Programado · /);
+    expect(
+      container.querySelectorAll('[data-slot="superchat-bubble"][data-pending]')
+    ).toHaveLength(1);
+    expect(
+      screen.getByRole('article', { name: /Programado · / })
+    ).toBeInTheDocument();
   });
 
   it('shows a copy affordance on every content message', () => {

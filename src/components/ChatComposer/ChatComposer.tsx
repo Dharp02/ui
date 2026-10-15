@@ -65,6 +65,24 @@ export interface ChatComposerMenuItem {
   onSelect?: () => void;
 }
 
+/** An alternative way to send, offered in the menu beside the send button. */
+export interface ChatComposerSendOption {
+  /** Stable id, passed back to `onSend` as `meta.sendOption`. */
+  id: string;
+  /** Display label, e.g. "Send later…" or "Send without notifying". */
+  label: React.ReactNode;
+  /** Optional leading icon. */
+  icon?: React.ReactNode;
+  /** Whether the option is disabled. */
+  disabled?: boolean;
+}
+
+/** Context for a send, beyond the message itself. */
+export interface ChatComposerSendMeta {
+  /** Id of the {@link ChatComposerSendOption} chosen; absent for a plain send. */
+  sendOption?: string;
+}
+
 /** An agent shown in the composer's agent selector. */
 export interface ChatComposerAgentOption {
   /** Stable id (returned via `onAgentChange`). */
@@ -104,8 +122,14 @@ export interface ChatComposerError {
 }
 
 export interface ChatComposerProps {
-  /** Called when the user sends a message. */
-  onSend?: (message: NewMessage) => void | Promise<void>;
+  /**
+   * Called when the user sends a message. `meta` is passed only when the
+   * send came from one of `sendOptions`.
+   */
+  onSend?: (
+    message: NewMessage,
+    meta?: ChatComposerSendMeta
+  ) => void | Promise<void>;
   /** Controlled input value. Leave undefined for uncontrolled usage. */
   value?: string;
   /** Called when the input value changes. */
@@ -180,6 +204,13 @@ export interface ChatComposerProps {
   leadingSlot?: React.ReactNode;
   /** Extra entries for the `+` menu, rendered after the built-in items. */
   addMenuItems?: ChatComposerMenuItem[];
+  /**
+   * Other ways to send the draft (e.g. "Send later…"), shown in a menu on a
+   * chevron beside the send button. Choosing one sends exactly like the send
+   * button, with the option's id in `onSend`'s `meta.sendOption`; the host
+   * decides what it means. Enter always does a plain send.
+   */
+  sendOptions?: ChatComposerSendOption[];
   /** Enable file attachments (built-in "Attach files" menu item, paste-to-attach, drag-and-drop, chips). @default true */
   allowAttachments?: boolean;
   /** Accepted file types for the picker/paste validation (native `accept` tokens). */
@@ -273,6 +304,8 @@ export interface ChatComposerProps {
   micLabel?: string;
   /** Accessible label for the send button. @default 'Send message' */
   sendLabel?: string;
+  /** Accessible label for the `sendOptions` menu trigger. @default 'More send options' */
+  sendOptionsLabel?: string;
   /** Accessible label for the stop button. @default 'Stop generating' */
   stopLabel?: string;
   /** Accessible label / empty-state text for the agent selector. @default 'Select agent' */
@@ -377,6 +410,7 @@ export const ChatComposer = React.forwardRef<
     textareaProps,
     leadingSlot,
     addMenuItems,
+    sendOptions,
     allowAttachments = true,
     acceptedFileTypes,
     maxFileSize,
@@ -407,6 +441,7 @@ export const ChatComposer = React.forwardRef<
     attachFilesLabel = 'Attach files',
     micLabel = 'Start voice input',
     sendLabel = 'Send message',
+    sendOptionsLabel = 'More send options',
     stopLabel = 'Stop generating',
     agentSelectorLabel = 'Select agent',
     mentionListLabel = 'Mention',
@@ -429,6 +464,7 @@ export const ChatComposer = React.forwardRef<
   const fileInputRef = React.useRef<HTMLInputElement>(null);
 
   const [addMenuOpen, setAddMenuOpen] = React.useState(false);
+  const [sendMenuOpen, setSendMenuOpen] = React.useState(false);
   const [agentMenuOpen, setAgentMenuOpen] = React.useState(false);
 
   const isTouchDevice = React.useSyncExternalStore(
@@ -656,7 +692,7 @@ export const ChatComposer = React.forwardRef<
   // Sending
   // --------------------------------------------------------------------
 
-  const handleSend = () => {
+  const handleSend = (sendOption?: string) => {
     if (!canSend || !onSend) return;
     const message: NewMessage = {
       content: value.trim(),
@@ -677,7 +713,12 @@ export const ChatComposer = React.forwardRef<
     // synchronous throw and a rejected promise surface through onError
     // instead of being swallowed.
     try {
-      Promise.resolve(onSend(message)).catch(() => {
+      // `meta` only for an option send, so plain-send payloads stay unchanged.
+      const sent =
+        sendOption === undefined
+          ? onSend(message)
+          : onSend(message, { sendOption });
+      Promise.resolve(sent).catch(() => {
         onError?.(sendFailedLabel, { reason: 'send-failed' });
       });
     } catch {
@@ -1056,7 +1097,7 @@ export const ChatComposer = React.forwardRef<
               aria-busy={isSending || undefined}
               disabled={!canSend}
               onMouseDown={keepInputFocus}
-              onClick={handleSend}
+              onClick={() => handleSend()}
               className={cn(
                 iconButtonClasses,
                 canSend &&
@@ -1073,6 +1114,42 @@ export const ChatComposer = React.forwardRef<
               )}
             </button>
           )}
+
+          {!(isStreaming && onStop) &&
+            sendOptions &&
+            sendOptions.length > 0 && (
+              <Dropdown
+                placement="top-end"
+                open={sendMenuOpen}
+                onOpenChange={setSendMenuOpen}
+                trigger={
+                  <button
+                    type="button"
+                    data-slot="chat-composer-send-options"
+                    aria-label={sendOptionsLabel}
+                    disabled={!canSend}
+                    onMouseDown={keepInputFocus}
+                    className={cn(iconButtonClasses, 'w-6')}
+                  >
+                    <ChevronUpIcon className="h-4 w-4" aria-hidden="true" />
+                  </button>
+                }
+              >
+                {sendOptions.map((option) => (
+                  <DropdownItem
+                    key={option.id}
+                    icon={option.icon}
+                    disabled={option.disabled}
+                    onClick={() => {
+                      setSendMenuOpen(false);
+                      handleSend(option.id);
+                    }}
+                  >
+                    <span className="min-w-0 truncate">{option.label}</span>
+                  </DropdownItem>
+                ))}
+              </Dropdown>
+            )}
         </div>
       </div>
     </>
