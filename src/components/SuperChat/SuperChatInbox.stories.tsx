@@ -73,6 +73,20 @@ const meta: Meta<typeof SuperChatInbox> = {
       description: 'Show the conversation list.',
       table: { category: 'Behavior' },
     },
+    resizableSidebar: {
+      control: 'boolean',
+      description:
+        'Drag the divider (or focus it and use the arrow keys) to resize the list; double-click restores the default width.',
+      table: { category: 'Behavior' },
+    },
+    defaultSidebarWidth: {
+      control: { type: 'number', min: 200, max: 480, step: 8 },
+      description:
+        'Starting list width in px, and the width a double-click restores.',
+      table: { category: 'Behavior' },
+    },
+    sidebarWidth: { control: false, table: { category: 'Behavior' } },
+    onSidebarWidthChange: { control: false, table: { category: 'Callbacks' } },
     trustedContent: {
       control: 'boolean',
       description: 'Skip sanitization — only for host-authored content.',
@@ -287,6 +301,7 @@ export const Playground: Story = {
   args: {
     currentParticipantId: 'u1',
     showSidebar: true,
+    resizableSidebar: true,
     readOnly: false,
     trustedContent: false,
     defaultActiveConversationId: 'c1',

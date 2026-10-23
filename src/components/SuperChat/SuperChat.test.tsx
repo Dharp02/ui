@@ -1822,6 +1822,138 @@ describe('SuperChatInbox', () => {
     expect(panelHidden('chat')).toBe(false);
   });
 
+  describe('resizable sidebar', () => {
+    const renderInbox = (
+      props: Partial<React.ComponentProps<typeof SuperChatInbox>> = {}
+    ) =>
+      render(
+        <div style={{ height: 400 }}>
+          <SuperChatInbox
+            conversations={conversations}
+            currentParticipantId="u1"
+            {...props}
+          />
+        </div>
+      );
+    const sidebarWidth = (container: HTMLElement) =>
+      (
+        container.querySelector('[data-slot="superchat-inbox"]') as HTMLElement
+      ).style.getPropertyValue('--superchat-sidebar-width');
+    // jsdom has no PointerEvent, and fireEvent.pointer* drops clientX; a
+    // MouseEvent of the pointer type carries it.
+    const pointer = (
+      el: HTMLElement,
+      type: 'pointerdown' | 'pointermove' | 'pointerup',
+      clientX = 0
+    ) =>
+      fireEvent(
+        el,
+        new MouseEvent(type, { bubbles: true, button: 0, clientX })
+      );
+
+    it('renders no divider and the default 256px width without resizableSidebar', () => {
+      const { container } = renderInbox();
+      expect(screen.queryByRole('separator')).toBeNull();
+      expect(sidebarWidth(container)).toBe('256px');
+    });
+
+    it('exposes the divider as a labelled vertical separator', () => {
+      renderInbox({ resizableSidebar: true });
+      const handle = screen.getByRole('separator', {
+        name: 'Resize conversation list',
+      });
+      expect(handle).toHaveAttribute('aria-orientation', 'vertical');
+      expect(handle).toHaveAttribute('aria-valuenow', '256');
+      expect(handle).toHaveAttribute('aria-valuemin', '200');
+      expect(handle).toHaveAttribute('aria-valuemax', '480');
+      expect(handle).toHaveAttribute('tabindex', '0');
+      // Hidden below sm, where only one pane shows.
+      expect(handle).toHaveClass('hidden', 'sm:block');
+    });
+
+    it('resizes by dragging, clamped to the min and max', () => {
+      const onSidebarWidthChange = vi.fn();
+      const { container } = renderInbox({
+        resizableSidebar: true,
+        onSidebarWidthChange,
+      });
+      const handle = screen.getByRole('separator');
+      pointer(handle, 'pointerdown', 256);
+      pointer(handle, 'pointermove', 300);
+      expect(sidebarWidth(container)).toBe('300px');
+      expect(onSidebarWidthChange).toHaveBeenLastCalledWith(300);
+      pointer(handle, 'pointermove', 2000);
+      expect(sidebarWidth(container)).toBe('480px');
+      pointer(handle, 'pointermove', 0);
+      expect(sidebarWidth(container)).toBe('200px');
+      pointer(handle, 'pointerup');
+      pointer(handle, 'pointermove', 400);
+      expect(sidebarWidth(container)).toBe('200px');
+    });
+
+    it('resizes with the arrow keys, Home and End', () => {
+      renderInbox({ resizableSidebar: true });
+      const handle = screen.getByRole('separator');
+      fireEvent.keyDown(handle, { key: 'ArrowRight' });
+      expect(handle).toHaveAttribute('aria-valuenow', '272');
+      fireEvent.keyDown(handle, { key: 'ArrowLeft' });
+      fireEvent.keyDown(handle, { key: 'ArrowLeft' });
+      expect(handle).toHaveAttribute('aria-valuenow', '240');
+      fireEvent.keyDown(handle, { key: 'End' });
+      expect(handle).toHaveAttribute('aria-valuenow', '480');
+      fireEvent.keyDown(handle, { key: 'Home' });
+      expect(handle).toHaveAttribute('aria-valuenow', '200');
+    });
+
+    it('inverts drag and arrow keys in RTL', () => {
+      const { container } = render(
+        <div dir="rtl" style={{ height: 400 }}>
+          <SuperChatInbox
+            conversations={conversations}
+            currentParticipantId="u1"
+            resizableSidebar
+          />
+        </div>
+      );
+      const handle = screen.getByRole('separator');
+      // jsdom doesn't inherit `direction` from `dir`; set it on the handle.
+      handle.style.direction = 'rtl';
+      fireEvent.keyDown(handle, { key: 'ArrowLeft' });
+      expect(handle).toHaveAttribute('aria-valuenow', '272');
+      pointer(handle, 'pointerdown', 500);
+      pointer(handle, 'pointermove', 450);
+      expect(sidebarWidth(container)).toBe('322px');
+    });
+
+    it('restores defaultSidebarWidth on double-click', () => {
+      const onSidebarWidthChange = vi.fn();
+      renderInbox({
+        resizableSidebar: true,
+        sidebarWidth: 400,
+        defaultSidebarWidth: 300,
+        onSidebarWidthChange,
+      });
+      fireEvent.doubleClick(screen.getByRole('separator'));
+      expect(onSidebarWidthChange).toHaveBeenCalledWith(300);
+    });
+
+    it('follows a controlled sidebarWidth', () => {
+      const { container } = renderInbox({
+        resizableSidebar: true,
+        sidebarWidth: 360,
+      });
+      const handle = screen.getByRole('separator');
+      fireEvent.keyDown(handle, { key: 'ArrowRight' });
+      // Controlled: the width stays until the host passes the new one.
+      expect(sidebarWidth(container)).toBe('360px');
+    });
+
+    it('renders no divider when the sidebar is hidden', () => {
+      renderInbox({ resizableSidebar: true, showSidebar: false });
+      expect(screen.queryByRole('separator')).toBeNull();
+    });
+  });
+
   it('switches the active panel when another conversation is opened', async () => {
     const { default: userEvent } = await import('@testing-library/user-event');
     const user = userEvent.setup();

@@ -18,6 +18,7 @@ import {
   type SuperChatProps,
 } from './SuperChat';
 import { SuperChatConversations } from './SuperChatConversations';
+import { SidebarResizeHandle } from './SidebarResizeHandle';
 import type {
   AIRenderTextContent,
   AttachmentKind,
@@ -82,6 +83,31 @@ export interface SuperChatInboxProps {
    * (below `sm`). Defaults to the list; `'chat'` opens the active conversation.
    */
   defaultMobileView?: 'list' | 'chat';
+  /**
+   * Show a divider the user can drag (or move with the arrow keys) to resize
+   * the sidebar, from `sm` up. Double-clicking it restores
+   * `defaultSidebarWidth`. Defaults to `false`.
+   */
+  resizableSidebar?: boolean;
+  /** Controlled sidebar width in px, from `sm` up. Pair with `onSidebarWidthChange`. */
+  sidebarWidth?: number;
+  /**
+   * Starting sidebar width in px when uncontrolled, and the width a
+   * double-click on the divider restores. Defaults to `256`.
+   */
+  defaultSidebarWidth?: number;
+  /** Narrowest the divider can make the sidebar, in px. Defaults to `200`. */
+  minSidebarWidth?: number;
+  /** Widest the divider can make the sidebar, in px. Defaults to `480`. */
+  maxSidebarWidth?: number;
+  /**
+   * Fired with the new, clamped width whenever the user resizes the sidebar.
+   * Hosts persist it here (e.g. to `localStorage`) and pass it back as
+   * `sidebarWidth` or `defaultSidebarWidth`.
+   */
+  onSidebarWidthChange?: (width: number) => void;
+  /** Accessible name of the resize divider. Defaults to `'Resize conversation list'`. */
+  sidebarResizeLabel?: string;
   /** Build hrefs for `ref` thread items. */
   linkBuilder?: SuperChatLinkBuilder;
   /** Format for a message's default copy action (Ctrl/Cmd-click on copy). */
@@ -135,6 +161,13 @@ export function SuperChatInbox({
   showSidebar = true,
   listFooter,
   defaultMobileView = 'list',
+  resizableSidebar = false,
+  sidebarWidth,
+  defaultSidebarWidth = 256,
+  minSidebarWidth = 200,
+  maxSidebarWidth = 480,
+  onSidebarWidthChange,
+  sidebarResizeLabel = 'Resize conversation list',
   linkBuilder,
   defaultCopyFormat,
   className,
@@ -162,6 +195,17 @@ export function SuperChatInbox({
     defaultMobileView
   );
 
+  const clampWidth = (w: number) =>
+    Math.round(Math.min(maxSidebarWidth, Math.max(minSidebarWidth, w)));
+  const [internalWidth, setInternalWidth] = React.useState(defaultSidebarWidth);
+  const width = clampWidth(sidebarWidth ?? internalWidth);
+  const resizeSidebar = (next: number) => {
+    const clamped = clampWidth(next);
+    if (clamped === width) return;
+    if (sidebarWidth === undefined) setInternalWidth(clamped);
+    onSidebarWidthChange?.(clamped);
+  };
+
   const handleOpen = (c: SuperChatConversation) => {
     if (activeConversationId === undefined) setInternalActive(c.id);
     setMobileView('chat');
@@ -177,6 +221,10 @@ export function SuperChatInbox({
         'flex h-full overflow-hidden rounded-xl border border-neutral-200 bg-white dark:border-neutral-700 dark:bg-neutral-900',
         className
       )}
+      // The sidebar reads its `sm`+ width from this variable.
+      style={
+        { '--superchat-sidebar-width': `${width}px` } as React.CSSProperties
+      }
     >
       {showSidebar && (
         <SuperChatConversations
@@ -186,9 +234,21 @@ export function SuperChatInbox({
           onNewConversation={onNewConversation}
           listFooter={listFooter}
           className={cn(
-            'w-full sm:w-64',
+            'w-full sm:w-(--superchat-sidebar-width)',
             mobileView === 'chat' && 'hidden sm:flex'
           )}
+        />
+      )}
+      {showSidebar && resizableSidebar && (
+        <SidebarResizeHandle
+          width={width}
+          minWidth={minSidebarWidth}
+          maxWidth={maxSidebarWidth}
+          onResize={resizeSidebar}
+          onReset={() => resizeSidebar(defaultSidebarWidth)}
+          label={sidebarResizeLabel}
+          // One pane at a time below `sm`: nothing to divide.
+          className="hidden sm:block"
         />
       )}
 
