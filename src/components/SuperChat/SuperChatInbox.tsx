@@ -230,6 +230,13 @@ export function SuperChatInbox({
   // per drag, not once per pointermove.
   const [dragWidth, setDragWidth] = React.useState<number | null>(null);
   const settledWidth = clampWidth(sidebarWidth ?? internalWidth);
+  // What is stored, which a narrow inbox can show smaller than this.
+  const savedWidth = Math.round(
+    Math.min(
+      maxSidebarWidth,
+      Math.max(minSidebarWidth, sidebarWidth ?? internalWidth)
+    )
+  );
   const width = dragWidth ?? settledWidth;
   const resizeSidebar = (next: number, final: boolean) => {
     const clamped = clampWidth(next);
@@ -238,7 +245,7 @@ export function SuperChatInbox({
       return;
     }
     setDragWidth(null);
-    if (clamped === settledWidth) return;
+    if (clamped === savedWidth) return;
     if (sidebarWidth === undefined) setInternalWidth(clamped);
     onSidebarWidthChange?.(clamped);
   };

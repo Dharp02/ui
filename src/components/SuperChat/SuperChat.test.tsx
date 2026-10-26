@@ -1996,6 +1996,32 @@ describe('SuperChatInbox', () => {
       }
     });
 
+    it('saves the default on double-click even when a narrow inbox already shows it', () => {
+      vi.stubGlobal(
+        'ResizeObserver',
+        class {
+          constructor(private cb: (e: unknown[]) => void) {}
+          observe() {
+            this.cb([{ contentRect: { width: 496 } }]);
+          }
+          disconnect() {}
+        }
+      );
+      try {
+        const onSidebarWidthChange = vi.fn();
+        const { container } = renderInbox({
+          resizableSidebar: true,
+          sidebarWidth: 480,
+          onSidebarWidthChange,
+        });
+        expect(sidebarWidth(container)).toBe('256px');
+        fireEvent.doubleClick(screen.getByRole('separator'));
+        expect(onSidebarWidthChange).toHaveBeenCalledWith(256);
+      } finally {
+        vi.unstubAllGlobals();
+      }
+    });
+
     it('renders no divider when the sidebar is hidden', () => {
       renderInbox({ resizableSidebar: true, showSidebar: false });
       expect(screen.queryByRole('separator')).toBeNull();
