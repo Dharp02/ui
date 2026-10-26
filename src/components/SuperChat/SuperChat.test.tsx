@@ -2022,6 +2022,32 @@ describe('SuperChatInbox', () => {
       }
     });
 
+    it('keeps the stored width when a key press leaves the divider where it is', () => {
+      vi.stubGlobal(
+        'ResizeObserver',
+        class {
+          constructor(private cb: (e: unknown[]) => void) {}
+          observe() {
+            this.cb([{ contentRect: { width: 600 } }]);
+          }
+          disconnect() {}
+        }
+      );
+      try {
+        const onSidebarWidthChange = vi.fn();
+        const { container } = renderInbox({
+          resizableSidebar: true,
+          sidebarWidth: 480,
+          onSidebarWidthChange,
+        });
+        expect(sidebarWidth(container)).toBe('360px');
+        fireEvent.keyDown(screen.getByRole('separator'), { key: 'ArrowRight' });
+        expect(onSidebarWidthChange).not.toHaveBeenCalled();
+      } finally {
+        vi.unstubAllGlobals();
+      }
+    });
+
     it('renders no divider when the sidebar is hidden', () => {
       renderInbox({ resizableSidebar: true, showSidebar: false });
       expect(screen.queryByRole('separator')).toBeNull();

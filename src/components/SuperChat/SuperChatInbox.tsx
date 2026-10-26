@@ -230,7 +230,9 @@ export function SuperChatInbox({
   // per drag, not once per pointermove.
   const [dragWidth, setDragWidth] = React.useState<number | null>(null);
   const settledWidth = clampWidth(sidebarWidth ?? internalWidth);
-  // What is stored, which a narrow inbox can show smaller than this.
+  // What is stored, which a narrow inbox can show smaller than this. Only a
+  // reset compares against it, so a key press that leaves the divider where it
+  // is never overwrites the stored width.
   const savedWidth = Math.round(
     Math.min(
       maxSidebarWidth,
@@ -238,14 +240,14 @@ export function SuperChatInbox({
     )
   );
   const width = dragWidth ?? settledWidth;
-  const resizeSidebar = (next: number, final: boolean) => {
+  const resizeSidebar = (next: number, final: boolean, reset = false) => {
     const clamped = clampWidth(next);
     if (!final) {
       setDragWidth(clamped);
       return;
     }
     setDragWidth(null);
-    if (clamped === savedWidth) return;
+    if (clamped === (reset ? savedWidth : settledWidth)) return;
     if (sidebarWidth === undefined) setInternalWidth(clamped);
     onSidebarWidthChange?.(clamped);
   };
@@ -290,7 +292,7 @@ export function SuperChatInbox({
           minWidth={minSidebarWidth}
           maxWidth={widestSidebar}
           onResize={resizeSidebar}
-          onReset={() => resizeSidebar(defaultSidebarWidth, true)}
+          onReset={() => resizeSidebar(defaultSidebarWidth, true, true)}
           label={sidebarResizeLabel}
           // One pane at a time below `sm`: nothing to divide.
           className="hidden sm:block"
