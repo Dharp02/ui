@@ -223,6 +223,8 @@ export function SuperChatInbox({
           Math.min(maxSidebarWidth, availableWidth - MIN_PANEL_WIDTH)
         );
 
+  const clampStoredWidth = (w: number) =>
+    Math.round(Math.min(maxSidebarWidth, Math.max(minSidebarWidth, w)));
   const clampWidth = (w: number) =>
     Math.round(Math.min(widestSidebar, Math.max(minSidebarWidth, w)));
   const [internalWidth, setInternalWidth] = React.useState(defaultSidebarWidth);
@@ -233,12 +235,7 @@ export function SuperChatInbox({
   // What is stored, which a narrow inbox can show smaller than this. Only a
   // reset compares against it, so a key press that leaves the divider where it
   // is never overwrites the stored width.
-  const savedWidth = Math.round(
-    Math.min(
-      maxSidebarWidth,
-      Math.max(minSidebarWidth, sidebarWidth ?? internalWidth)
-    )
-  );
+  const savedWidth = clampStoredWidth(sidebarWidth ?? internalWidth);
   const width = dragWidth ?? settledWidth;
   const resizeSidebar = (next: number, final: boolean, reset = false) => {
     const clamped = clampWidth(next);
@@ -247,9 +244,11 @@ export function SuperChatInbox({
       return;
     }
     setDragWidth(null);
-    if (clamped === (reset ? savedWidth : settledWidth)) return;
-    if (sidebarWidth === undefined) setInternalWidth(clamped);
-    onSidebarWidthChange?.(clamped);
+    // A reset stores the default itself; a narrow inbox only caps what is drawn.
+    const stored = reset ? clampStoredWidth(next) : clamped;
+    if (stored === (reset ? savedWidth : settledWidth)) return;
+    if (sidebarWidth === undefined) setInternalWidth(stored);
+    onSidebarWidthChange?.(stored);
   };
 
   const handleOpen = (c: SuperChatConversation) => {
