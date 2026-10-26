@@ -1971,6 +1971,31 @@ describe('SuperChatInbox', () => {
       expect(sidebarWidth(container)).toBe('360px');
     });
 
+    it('limits the width so the panel keeps 240px, and announces it', () => {
+      vi.stubGlobal(
+        'ResizeObserver',
+        class {
+          constructor(private cb: (e: unknown[]) => void) {}
+          observe() {
+            this.cb([{ contentRect: { width: 600 } }]);
+          }
+          disconnect() {}
+        }
+      );
+      try {
+        const { container } = renderInbox({
+          resizableSidebar: true,
+          sidebarWidth: 480,
+        });
+        const handle = screen.getByRole('separator');
+        expect(sidebarWidth(container)).toBe('360px');
+        expect(handle).toHaveAttribute('aria-valuenow', '360');
+        expect(handle).toHaveAttribute('aria-valuemax', '360');
+      } finally {
+        vi.unstubAllGlobals();
+      }
+    });
+
     it('renders no divider when the sidebar is hidden', () => {
       renderInbox({ resizableSidebar: true, showSidebar: false });
       expect(screen.queryByRole('separator')).toBeNull();

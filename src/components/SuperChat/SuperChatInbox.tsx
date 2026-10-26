@@ -33,6 +33,9 @@ import type {
 // SuperChatInbox (list + panel)
 // ============================================================================
 
+/** Narrowest the conversation panel may be squeezed to by a wide list, in px. */
+const MIN_PANEL_WIDTH = 240;
+
 export interface SuperChatInboxProps {
   /** All conversations (host-owned state). */
   conversations: SuperChatConversation[];
@@ -98,7 +101,10 @@ export interface SuperChatInboxProps {
   defaultSidebarWidth?: number;
   /** Narrowest the divider can make the sidebar, in px. Defaults to `200`. */
   minSidebarWidth?: number;
-  /** Widest the divider can make the sidebar, in px. Defaults to `480`. */
+  /**
+   * Widest the divider can make the sidebar, in px. Defaults to `480`. A narrow
+   * inbox lowers it further so the panel keeps at least 240px.
+   */
   maxSidebarWidth?: number;
   /**
    * Fired with the new, clamped width whenever the user resizes the sidebar.
@@ -195,8 +201,30 @@ export function SuperChatInbox({
     defaultMobileView
   );
 
+  // The list can't be wider than leaves the panel `MIN_PANEL_WIDTH`, so the
+  // width shown, dragged and announced is always the one actually rendered.
+  const rootRef = React.useRef<HTMLDivElement>(null);
+  const [availableWidth, setAvailableWidth] = React.useState<number>();
+  React.useLayoutEffect(() => {
+    const root = rootRef.current;
+    if (!root || !resizableSidebar || typeof ResizeObserver === 'undefined')
+      return;
+    const observer = new ResizeObserver(([entry]) => {
+      if (entry?.contentRect) setAvailableWidth(entry.contentRect.width);
+    });
+    observer.observe(root);
+    return () => observer.disconnect();
+  }, [resizableSidebar]);
+  const widestSidebar =
+    availableWidth === undefined
+      ? maxSidebarWidth
+      : Math.max(
+          minSidebarWidth,
+          Math.min(maxSidebarWidth, availableWidth - MIN_PANEL_WIDTH)
+        );
+
   const clampWidth = (w: number) =>
-    Math.round(Math.min(maxSidebarWidth, Math.max(minSidebarWidth, w)));
+    Math.round(Math.min(widestSidebar, Math.max(minSidebarWidth, w)));
   const [internalWidth, setInternalWidth] = React.useState(defaultSidebarWidth);
   // Width while a drag is in progress; kept here so the host re-renders once
   // per drag, not once per pointermove.
@@ -223,6 +251,7 @@ export function SuperChatInbox({
 
   return (
     <div
+      ref={rootRef}
       data-slot="superchat-inbox"
       role="group"
       aria-label={active ? `Chat: ${active.title}` : 'Chat'}
@@ -243,8 +272,7 @@ export function SuperChatInbox({
           onNewConversation={onNewConversation}
           listFooter={listFooter}
           className={cn(
-            // Yields to the panel's `sm:min-w-60` when the width is dragged wide.
-            'w-full sm:w-(--superchat-sidebar-width) sm:shrink',
+            'w-full sm:w-(--superchat-sidebar-width)',
             mobileView === 'chat' && 'hidden sm:flex'
           )}
         />
@@ -253,7 +281,7 @@ export function SuperChatInbox({
         <SidebarResizeHandle
           width={width}
           minWidth={minSidebarWidth}
-          maxWidth={maxSidebarWidth}
+          maxWidth={widestSidebar}
           onResize={resizeSidebar}
           onReset={() => resizeSidebar(defaultSidebarWidth, true)}
           label={sidebarResizeLabel}
@@ -288,7 +316,6 @@ export function SuperChatInbox({
           onReferenceClick={onReferenceClick}
           onBack={showSidebar ? () => setMobileView('list') : undefined}
           className={cn(
-            showSidebar && 'sm:min-w-60',
             showSidebar && mobileView === 'list' && 'hidden sm:flex'
           )}
         />
