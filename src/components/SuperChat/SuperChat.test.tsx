@@ -1881,14 +1881,37 @@ describe('SuperChatInbox', () => {
       pointer(handle, 'pointerdown', 256);
       pointer(handle, 'pointermove', 300);
       expect(sidebarWidth(container)).toBe('300px');
-      expect(onSidebarWidthChange).toHaveBeenLastCalledWith(300);
+      // Reported once the drag ends, not on every move.
+      expect(onSidebarWidthChange).not.toHaveBeenCalled();
       pointer(handle, 'pointermove', 2000);
       expect(sidebarWidth(container)).toBe('480px');
       pointer(handle, 'pointermove', 0);
       expect(sidebarWidth(container)).toBe('200px');
       pointer(handle, 'pointerup');
+      expect(onSidebarWidthChange).toHaveBeenCalledTimes(1);
+      expect(onSidebarWidthChange).toHaveBeenCalledWith(200);
       pointer(handle, 'pointermove', 400);
       expect(sidebarWidth(container)).toBe('200px');
+    });
+
+    it('reports the width right away for a key press', () => {
+      const onSidebarWidthChange = vi.fn();
+      renderInbox({ resizableSidebar: true, onSidebarWidthChange });
+      fireEvent.keyDown(screen.getByRole('separator'), { key: 'ArrowRight' });
+      expect(onSidebarWidthChange).toHaveBeenCalledWith(272);
+    });
+
+    it('reverts a drag to a controlled sidebarWidth the host did not update', () => {
+      const { container } = renderInbox({
+        resizableSidebar: true,
+        sidebarWidth: 360,
+      });
+      const handle = screen.getByRole('separator');
+      pointer(handle, 'pointerdown', 360);
+      pointer(handle, 'pointermove', 400);
+      expect(sidebarWidth(container)).toBe('400px');
+      pointer(handle, 'pointerup');
+      expect(sidebarWidth(container)).toBe('360px');
     });
 
     it('resizes with the arrow keys, Home and End', () => {

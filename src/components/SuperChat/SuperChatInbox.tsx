@@ -198,10 +198,19 @@ export function SuperChatInbox({
   const clampWidth = (w: number) =>
     Math.round(Math.min(maxSidebarWidth, Math.max(minSidebarWidth, w)));
   const [internalWidth, setInternalWidth] = React.useState(defaultSidebarWidth);
-  const width = clampWidth(sidebarWidth ?? internalWidth);
-  const resizeSidebar = (next: number) => {
+  // Width while a drag is in progress; kept here so the host re-renders once
+  // per drag, not once per pointermove.
+  const [dragWidth, setDragWidth] = React.useState<number | null>(null);
+  const settledWidth = clampWidth(sidebarWidth ?? internalWidth);
+  const width = dragWidth ?? settledWidth;
+  const resizeSidebar = (next: number, final: boolean) => {
     const clamped = clampWidth(next);
-    if (clamped === width) return;
+    if (!final) {
+      setDragWidth(clamped);
+      return;
+    }
+    setDragWidth(null);
+    if (clamped === settledWidth) return;
     if (sidebarWidth === undefined) setInternalWidth(clamped);
     onSidebarWidthChange?.(clamped);
   };
@@ -234,7 +243,8 @@ export function SuperChatInbox({
           onNewConversation={onNewConversation}
           listFooter={listFooter}
           className={cn(
-            'w-full sm:w-(--superchat-sidebar-width)',
+            // Yields to the panel's `sm:min-w-60` when the width is dragged wide.
+            'w-full sm:w-(--superchat-sidebar-width) sm:shrink',
             mobileView === 'chat' && 'hidden sm:flex'
           )}
         />
@@ -245,7 +255,7 @@ export function SuperChatInbox({
           minWidth={minSidebarWidth}
           maxWidth={maxSidebarWidth}
           onResize={resizeSidebar}
-          onReset={() => resizeSidebar(defaultSidebarWidth)}
+          onReset={() => resizeSidebar(defaultSidebarWidth, true)}
           label={sidebarResizeLabel}
           // One pane at a time below `sm`: nothing to divide.
           className="hidden sm:block"
@@ -278,6 +288,7 @@ export function SuperChatInbox({
           onReferenceClick={onReferenceClick}
           onBack={showSidebar ? () => setMobileView('list') : undefined}
           className={cn(
+            showSidebar && 'sm:min-w-60',
             showSidebar && mobileView === 'list' && 'hidden sm:flex'
           )}
         />

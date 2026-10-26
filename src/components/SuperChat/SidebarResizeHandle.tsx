@@ -16,8 +16,8 @@ export interface SidebarResizeHandleProps {
   width: number;
   minWidth: number;
   maxWidth: number;
-  /** Requested width in px; the owner clamps it. */
-  onResize: (width: number) => void;
+  /** Requested width in px; the owner clamps it. `final` is false while a drag is in progress. */
+  onResize: (width: number, final: boolean) => void;
   /** Double-click: restore the default width. */
   onReset: () => void;
   /** Accessible name of the separator. */
@@ -39,9 +39,12 @@ export function SidebarResizeHandle({
   label,
   className,
 }: SidebarResizeHandleProps) {
-  const drag = React.useRef<{ x: number; width: number; rtl: boolean } | null>(
-    null
-  );
+  const drag = React.useRef<{
+    x: number;
+    width: number;
+    rtl: boolean;
+    last?: number;
+  } | null>(null);
 
   const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
     if (e.button !== 0) return;
@@ -60,11 +63,16 @@ export function SidebarResizeHandle({
     if (!start) return;
     // rtl-ignore -- pointer-coordinate math, inverted below for RTL
     const dx = e.clientX - start.x;
-    onResize(start.width + (start.rtl ? -dx : dx));
+    start.last = start.width + (start.rtl ? -dx : dx);
+    onResize(start.last, false);
   };
 
+  // pointerup, pointercancel and lostpointercapture all land here; only the
+  // first one after a move reports.
   const endDrag = () => {
+    const start = drag.current;
     drag.current = null;
+    if (start?.last !== undefined) onResize(start.last, true);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
@@ -82,7 +90,7 @@ export function SidebarResizeHandle({
               : undefined;
     if (next === undefined) return;
     e.preventDefault();
-    onResize(next);
+    onResize(next, true);
   };
 
   return (
